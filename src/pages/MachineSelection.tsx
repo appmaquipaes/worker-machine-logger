@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMachine } from '@/context/MachineContext';
 import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 
@@ -35,31 +35,16 @@ const MachineSelection: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {machines.map((machine) => (
-          <Card key={machine.id} className="machine-card overflow-hidden">
-            <div className="aspect-square relative overflow-hidden bg-muted flex items-center justify-center">
-              <img
-                src={machine.imageUrl}
-                alt={machine.name}
-                className="object-cover w-full h-full"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                <h3 className="text-white font-medium text-lg">{machine.name}</h3>
-              </div>
-            </div>
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground">Tipo: {machine.type}</p>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={() => handleSelectMachine(machine)} 
-                className="w-full"
-              >
-                Seleccionar
-              </Button>
-            </CardFooter>
-          </Card>
+          <Button
+            key={machine.id}
+            onClick={() => handleSelectMachine(machine)}
+            className="h-auto py-6 text-lg font-medium"
+            variant="outline"
+          >
+            {machine.name}
+          </Button>
         ))}
       </div>
     </div>

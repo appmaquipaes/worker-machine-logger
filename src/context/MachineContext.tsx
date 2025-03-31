@@ -6,7 +6,7 @@ export type Machine = {
   id: string;
   name: string;
   type: string;
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 // Tipo para el contexto de máquinas
@@ -20,20 +20,18 @@ type MachineContextType = {
 // Crear el contexto
 const MachineContext = createContext<MachineContextType | undefined>(undefined);
 
-// Lista de máquinas para demostración
+// Lista de máquinas actualizada
 const demoMachines: Machine[] = [
-  { id: '1', name: 'Excavadora 320', type: 'Excavadora', imageUrl: '/placeholder.svg' },
-  { id: '2', name: 'Bulldozer D6', type: 'Bulldozer', imageUrl: '/placeholder.svg' },
-  { id: '3', name: 'Cargadora 950', type: 'Cargadora', imageUrl: '/placeholder.svg' },
-  { id: '4', name: 'Motoniveladora 140', type: 'Motoniveladora', imageUrl: '/placeholder.svg' },
-  { id: '5', name: 'Compactador CS', type: 'Compactador', imageUrl: '/placeholder.svg' },
-  { id: '6', name: 'Retroexcavadora 420', type: 'Retroexcavadora', imageUrl: '/placeholder.svg' },
-  { id: '7', name: 'Camión Volquete', type: 'Camión', imageUrl: '/placeholder.svg' },
-  { id: '8', name: 'Pavimentadora AP', type: 'Pavimentadora', imageUrl: '/placeholder.svg' },
-  { id: '9', name: 'Grúa RT', type: 'Grúa', imageUrl: '/placeholder.svg' },
-  { id: '10', name: 'Perforadora MD', type: 'Perforadora', imageUrl: '/placeholder.svg' },
-  { id: '11', name: 'Bomba de Concreto', type: 'Bomba', imageUrl: '/placeholder.svg' },
-  { id: '12', name: 'Generador 100kW', type: 'Generador', imageUrl: '/placeholder.svg' },
+  { id: '1', name: 'Cat315', type: 'Excavadora' },
+  { id: '2', name: 'Cat312', type: 'Excavadora' },
+  { id: '3', name: 'Bulldozer D6', type: 'Bulldozer' },
+  { id: '4', name: 'Vibro-SD100', type: 'Compactador' },
+  { id: '5', name: 'VIBRO-SD70D', type: 'Compactador' },
+  { id: '6', name: 'VIBRO-CATCS-323', type: 'Compactador' },
+  { id: '7', name: 'KOMATSU-200', type: 'Excavadora' },
+  { id: '8', name: 'CARGADOR-S950', type: 'Cargador' },
+  { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora' },
+  { id: '10', name: 'PALADRAGA', type: 'Paladraga' },
 ];
 
 // Hook personalizado para usar el contexto
