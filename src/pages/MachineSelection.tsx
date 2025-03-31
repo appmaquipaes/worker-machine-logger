@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMachine } from '@/context/MachineContext';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const MachineSelection: React.FC = () => {
   const { machines, selectMachine } = useMachine();

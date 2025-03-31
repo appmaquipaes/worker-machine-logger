@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Machine } from './MachineContext';
 
 // Tipos para los reportes
