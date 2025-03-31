@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,11 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 
 const ReportForm: React.FC = () => {
   const [reportType, setReportType] = useState<ReportType>('Horas Trabajadas');
   const [description, setDescription] = useState('');
+  const [trips, setTrips] = useState<number | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { user } = useAuth();
@@ -33,6 +36,15 @@ const ReportForm: React.FC = () => {
     }
   }, [user, selectedMachine, navigate]);
 
+  // Resetear el número de viajes cuando se cambia el tipo de reporte
+  useEffect(() => {
+    if (reportType !== 'Viajes') {
+      setTrips(undefined);
+    } else if (trips === undefined) {
+      setTrips(1); // Valor predeterminado
+    }
+  }, [reportType]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,6 +58,11 @@ const ReportForm: React.FC = () => {
       return;
     }
     
+    if (reportType === 'Viajes' && (trips === undefined || trips <= 0)) {
+      toast.error('Debes ingresar un número válido de viajes');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -53,11 +70,15 @@ const ReportForm: React.FC = () => {
         selectedMachine.id,
         selectedMachine.name,
         reportType,
-        description
+        description,
+        reportType === 'Viajes' ? trips : undefined
       );
       
       // Limpiar el formulario
       setDescription('');
+      if (reportType === 'Viajes') {
+        setTrips(1);
+      }
       
       // Mostrar mensaje de éxito
       toast.success('Reporte enviado correctamente');
@@ -69,6 +90,9 @@ const ReportForm: React.FC = () => {
     }
   };
 
+  // Verificar si la máquina seleccionada es un camión
+  const isTruck = selectedMachine?.type === 'Camión';
+
   if (!user || !selectedMachine) return null;
 
   return (
@@ -77,7 +101,7 @@ const ReportForm: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Enviar Reporte</CardTitle>
           <CardDescription>
-            Máquina: <span className="font-medium">{selectedMachine.name}</span>
+            Máquina: <span className="font-medium">{selectedMachine.name}</span> ({selectedMachine.type})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,8 +133,28 @@ const ReportForm: React.FC = () => {
                   <RadioGroupItem value="Novedades" id="novedades" />
                   <Label htmlFor="novedades">Novedades</Label>
                 </div>
+                {isTruck && (
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Viajes" id="viajes" />
+                    <Label htmlFor="viajes">Viajes</Label>
+                  </div>
+                )}
               </RadioGroup>
             </div>
+            
+            {reportType === 'Viajes' && isTruck && (
+              <div className="space-y-3">
+                <Label htmlFor="trips">Número de Viajes</Label>
+                <Input
+                  id="trips"
+                  type="number"
+                  min="1"
+                  value={trips || ''}
+                  onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
+                  required
+                />
+              </div>
+            )}
             
             <div className="space-y-3">
               <Label htmlFor="description">Descripción</Label>
@@ -125,6 +169,8 @@ const ReportForm: React.FC = () => {
                     ? 'Ej. Cambio de aceite y filtros'
                     : reportType === 'Combustible'
                     ? 'Ej. 20 galones de diésel'
+                    : reportType === 'Viajes'
+                    ? 'Ej. Viajes realizados entre la cantera y la obra'
                     : 'Descripción de la novedad'
                 }
                 value={description}

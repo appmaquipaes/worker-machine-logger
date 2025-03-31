@@ -1,10 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from "sonner";
 import { Machine } from './MachineContext';
 
 // Tipos para los reportes
-export type ReportType = 'Horas Extras' | 'Horas Trabajadas' | 'Mantenimiento' | 'Combustible' | 'Novedades';
+export type ReportType = 'Horas Extras' | 'Horas Trabajadas' | 'Mantenimiento' | 'Combustible' | 'Novedades' | 'Viajes';
 
 export type Report = {
   id: string;
@@ -15,12 +16,13 @@ export type Report = {
   reportType: ReportType;
   description: string;
   createdAt: Date;
+  trips?: number; // Campo opcional para número de viajes
 };
 
 // Tipo para el contexto de reportes
 type ReportContextType = {
   reports: Report[];
-  addReport: (machineId: string, machineName: string, reportType: ReportType, description: string) => void;
+  addReport: (machineId: string, machineName: string, reportType: ReportType, description: string, trips?: number) => void;
   getFilteredReports: (filters: {
     userId?: string;
     machineId?: string;
@@ -59,7 +61,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // Función para agregar un nuevo reporte
-  const addReport = (machineId: string, machineName: string, reportType: ReportType, description: string) => {
+  const addReport = (machineId: string, machineName: string, reportType: ReportType, description: string, trips?: number) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
       return;
@@ -74,6 +76,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reportType,
       description,
       createdAt: new Date(),
+      ...(trips !== undefined && { trips }),
     };
 
     const updatedReports = [...reports, newReport];
