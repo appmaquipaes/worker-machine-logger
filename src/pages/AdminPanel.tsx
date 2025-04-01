@@ -23,8 +23,8 @@ const AdminPanel: React.FC = () => {
   
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [userNameFilter, setUserNameFilter] = useState('');
-  const [machineFilter, setMachineFilter] = useState('');
-  const [reportTypeFilter, setReportTypeFilter] = useState('');
+  const [machineFilter, setMachineFilter] = useState('all');
+  const [reportTypeFilter, setReportTypeFilter] = useState('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   
@@ -51,11 +51,11 @@ const AdminPanel: React.FC = () => {
       );
     }
     
-    if (machineFilter) {
+    if (machineFilter && machineFilter !== 'all') {
       result = result.filter(report => report.machineId === machineFilter);
     }
     
-    if (reportTypeFilter) {
+    if (reportTypeFilter && reportTypeFilter !== 'all') {
       result = result.filter(report => report.reportType === reportTypeFilter);
     }
     
@@ -118,8 +118,8 @@ const AdminPanel: React.FC = () => {
   
   const clearFilters = () => {
     setUserNameFilter('');
-    setMachineFilter('');
-    setReportTypeFilter('');
+    setMachineFilter('all');
+    setReportTypeFilter('all');
     setStartDate(undefined);
     setEndDate(undefined);
   };
@@ -160,7 +160,7 @@ const AdminPanel: React.FC = () => {
                   <SelectValue placeholder="Todas las máquinas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las máquinas</SelectItem>
+                  <SelectItem value="all">Todas las máquinas</SelectItem>
                   {machines.map((machine) => (
                     <SelectItem key={machine.id} value={machine.id}>
                       {machine.name}
@@ -176,7 +176,7 @@ const AdminPanel: React.FC = () => {
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
                   <SelectItem value="Horas Trabajadas">Horas Trabajadas</SelectItem>
                   <SelectItem value="Horas Extras">Horas Extras</SelectItem>
                   <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
