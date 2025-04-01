@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from "sonner";
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -16,8 +17,21 @@ const Register: React.FC = () => {
   const [role, setRole] = useState<'Trabajador' | 'Administrador'>('Trabajador');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
+
+  // Verificar si el usuario actual es administrador
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (user.role !== 'Administrador') {
+      toast.error('Solo los administradores pueden registrar nuevos usuarios');
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -44,17 +58,26 @@ const Register: React.FC = () => {
     setIsSubmitting(false);
     
     if (success) {
-      navigate('/dashboard');
+      toast.success(`Usuario ${name} creado exitosamente`);
+      // Restablecer los campos del formulario en lugar de redirigir
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setRole('Trabajador');
     }
   };
+
+  // Si no hay usuario o no es administrador, no renderizar la página
+  if (!user || user.role !== 'Administrador') return null;
 
   return (
     <div className="container max-w-md mx-auto py-10">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
+          <CardTitle className="text-2xl font-bold">Crear Usuario</CardTitle>
           <CardDescription>
-            Ingresa tus datos para registrarte en el sistema
+            Registra un nuevo usuario trabajador o administrador
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -122,17 +145,14 @@ const Register: React.FC = () => {
               </RadioGroup>
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Registrando..." : "Registrarse"}
+              {isSubmitting ? "Registrando..." : "Registrar Usuario"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center">
-            ¿Ya tienes una cuenta?{" "}
-            <Link to="/login" className="text-primary hover:underline">
-              Iniciar Sesión
-            </Link>
-          </div>
+        <CardFooter className="flex justify-center">
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            Volver al Dashboard
+          </Button>
         </CardFooter>
       </Card>
     </div>

@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from "sonner";
 import { format } from 'date-fns';
+import { DatePicker } from '@/components/DatePicker';
+import { Calendar } from "lucide-react";
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
-  const { reports } = useReport();
+  const { reports, getFilteredReports } = useReport();
   const { machines } = useMachine();
   const navigate = useNavigate();
   
@@ -23,6 +25,8 @@ const AdminPanel: React.FC = () => {
   const [userNameFilter, setUserNameFilter] = useState('');
   const [machineFilter, setMachineFilter] = useState('');
   const [reportTypeFilter, setReportTypeFilter] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   
   // Redirigir si no hay un usuario o no es administrador
   useEffect(() => {
@@ -55,16 +59,30 @@ const AdminPanel: React.FC = () => {
       result = result.filter(report => report.reportType === reportTypeFilter);
     }
     
+    if (startDate) {
+      result = result.filter(report => {
+        const reportDate = new Date(report.reportDate);
+        reportDate.setHours(0, 0, 0, 0);
+        return reportDate >= startDate;
+      });
+    }
+    
+    if (endDate) {
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      result = result.filter(report => new Date(report.reportDate) <= endOfDay);
+    }
+    
     // Ordenar por fecha descendente (más reciente primero)
-    result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    result.sort((a, b) => b.reportDate.getTime() - a.reportDate.getTime());
     
     setFilteredReports(result);
-  }, [reports, userNameFilter, machineFilter, reportTypeFilter]);
+  }, [reports, userNameFilter, machineFilter, reportTypeFilter, startDate, endDate]);
   
   const handleExportCSV = () => {
     try {
       // Crear los datos en formato CSV
-      const headers = ['ID', 'Trabajador', 'Máquina', 'Tipo', 'Descripción', 'Fecha'];
+      const headers = ['ID', 'Trabajador', 'Máquina', 'Tipo', 'Descripción', 'Fecha del Reporte', 'Fecha de Creación'];
       const csvData = [
         headers.join(','),
         ...filteredReports.map(report => [
@@ -73,6 +91,7 @@ const AdminPanel: React.FC = () => {
           report.machineName,
           report.reportType,
           `"${report.description.replace(/"/g, '""')}"`, // Escapar comillas en texto
+          format(report.reportDate, 'dd/MM/yyyy'),
           format(report.createdAt, 'dd/MM/yyyy HH:mm')
         ].join(','))
       ].join('\n');
@@ -95,6 +114,14 @@ const AdminPanel: React.FC = () => {
       console.error('Error al exportar:', error);
       toast.error('Error al exportar el reporte');
     }
+  };
+  
+  const clearFilters = () => {
+    setUserNameFilter('');
+    setMachineFilter('');
+    setReportTypeFilter('');
+    setStartDate(undefined);
+    setEndDate(undefined);
   };
   
   if (!user || user.role !== 'Administrador') return null;
@@ -155,12 +182,49 @@ const AdminPanel: React.FC = () => {
                   <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
                   <SelectItem value="Combustible">Combustible</SelectItem>
                   <SelectItem value="Novedades">Novedades</SelectItem>
+                  <SelectItem value="Viajes">Viajes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           
-          <div className="mt-6 flex justify-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="space-y-2">
+              <Label>Fecha Inicial</Label>
+              {startDate ? (
+                <DatePicker date={startDate} setDate={setStartDate} />
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-left font-normal text-muted-foreground"
+                  onClick={() => setStartDate(new Date())}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>Seleccionar fecha inicial</span>
+                </Button>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha Final</Label>
+              {endDate ? (
+                <DatePicker date={endDate} setDate={setEndDate} />
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-left font-normal text-muted-foreground"
+                  onClick={() => setEndDate(new Date())}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>Seleccionar fecha final</span>
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-between">
+            <Button variant="outline" onClick={clearFilters}>
+              Limpiar Filtros
+            </Button>
             <Button onClick={handleExportCSV} disabled={filteredReports.length === 0}>
               Exportar a CSV
             </Button>
@@ -177,7 +241,7 @@ const AdminPanel: React.FC = () => {
         </CardHeader>
         <CardContent>
           {filteredReports.length > 0 ? (
-            <div className="rounded-md border overflow-hidden">
+            <div className="rounded-md border overflow-hidden overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -185,7 +249,8 @@ const AdminPanel: React.FC = () => {
                     <TableHead>Máquina</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Descripción</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fecha del Reporte</TableHead>
+                    <TableHead>Fecha de Creación</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -196,6 +261,9 @@ const AdminPanel: React.FC = () => {
                       <TableCell>{report.reportType}</TableCell>
                       <TableCell className="max-w-xs truncate" title={report.description}>
                         {report.description}
+                      </TableCell>
+                      <TableCell>
+                        {format(report.reportDate, 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>
                         {format(report.createdAt, 'dd/MM/yyyy HH:mm')}

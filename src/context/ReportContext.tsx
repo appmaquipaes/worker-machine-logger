@@ -16,17 +16,27 @@ export type Report = {
   reportType: ReportType;
   description: string;
   createdAt: Date;
+  reportDate: Date; // Fecha del reporte que puede ser diferente a la fecha de creación
   trips?: number; // Campo opcional para número de viajes
 };
 
 // Tipo para el contexto de reportes
 type ReportContextType = {
   reports: Report[];
-  addReport: (machineId: string, machineName: string, reportType: ReportType, description: string, trips?: number) => void;
+  addReport: (
+    machineId: string, 
+    machineName: string, 
+    reportType: ReportType, 
+    description: string, 
+    reportDate: Date,
+    trips?: number
+  ) => void;
   getFilteredReports: (filters: {
     userId?: string;
     machineId?: string;
     reportType?: ReportType;
+    startDate?: Date;
+    endDate?: Date;
   }) => Report[];
 };
 
@@ -55,13 +65,21 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const parsedReports = JSON.parse(storedReports).map((report: any) => ({
         ...report,
         createdAt: new Date(report.createdAt),
+        reportDate: report.reportDate ? new Date(report.reportDate) : new Date(report.createdAt),
       }));
       setReports(parsedReports);
     }
   }, []);
 
   // Función para agregar un nuevo reporte
-  const addReport = (machineId: string, machineName: string, reportType: ReportType, description: string, trips?: number) => {
+  const addReport = (
+    machineId: string, 
+    machineName: string, 
+    reportType: ReportType, 
+    description: string, 
+    reportDate: Date,
+    trips?: number
+  ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
       return;
@@ -76,6 +94,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reportType,
       description,
       createdAt: new Date(),
+      reportDate: reportDate,
       ...(trips !== undefined && { trips }),
     };
 
@@ -90,11 +109,20 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     userId?: string;
     machineId?: string;
     reportType?: ReportType;
+    startDate?: Date;
+    endDate?: Date;
   }) => {
     return reports.filter((report) => {
       if (filters.userId && report.userId !== filters.userId) return false;
       if (filters.machineId && report.machineId !== filters.machineId) return false;
       if (filters.reportType && report.reportType !== filters.reportType) return false;
+      if (filters.startDate && report.reportDate < filters.startDate) return false;
+      if (filters.endDate) {
+        // Ajustar la fecha de fin para incluir todo el día
+        const endDateAdjusted = new Date(filters.endDate);
+        endDateAdjusted.setHours(23, 59, 59, 999);
+        if (report.reportDate > endDateAdjusted) return false;
+      }
       return true;
     });
   };
