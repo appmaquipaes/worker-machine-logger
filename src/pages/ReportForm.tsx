@@ -24,6 +24,7 @@ const ReportForm = () => {
   const [description, setDescription] = useState('');
   const [trips, setTrips] = useState<number | undefined>(undefined);
   const [hours, setHours] = useState<number | undefined>(undefined);
+  const [value, setValue] = useState<number | undefined>(undefined);
   const [reportDate, setReportDate] = useState<Date>(new Date());
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -66,6 +67,12 @@ const ReportForm = () => {
       return;
     }
     
+    // Validar el valor para reportes de combustible
+    if (reportType === 'Combustible' && (value === undefined || value <= 0)) {
+      toast.error('Debe ingresar un valor válido para el combustible');
+      return;
+    }
+    
     // Enviar el reporte
     addReport(
       selectedMachine.id,
@@ -74,13 +81,15 @@ const ReportForm = () => {
       description,
       reportDate,
       reportType === 'Viajes' ? trips : undefined,
-      shouldShowHoursInput ? hours : undefined
+      shouldShowHoursInput ? hours : undefined,
+      reportType === 'Combustible' ? value : undefined
     );
     
     // Limpiar el formulario
     setDescription('');
     setTrips(undefined);
     setHours(undefined);
+    setValue(undefined);
     
     // Opcional: redirigir al dashboard después de enviar
     // navigate('/dashboard');
@@ -88,6 +97,7 @@ const ReportForm = () => {
   
   const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
   const shouldShowHoursInput = reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' || reportType === 'Mantenimiento';
+  const shouldShowValueInput = reportType === 'Combustible';
   
   if (!user || !selectedMachine) return null;
   
@@ -151,6 +161,20 @@ const ReportForm = () => {
                   placeholder="Ej: 8"
                   value={hours === undefined ? '' : hours}
                   onChange={(e) => setHours(parseFloat(e.target.value) || undefined)}
+                />
+              </div>
+            )}
+            
+            {shouldShowValueInput && (
+              <div className="space-y-2">
+                <Label htmlFor="value">Valor del Combustible</Label>
+                <Input 
+                  id="value"
+                  type="number"
+                  min="1"
+                  placeholder="Ej: 50000"
+                  value={value === undefined ? '' : value}
+                  onChange={(e) => setValue(parseFloat(e.target.value) || undefined)}
                 />
               </div>
             )}

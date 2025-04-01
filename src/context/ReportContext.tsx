@@ -19,6 +19,7 @@ export type Report = {
   reportDate: Date; // Fecha del reporte que puede ser diferente a la fecha de creación
   trips?: number; // Campo opcional para número de viajes
   hours?: number; // Campo opcional para número de horas
+  value?: number; // Campo opcional para el valor del combustible
 };
 
 // Tipo para el contexto de reportes
@@ -31,7 +32,8 @@ type ReportContextType = {
     description: string, 
     reportDate: Date,
     trips?: number,
-    hours?: number
+    hours?: number,
+    value?: number
   ) => void;
   getFilteredReports: (filters: {
     userId?: string;
@@ -81,7 +83,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     description: string, 
     reportDate: Date,
     trips?: number,
-    hours?: number
+    hours?: number,
+    value?: number
   ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
@@ -100,6 +103,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reportDate: reportDate,
       ...(trips !== undefined && { trips }),
       ...(hours !== undefined && { hours }),
+      ...(value !== undefined && { value }),
     };
 
     const updatedReports = [...reports, newReport];
