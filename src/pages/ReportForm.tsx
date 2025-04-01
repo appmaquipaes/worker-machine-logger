@@ -23,6 +23,7 @@ const ReportForm = () => {
   const [reportType, setReportType] = useState<ReportType>('Horas Trabajadas');
   const [description, setDescription] = useState('');
   const [trips, setTrips] = useState<number | undefined>(undefined);
+  const [hours, setHours] = useState<number | undefined>(undefined);
   const [reportDate, setReportDate] = useState<Date>(new Date());
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -59,6 +60,12 @@ const ReportForm = () => {
       }
     }
     
+    // Validar el número de horas para tipos de reporte relevantes
+    if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
+      toast.error('Debe ingresar un número válido de horas');
+      return;
+    }
+    
     // Enviar el reporte
     addReport(
       selectedMachine.id,
@@ -66,18 +73,21 @@ const ReportForm = () => {
       reportType,
       description,
       reportDate,
-      reportType === 'Viajes' ? trips : undefined
+      reportType === 'Viajes' ? trips : undefined,
+      shouldShowHoursInput ? hours : undefined
     );
     
     // Limpiar el formulario
     setDescription('');
     setTrips(undefined);
+    setHours(undefined);
     
     // Opcional: redirigir al dashboard después de enviar
     // navigate('/dashboard');
   };
   
   const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
+  const shouldShowHoursInput = reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' || reportType === 'Mantenimiento';
   
   if (!user || !selectedMachine) return null;
   
@@ -126,6 +136,21 @@ const ReportForm = () => {
                   placeholder="Ej: 5"
                   value={trips === undefined ? '' : trips}
                   onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
+                />
+              </div>
+            )}
+            
+            {shouldShowHoursInput && (
+              <div className="space-y-2">
+                <Label htmlFor="hours">Número de Horas</Label>
+                <Input 
+                  id="hours"
+                  type="number"
+                  min="1"
+                  step="0.5"
+                  placeholder="Ej: 8"
+                  value={hours === undefined ? '' : hours}
+                  onChange={(e) => setHours(parseFloat(e.target.value) || undefined)}
                 />
               </div>
             )}
