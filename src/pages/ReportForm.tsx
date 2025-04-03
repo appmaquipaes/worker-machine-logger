@@ -63,9 +63,8 @@ const ReportForm = () => {
         return;
       }
       
-      // Validar origen y destino para vehículos específicos
-      const isSpecialVehicle = selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429';
-      if (isSpecialVehicle && (!origin.trim() || !destination.trim())) {
+      // Para todos los camiones (volquetas), validar origen y destino
+      if (selectedMachine.type === 'Camión' && (!origin.trim() || !destination.trim())) {
         toast.error('Debe ingresar el origen y destino del viaje');
         return;
       }
@@ -77,8 +76,8 @@ const ReportForm = () => {
       return;
     }
     
-    // Validar el sitio de trabajo para horas trabajadas
-    if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
+    // Validar el sitio de trabajo para horas trabajadas (solo para máquinas que no son camiones)
+    if (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión' && !workSite.trim()) {
       toast.error('Debe ingresar el sitio de trabajo');
       return;
     }
@@ -99,9 +98,9 @@ const ReportForm = () => {
       reportType === 'Viajes' ? trips : undefined,
       shouldShowHoursInput ? hours : undefined,
       reportType === 'Combustible' ? value : undefined,
-      reportType === 'Horas Trabajadas' ? workSite : undefined,
-      (reportType === 'Viajes' && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429')) ? origin : undefined,
-      (reportType === 'Viajes' && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429')) ? destination : undefined
+      (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión') ? workSite : undefined,
+      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? origin : undefined,
+      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? destination : undefined
     );
     
     // Limpiar el formulario
@@ -120,9 +119,8 @@ const ReportForm = () => {
   const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
   const shouldShowHoursInput = reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' || reportType === 'Mantenimiento';
   const shouldShowValueInput = reportType === 'Combustible';
-  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
-  const isSpecialVehicle = selectedMachine && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429');
-  const shouldShowOriginDestination = reportType === 'Viajes' && isSpecialVehicle;
+  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && selectedMachine?.type !== 'Camión';
+  const shouldShowOriginDestination = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
   
   if (!user || !selectedMachine) return null;
   
