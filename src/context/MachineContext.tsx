@@ -6,6 +6,7 @@ export type Machine = {
   id: string;
   name: string;
   type: string;
+  plate?: string;  // Añadimos la propiedad plate como opcional
   imageUrl?: string;
 };
 
@@ -32,8 +33,8 @@ const demoMachines: Machine[] = [
   { id: '8', name: 'CARGADOR-S950', type: 'Cargador' },
   { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora' },
   { id: '10', name: 'PALADRAGA', type: 'Paladraga' },
-  { id: '11', name: 'MACK UFJ852', type: 'Camión' },
-  { id: '12', name: 'MACK SWN429', type: 'Camión' },
+  { id: '11', name: 'MACK UFJ852', type: 'Camión', plate: 'UFJ852' },
+  { id: '12', name: 'MACK SWN429', type: 'Camión', plate: 'SWN429' },
 ];
 
 // Hook personalizado para usar el contexto
