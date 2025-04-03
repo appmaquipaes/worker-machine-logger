@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,19 +19,6 @@ const Register: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const { register, user } = useAuth();
   const navigate = useNavigate();
-
-  // Verificar si el usuario actual es administrador
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    
-    if (user.role !== 'Administrador') {
-      toast.error('Solo los administradores pueden registrar nuevos usuarios');
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -58,26 +45,35 @@ const Register: React.FC = () => {
     setIsSubmitting(false);
     
     if (success) {
-      toast.success(`Usuario ${name} creado exitosamente`);
-      // Restablecer los campos del formulario en lugar de redirigir
-      setName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setRole('Trabajador');
+      toast.success(`Usuario registrado exitosamente`);
+      // Si ya hay un usuario autenticado, es un administrador creando otro usuario
+      if (user && user.role === 'Administrador') {
+        // Restablecer el formulario para crear otro usuario
+        setName('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setRole('Trabajador');
+      } else {
+        // Es un nuevo usuario registrándose, redirigir al dashboard
+        navigate('/dashboard');
+      }
     }
   };
 
-  // Si no hay usuario o no es administrador, no renderizar la página
-  if (!user || user.role !== 'Administrador') return null;
+  // Título y descripción varían según si es un admin creando un usuario o un registro público
+  const pageTitle = user && user.role === 'Administrador' ? "Crear Usuario" : "Registrarse";
+  const pageDescription = user && user.role === 'Administrador' 
+    ? "Registra un nuevo usuario trabajador o administrador"
+    : "Crea una cuenta para acceder al sistema";
 
   return (
     <div className="container max-w-md mx-auto py-10">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Crear Usuario</CardTitle>
+          <CardTitle className="text-2xl font-bold">{pageTitle}</CardTitle>
           <CardDescription>
-            Registra un nuevo usuario trabajador o administrador
+            {pageDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,32 +123,46 @@ const Register: React.FC = () => {
               />
               {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
             </div>
-            <div className="space-y-2">
-              <Label>Rol</Label>
-              <RadioGroup
-                value={role}
-                onValueChange={(value) => setRole(value as 'Trabajador' | 'Administrador')}
-                className="flex space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Trabajador" id="trabajador" />
-                  <Label htmlFor="trabajador">Trabajador</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Administrador" id="administrador" />
-                  <Label htmlFor="administrador">Administrador</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            
+            {/* Mostrar selección de rol solo para administradores */}
+            {user && user.role === 'Administrador' && (
+              <div className="space-y-2">
+                <Label>Rol</Label>
+                <RadioGroup
+                  value={role}
+                  onValueChange={(value) => setRole(value as 'Trabajador' | 'Administrador')}
+                  className="flex space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Trabajador" id="trabajador" />
+                    <Label htmlFor="trabajador">Trabajador</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Administrador" id="administrador" />
+                    <Label htmlFor="administrador">Administrador</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+            
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Registrando..." : "Registrar Usuario"}
+              {isSubmitting ? "Registrando..." : user && user.role === 'Administrador' ? "Registrar Usuario" : "Crear Cuenta"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            Volver al Dashboard
-          </Button>
+        <CardFooter className="flex justify-between">
+          {user && user.role === 'Administrador' ? (
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              Volver al Dashboard
+            </Button>
+          ) : (
+            <div className="w-full text-center">
+              ¿Ya tienes una cuenta?{" "}
+              <Link to="/login" className="text-primary hover:underline">
+                Iniciar Sesión
+              </Link>
+            </div>
+          )}
         </CardFooter>
       </Card>
     </div>

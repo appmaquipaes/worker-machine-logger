@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 
@@ -105,11 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Guardar el usuario en la "base de datos" (localStorage)
       users.push(newUser);
       localStorage.setItem('users', JSON.stringify(users));
-      
-      // Iniciar sesión automáticamente después del registro
-      const { password: _, ...userWithoutPassword } = newUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+
+      // Si no hay un usuario autenticado o si el registro es público, iniciar sesión
+      if (!user) {
+        // Iniciar sesión automáticamente después del registro público
+        const { password: _, ...userWithoutPassword } = newUser;
+        setUser(userWithoutPassword);
+        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      }
       
       toast.success("Registro exitoso");
       return true;
