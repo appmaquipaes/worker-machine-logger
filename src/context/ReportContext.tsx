@@ -20,6 +20,9 @@ export type Report = {
   trips?: number; // Campo opcional para número de viajes
   hours?: number; // Campo opcional para número de horas
   value?: number; // Campo opcional para el valor del combustible
+  workSite?: string; // Campo opcional para el sitio de trabajo
+  origin?: string; // Campo opcional para el origen del viaje
+  destination?: string; // Campo opcional para el destino del viaje
 };
 
 // Tipo para el contexto de reportes
@@ -33,7 +36,10 @@ type ReportContextType = {
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number
+    value?: number,
+    workSite?: string,
+    origin?: string,
+    destination?: string
   ) => void;
   getFilteredReports: (filters: {
     userId?: string;
@@ -84,7 +90,10 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number
+    value?: number,
+    workSite?: string,
+    origin?: string,
+    destination?: string
   ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
@@ -104,6 +113,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...(trips !== undefined && { trips }),
       ...(hours !== undefined && { hours }),
       ...(value !== undefined && { value }),
+      ...(workSite !== undefined && { workSite }),
+      ...(origin !== undefined && { origin }),
+      ...(destination !== undefined && { destination }),
     };
 
     const updatedReports = [...reports, newReport];

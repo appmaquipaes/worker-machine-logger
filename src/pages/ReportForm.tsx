@@ -26,6 +26,9 @@ const ReportForm = () => {
   const [hours, setHours] = useState<number | undefined>(undefined);
   const [value, setValue] = useState<number | undefined>(undefined);
   const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [workSite, setWorkSite] = useState<string>('');
+  const [origin, setOrigin] = useState<string>('');
+  const [destination, setDestination] = useState<string>('');
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
   useEffect(() => {
@@ -59,11 +62,24 @@ const ReportForm = () => {
         toast.error('Debe ingresar un número válido de viajes');
         return;
       }
+      
+      // Validar origen y destino para vehículos específicos
+      const isSpecialVehicle = selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429';
+      if (isSpecialVehicle && (!origin.trim() || !destination.trim())) {
+        toast.error('Debe ingresar el origen y destino del viaje');
+        return;
+      }
     }
     
     // Validar el número de horas para tipos de reporte relevantes
     if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
       toast.error('Debe ingresar un número válido de horas');
+      return;
+    }
+    
+    // Validar el sitio de trabajo para horas trabajadas
+    if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
+      toast.error('Debe ingresar el sitio de trabajo');
       return;
     }
     
@@ -82,7 +98,10 @@ const ReportForm = () => {
       reportDate,
       reportType === 'Viajes' ? trips : undefined,
       shouldShowHoursInput ? hours : undefined,
-      reportType === 'Combustible' ? value : undefined
+      reportType === 'Combustible' ? value : undefined,
+      reportType === 'Horas Trabajadas' ? workSite : undefined,
+      (reportType === 'Viajes' && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429')) ? origin : undefined,
+      (reportType === 'Viajes' && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429')) ? destination : undefined
     );
     
     // Limpiar el formulario
@@ -90,6 +109,9 @@ const ReportForm = () => {
     setTrips(undefined);
     setHours(undefined);
     setValue(undefined);
+    setWorkSite('');
+    setOrigin('');
+    setDestination('');
     
     // Opcional: redirigir al dashboard después de enviar
     // navigate('/dashboard');
@@ -98,6 +120,9 @@ const ReportForm = () => {
   const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
   const shouldShowHoursInput = reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' || reportType === 'Mantenimiento';
   const shouldShowValueInput = reportType === 'Combustible';
+  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
+  const isSpecialVehicle = selectedMachine && (selectedMachine.plate === 'UFJ852' || selectedMachine.plate === 'SWN429');
+  const shouldShowOriginDestination = reportType === 'Viajes' && isSpecialVehicle;
   
   if (!user || !selectedMachine) return null;
   
@@ -108,6 +133,9 @@ const ReportForm = () => {
           <CardTitle className="text-2xl">Enviar Reporte</CardTitle>
           <CardDescription>
             Máquina: <span className="font-medium">{selectedMachine.name}</span>
+            {selectedMachine.plate && (
+              <span className="ml-2">({selectedMachine.plate})</span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,6 +164,20 @@ const ReportForm = () => {
               </Select>
             </div>
             
+            {shouldShowWorkSiteInput && (
+              <div className="space-y-2">
+                <Label htmlFor="work-site">Sitio de Trabajo</Label>
+                <Input 
+                  id="work-site"
+                  type="text"
+                  placeholder="Ej: Obra Norte"
+                  value={workSite}
+                  onChange={(e) => setWorkSite(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+            
             {isShowingTripInput && (
               <div className="space-y-2">
                 <Label htmlFor="trips">Número de Viajes</Label>
@@ -148,6 +190,33 @@ const ReportForm = () => {
                   onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
                 />
               </div>
+            )}
+            
+            {shouldShowOriginDestination && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="origin">Origen</Label>
+                  <Input 
+                    id="origin"
+                    type="text"
+                    placeholder="Lugar de origen"
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="destination">Destino</Label>
+                  <Input 
+                    id="destination"
+                    type="text"
+                    placeholder="Lugar de destino"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
             )}
             
             {shouldShowHoursInput && (
