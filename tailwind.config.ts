@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,39 +19,33 @@ export default {
 		},
 		extend: {
 			colors: {
-				border: 'hsl(var(--border))',
-				input: 'hsl(var(--input))',
-				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
-				foreground: 'hsl(var(--foreground))',
+				// Caterpillar-inspired color palette
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: '#FFBF00', // Caterpillar Yellow
+					foreground: '#000000', // Black text on yellow background
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
-				},
-				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
-					foreground: 'hsl(var(--destructive-foreground))'
-				},
-				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
+					DEFAULT: '#231F20', // Caterpillar Black
+					foreground: '#FFFFFF', // White text on black background
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
+					DEFAULT: '#FFD700', // Slightly lighter yellow
+					foreground: '#000000',
 				},
-				popover: {
-					DEFAULT: 'hsl(var(--popover))',
-					foreground: 'hsl(var(--popover-foreground))'
+				border: {
+					DEFAULT: '#231F20', // Black border
 				},
-				card: {
-					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
-				}
+				// Keeping other color variants with Caterpillar-inspired adjustments
+				destructive: {
+					DEFAULT: '#DC3545', // A strong red for destructive actions
+					foreground: '#FFFFFF',
+				},
+				muted: {
+					DEFAULT: '#6C757D', // A muted gray
+					foreground: '#FFFFFF',
+				},
+				background: '#F8F9FA', // Light background
+				foreground: '#231F20', // Dark text
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
