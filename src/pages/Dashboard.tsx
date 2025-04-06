@@ -4,8 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMachine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Wrench, ChevronRight, BarChart3 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { 
+  Wrench, 
+  ClipboardList, 
+  Users, 
+  BarChart3, 
+  ArrowRight
+} from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -28,107 +34,110 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-3xl font-bold mb-4 text-center">
         ¡Bienvenido, {user.name}!
       </h1>
+      <p className="text-xl text-center mb-8">¿Qué deseas hacer hoy?</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Tarjeta para seleccionar máquina */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>Seleccionar Máquina</CardTitle>
-            <CardDescription>
-              Elige la máquina con la que trabajarás hoy
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="default"
-              onClick={() => navigate('/machines')}
-              className="w-full"
-            >
-              Ver Máquinas
-            </Button>
-          </CardContent>
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/machines')}
+            className="w-full h-auto flex flex-col items-center gap-4 py-8"
+          >
+            <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
+              <Wrench size={56} className="text-primary" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold mb-2">Seleccionar Máquina</h3>
+              <p className="text-muted-foreground">
+                Elige la máquina con la que trabajarás hoy
+              </p>
+            </div>
+            <ArrowRight size={24} className="mt-2" />
+          </Button>
         </Card>
 
         {/* Tarjeta para reportes */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>Enviar Reportes</CardTitle>
-            <CardDescription>
-              Registra horas, mantenimientos y otras actividades
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="default"
-              onClick={() => navigate('/reports')}
-              className="w-full"
-            >
-              Ir a Reportes
-            </Button>
-          </CardContent>
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/reports')}
+            className="w-full h-auto flex flex-col items-center gap-4 py-8"
+          >
+            <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
+              <ClipboardList size={56} className="text-primary" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold mb-2">Enviar Reportes</h3>
+              <p className="text-muted-foreground">
+                Registra horas, mantenimientos y otras actividades
+              </p>
+            </div>
+            <ArrowRight size={24} className="mt-2" />
+          </Button>
         </Card>
 
         {/* Tarjetas para administración (solo visible para administradores) */}
         {user.role === 'Administrador' && (
           <>
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Panel de Administración</CardTitle>
-                <CardDescription>
-                  Visualiza y gestiona todos los reportes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="default"
-                  onClick={() => navigate('/admin')}
-                  className="w-full"
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Panel Admin
-                </Button>
-              </CardContent>
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/admin')}
+                className="w-full h-auto flex flex-col items-center gap-4 py-8"
+              >
+                <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
+                  <BarChart3 size={56} className="text-primary" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-2">Panel Admin</h3>
+                  <p className="text-muted-foreground">
+                    Visualiza y gestiona todos los reportes
+                  </p>
+                </div>
+                <ArrowRight size={24} className="mt-2" />
+              </Button>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Gestión de Máquinas</CardTitle>
-                <CardDescription>
-                  Añadir o eliminar máquinas del sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="default"
-                  onClick={() => navigate('/admin/machines')}
-                  className="w-full"
-                >
-                  <Wrench className="mr-2 h-4 w-4" />
-                  Gestionar Máquinas
-                </Button>
-              </CardContent>
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/admin/machines')}
+                className="w-full h-auto flex flex-col items-center gap-4 py-8"
+              >
+                <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
+                  <Wrench size={56} className="text-primary" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-2">Gestionar Máquinas</h3>
+                  <p className="text-muted-foreground">
+                    Añadir o eliminar máquinas del sistema
+                  </p>
+                </div>
+                <ArrowRight size={24} className="mt-2" />
+              </Button>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Gestión de Usuarios</CardTitle>
-                <CardDescription>
-                  Administrar trabajadores y administradores
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="default"
-                  onClick={() => navigate('/admin/users')}
-                  className="w-full"
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  Gestionar Usuarios
-                </Button>
-              </CardContent>
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/admin/users')}
+                className="w-full h-auto flex flex-col items-center gap-4 py-8"
+              >
+                <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
+                  <Users size={56} className="text-primary" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-2">Gestionar Usuarios</h3>
+                  <p className="text-muted-foreground">
+                    Administrar trabajadores y administradores
+                  </p>
+                </div>
+                <ArrowRight size={24} className="mt-2" />
+              </Button>
             </Card>
           </>
         )}
