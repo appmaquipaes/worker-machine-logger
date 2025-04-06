@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 
@@ -26,7 +25,12 @@ const MachineContext = createContext<MachineContextType | undefined>(undefined);
 
 // Lista de máquinas actualizada
 const demoMachines: Machine[] = [
-  { id: '1', name: 'Cat315', type: 'Excavadora' },
+  { 
+    id: '1', 
+    name: 'Cat315', 
+    type: 'Excavadora', 
+    imageUrl: "/cat315-excavator.jpg" 
+  },
   { id: '2', name: 'Cat312', type: 'Excavadora' },
   { id: '3', name: 'Bulldozer D6', type: 'Bulldozer' },
   { id: '4', name: 'Vibro-SD100', type: 'Compactador' },
