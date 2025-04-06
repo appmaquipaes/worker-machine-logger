@@ -5,7 +5,7 @@ import { useMachine } from '@/context/MachineContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Truck } from 'lucide-react';
+import { ArrowLeft, Truck, Wrench } from 'lucide-react';
 import { toast } from "sonner";
 
 const MachineSelection: React.FC = () => {

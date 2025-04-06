@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -14,7 +13,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { 
   ArrowLeft, 
   Clock, 
-  Alarm, 
+  AlarmClock,  // Changed from Alarm to AlarmClock
   Wrench as ToolIcon, 
   Fuel, 
   Info, 
@@ -141,7 +140,7 @@ const ReportForm = () => {
       case 'Horas Trabajadas':
         return <Clock size={28} />;
       case 'Horas Extras':
-        return <Alarm size={28} />;
+        return <AlarmClock size={28} />;  // Changed from Alarm to AlarmClock
       case 'Mantenimiento':
         return <ToolIcon size={28} />;
       case 'Combustible':
@@ -212,7 +211,7 @@ const ReportForm = () => {
                   }`}
                   onClick={() => setReportType('Horas Extras')}
                 >
-                  <Alarm size={36} />
+                  <AlarmClock size={36} />
                   <span className="text-lg">Horas Extras</span>
                 </Button>
                 
