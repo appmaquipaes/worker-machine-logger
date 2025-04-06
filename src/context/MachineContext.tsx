@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from "sonner";
 
 // Tipos para las máquinas
 export type Machine = {
@@ -16,6 +17,8 @@ type MachineContextType = {
   selectedMachine: Machine | null;
   selectMachine: (machine: Machine) => void;
   clearSelectedMachine: () => void;
+  addMachine: (machine: Omit<Machine, "id">) => void;
+  removeMachine: (id: string) => void;
 };
 
 // Crear el contexto
@@ -48,8 +51,19 @@ export const useMachine = () => {
 
 // Proveedor del contexto de máquinas
 export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [machines] = useState<Machine[]>(demoMachines);
+  const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
+
+  // Cargar máquinas del almacenamiento local o usar demo
+  useEffect(() => {
+    const storedMachines = localStorage.getItem('machines');
+    if (storedMachines) {
+      setMachines(JSON.parse(storedMachines));
+    } else {
+      setMachines(demoMachines);
+      localStorage.setItem('machines', JSON.stringify(demoMachines));
+    }
+  }, []);
 
   // Cargar la máquina seleccionada del almacenamiento local si existe
   useEffect(() => {
@@ -71,11 +85,40 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('selectedMachine');
   };
 
+  // Función para añadir una máquina
+  const addMachine = (machineData: Omit<Machine, "id">) => {
+    const newMachine: Machine = {
+      ...machineData,
+      id: Date.now().toString(), // Generar un ID único
+    };
+    
+    const updatedMachines = [...machines, newMachine];
+    setMachines(updatedMachines);
+    localStorage.setItem('machines', JSON.stringify(updatedMachines));
+    toast.success(`Máquina ${newMachine.name} añadida correctamente`);
+  };
+
+  // Función para eliminar una máquina
+  const removeMachine = (id: string) => {
+    // Verificar si la máquina está seleccionada
+    if (selectedMachine && selectedMachine.id === id) {
+      clearSelectedMachine();
+    }
+    
+    // Filtrar la máquina a eliminar
+    const updatedMachines = machines.filter(machine => machine.id !== id);
+    setMachines(updatedMachines);
+    localStorage.setItem('machines', JSON.stringify(updatedMachines));
+    toast.success('Máquina eliminada correctamente');
+  };
+
   const value = {
     machines,
     selectedMachine,
     selectMachine,
     clearSelectedMachine,
+    addMachine,
+    removeMachine,
   };
 
   return <MachineContext.Provider value={value}>{children}</MachineContext.Provider>;

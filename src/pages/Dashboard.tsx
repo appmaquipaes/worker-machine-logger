@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useMachine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Wrench, ChevronRight, BarChart3 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -70,25 +71,66 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Tarjeta para administración (solo visible para administradores) */}
+        {/* Tarjetas para administración (solo visible para administradores) */}
         {user.role === 'Administrador' && (
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle>Panel de Administración</CardTitle>
-              <CardDescription>
-                Visualiza y gestiona todos los reportes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="default"
-                onClick={() => navigate('/admin')}
-                className="w-full"
-              >
-                Panel Admin
-              </Button>
-            </CardContent>
-          </Card>
+          <>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Panel de Administración</CardTitle>
+                <CardDescription>
+                  Visualiza y gestiona todos los reportes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="default"
+                  onClick={() => navigate('/admin')}
+                  className="w-full"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Panel Admin
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Gestión de Máquinas</CardTitle>
+                <CardDescription>
+                  Añadir o eliminar máquinas del sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="default"
+                  onClick={() => navigate('/admin/machines')}
+                  className="w-full"
+                >
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Gestionar Máquinas
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Gestión de Usuarios</CardTitle>
+                <CardDescription>
+                  Administrar trabajadores y administradores
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="default"
+                  onClick={() => navigate('/admin/users')}
+                  className="w-full"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Gestionar Usuarios
+                </Button>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>

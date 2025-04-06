@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard";
 import MachineSelection from "./pages/MachineSelection";
 import ReportForm from "./pages/ReportForm";
 import AdminPanel from "./pages/AdminPanel";
+import MachineManagement from "./pages/MachineManagement";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
                     <Route path="/machines" element={<MachineSelection />} />
                     <Route path="/reports" element={<ReportForm />} />
                     <Route path="/admin" element={<AdminPanel />} />
+                    <Route path="/admin/machines" element={<MachineManagement />} />
+                    <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
