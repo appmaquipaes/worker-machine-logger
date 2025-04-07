@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -82,7 +83,7 @@ const ReportForm = () => {
     }
     
     // Validar el número de horas para tipos de reporte relevantes
-    if (shouldShowHoursInput && reportType !== 'Mantenimiento' && (hours === undefined || hours <= 0)) {
+    if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
       toast.error('Debe ingresar un número válido de horas');
       return;
     }
