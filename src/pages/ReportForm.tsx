@@ -82,7 +82,7 @@ const ReportForm = () => {
     }
     
     // Validar el número de horas para tipos de reporte relevantes
-    if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
+    if (shouldShowHoursInput && reportType !== 'Mantenimiento' && (hours === undefined || hours <= 0)) {
       toast.error('Debe ingresar un número válido de horas');
       return;
     }
@@ -113,7 +113,7 @@ const ReportForm = () => {
       description,
       reportDate,
       reportType === 'Viajes' ? trips : undefined,
-      shouldShowHoursInput ? hours : undefined,
+      (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
       reportType === 'Combustible' ? value : 
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
       (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión') ? workSite : undefined,
@@ -139,7 +139,7 @@ const ReportForm = () => {
   };
   
   const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
-  const shouldShowHoursInput = reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' || reportType === 'Mantenimiento';
+  const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && selectedMachine?.type !== 'Camión';
   const shouldShowOriginDestination = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
