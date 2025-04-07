@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from "sonner";
@@ -19,7 +18,7 @@ export type Report = {
   reportDate: Date; // Fecha del reporte que puede ser diferente a la fecha de creación
   trips?: number; // Campo opcional para número de viajes
   hours?: number; // Campo opcional para número de horas
-  value?: number; // Campo opcional para el valor del combustible
+  value?: number; // This can now represent fuel or maintenance value
   workSite?: string; // Campo opcional para el sitio de trabajo
   origin?: string; // Campo opcional para el origen del viaje
   destination?: string; // Campo opcional para el destino del viaje
@@ -36,7 +35,7 @@ type ReportContextType = {
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number,
+    value?: number, // Can be fuel or maintenance value
     workSite?: string,
     origin?: string,
     destination?: string
@@ -90,7 +89,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number,
+    value?: number, // Can be fuel or maintenance value
     workSite?: string,
     origin?: string,
     destination?: string

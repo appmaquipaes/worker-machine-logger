@@ -13,7 +13,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { 
   ArrowLeft, 
   Clock, 
-  AlarmClock,  // Changed from Alarm to AlarmClock
+  AlarmClock, 
   Wrench as ToolIcon, 
   Fuel, 
   Info, 
@@ -39,6 +39,7 @@ const ReportForm = () => {
   const [workSite, setWorkSite] = useState<string>('');
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
+  const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
   useEffect(() => {
@@ -97,6 +98,12 @@ const ReportForm = () => {
       toast.error('Debe ingresar un valor válido para el combustible');
       return;
     }
+
+    // Add validation for maintenance value
+    if (reportType === 'Mantenimiento' && (maintenanceValue === undefined || maintenanceValue <= 0)) {
+      toast.error('Debe ingresar un valor válido para el mantenimiento');
+      return;
+    }
     
     // Enviar el reporte
     addReport(
@@ -107,7 +114,8 @@ const ReportForm = () => {
       reportDate,
       reportType === 'Viajes' ? trips : undefined,
       shouldShowHoursInput ? hours : undefined,
-      reportType === 'Combustible' ? value : undefined,
+      reportType === 'Combustible' ? value : 
+      reportType === 'Mantenimiento' ? maintenanceValue : undefined,
       (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión') ? workSite : undefined,
       (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? origin : undefined,
       (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? destination : undefined
@@ -124,6 +132,7 @@ const ReportForm = () => {
     setWorkSite('');
     setOrigin('');
     setDestination('');
+    setMaintenanceValue(undefined);
     
     // Opcional: redirigir al dashboard después de enviar
     navigate('/dashboard');
@@ -371,6 +380,25 @@ const ReportForm = () => {
                   value={value === undefined ? '' : value}
                   onChange={(e) => setValue(parseFloat(e.target.value) || undefined)}
                   className="text-lg p-6"
+                />
+              </div>
+            )}
+
+            {reportType === 'Mantenimiento' && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <ToolIcon size={24} />
+                  <Label htmlFor="maintenance-value" className="text-lg">Valor del Mantenimiento</Label>
+                </div>
+                <Input 
+                  id="maintenance-value"
+                  type="number"
+                  min="1"
+                  placeholder="Ej: 100000"
+                  value={maintenanceValue === undefined ? '' : maintenanceValue}
+                  onChange={(e) => setMaintenanceValue(parseFloat(e.target.value) || undefined)}
+                  className="text-lg p-6"
+                  required
                 />
               </div>
             )}
