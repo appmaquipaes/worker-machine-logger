@@ -17,6 +17,8 @@ type AuthContextType = {
   register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador') => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  resetPassword: (email: string) => Promise<boolean>;
+  updatePassword: (email: string, resetCode: string, newPassword: string) => Promise<boolean>;
 };
 
 // Crear el contexto
@@ -126,6 +128,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Función para restablecer la contraseña (envío de código)
+  const resetPassword = async (email: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Simulación de API - verificamos si el correo existe
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userExists = users.some((u: any) => u.email === email);
+      
+      if (!userExists) {
+        toast.error("No existe una cuenta con ese correo electrónico");
+        return false;
+      }
+      
+      // Generar un código de restablecimiento de 6 dígitos
+      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Guardar el código en localStorage (en producción sería enviado por email)
+      const resetRequests = JSON.parse(localStorage.getItem('resetRequests') || '{}');
+      resetRequests[email] = {
+        code: resetCode,
+        expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutos
+      };
+      localStorage.setItem('resetRequests', JSON.stringify(resetRequests));
+      
+      // En un entorno real, aquí se enviaría un email con el código
+      // Simulamos mostrando el código en un toast
+      toast.success(`Código de restablecimiento: ${resetCode} (En producción se enviaría por email)`);
+      return true;
+    } catch (error) {
+      console.error("Error al solicitar restablecimiento:", error);
+      toast.error("Error al procesar la solicitud");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para actualizar la contraseña con un código de verificación
+  const updatePassword = async (email: string, resetCode: string, newPassword: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Verificar si existe una solicitud de restablecimiento válida
+      const resetRequests = JSON.parse(localStorage.getItem('resetRequests') || '{}');
+      const request = resetRequests[email];
+      
+      if (!request) {
+        toast.error("No hay una solicitud de restablecimiento para este correo");
+        return false;
+      }
+      
+      // Verificar si el código es correcto y no ha expirado
+      if (request.code !== resetCode || request.expiresAt < Date.now()) {
+        toast.error("El código es incorrecto o ha expirado");
+        return false;
+      }
+      
+      // Actualizar la contraseña del usuario
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.email === email);
+      
+      if (userIndex === -1) {
+        toast.error("Usuario no encontrado");
+        return false;
+      }
+      
+      users[userIndex].password = newPassword;
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Eliminar la solicitud de restablecimiento
+      delete resetRequests[email];
+      localStorage.setItem('resetRequests', JSON.stringify(resetRequests));
+      
+      toast.success("Contraseña actualizada correctamente");
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar contraseña:", error);
+      toast.error("Error al actualizar la contraseña");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Función para cerrar sesión
   const logout = () => {
     setUser(null);
@@ -139,6 +224,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     isLoading,
+    resetPassword,
+    updatePassword
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

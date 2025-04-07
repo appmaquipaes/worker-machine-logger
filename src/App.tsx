@@ -12,6 +12,7 @@ import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import MachineSelection from "./pages/MachineSelection";
 import ReportForm from "./pages/ReportForm";
@@ -38,6 +39,7 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/machines" element={<MachineSelection />} />
                     <Route path="/reports" element={<ReportForm />} />
