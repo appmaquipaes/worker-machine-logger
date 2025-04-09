@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -171,16 +170,16 @@ const ReportForm = () => {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold">Enviar Reporte</h1>
         <p className="text-xl mt-2">
-          Máquina: <span className="font-bold">{selectedMachine.name}</span>
-          {selectedMachine.plate && (
+          Máquina: <span className="font-bold">{selectedMachine?.name}</span>
+          {selectedMachine?.plate && (
             <span className="ml-2">({selectedMachine.plate})</span>
           )}
         </p>
         
         <Button 
-          variant="outline" 
+          variant="back" 
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-lg mt-4"
+          className="flex items-center gap-2 text-lg mt-4 mx-auto"
         >
           <ArrowLeft size={24} />
           Volver al inicio
@@ -423,7 +422,7 @@ const ReportForm = () => {
             <div className="flex justify-between pt-4">
               <Button 
                 type="button" 
-                variant="outline" 
+                variant="back" 
                 onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-2 text-lg py-6 px-6"
               >

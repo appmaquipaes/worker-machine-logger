@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, UserPlus } from 'lucide-react';
+import { Trash2, UserPlus, ArrowLeft } from 'lucide-react';
 
 type User = {
   id: string;
@@ -76,7 +76,17 @@ const UserManagement: React.FC = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
+          <Button 
+            variant="back" 
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            Volver al panel admin
+          </Button>
+        </div>
         <p className="text-muted-foreground mt-2">
           Administra los usuarios del sistema
         </p>

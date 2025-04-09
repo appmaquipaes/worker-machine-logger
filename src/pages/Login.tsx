@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -32,6 +33,16 @@ const Login: React.FC = () => {
 
   return (
     <div className="container max-w-md mx-auto py-10">
+      <div className="mb-6 flex justify-start">
+        <Button
+          variant="back"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft size={18} />
+          Volver al inicio
+        </Button>
+      </div>
+      
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>

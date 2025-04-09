@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail } from 'lucide-react';
+import { Mail, ArrowLeft } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const ForgotPassword: React.FC = () => {
@@ -60,6 +60,16 @@ const ForgotPassword: React.FC = () => {
 
   return (
     <div className="container max-w-md mx-auto py-10">
+      <div className="mb-6 flex justify-start">
+        <Button
+          variant="back"
+          onClick={() => navigate('/login')}
+        >
+          <ArrowLeft size={18} />
+          Volver al inicio de sesión
+        </Button>
+      </div>
+      
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
@@ -168,12 +178,6 @@ const ForgotPassword: React.FC = () => {
             </form>
           </CardContent>
         )}
-
-        <CardFooter className="flex justify-center">
-          <Link to="/login" className="text-sm text-primary hover:underline">
-            Volver al inicio de sesión
-          </Link>
-        </CardFooter>
       </Card>
     </div>
   );

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from "sonner";
+import { ArrowLeft } from 'lucide-react';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -69,6 +70,16 @@ const Register: React.FC = () => {
 
   return (
     <div className="container max-w-md mx-auto py-10">
+      <div className="mb-6 flex justify-start">
+        <Button
+          variant="back"
+          onClick={() => navigate(user ? '/admin/users' : '/')}
+        >
+          <ArrowLeft size={18} />
+          {user ? 'Volver a gestión de usuarios' : 'Volver al inicio'}
+        </Button>
+      </div>
+      
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">{pageTitle}</CardTitle>
@@ -151,11 +162,7 @@ const Register: React.FC = () => {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          {user && user.role === 'Administrador' ? (
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
-              Volver al Dashboard
-            </Button>
-          ) : (
+          {!user && (
             <div className="w-full text-center">
               ¿Ya tienes una cuenta?{" "}
               <Link to="/login" className="text-primary hover:underline">
