@@ -1,14 +1,19 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
 import { User, Wrench, ClipboardList } from 'lucide-react';
+import { createInitialAdminUser } from '@/utils/initialSetup';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Crear usuario administrador al cargar la página inicial
+  React.useEffect(() => {
+    createInitialAdminUser();
+  }, []);
 
   // Si el usuario ya está autenticado, redirigir al dashboard
   React.useEffect(() => {
