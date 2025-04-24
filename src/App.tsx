@@ -19,6 +19,7 @@ import ReportForm from "./pages/ReportForm";
 import AdminPanel from "./pages/AdminPanel";
 import MachineManagement from "./pages/MachineManagement";
 import UserManagement from "./pages/UserManagement";
+import VolquetaManagement from "./pages/VolquetaManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
                     <Route path="/admin" element={<AdminPanel />} />
                     <Route path="/admin/machines" element={<MachineManagement />} />
                     <Route path="/admin/users" element={<UserManagement />} />
+                    <Route path="/admin/volquetas" element={<VolquetaManagement />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

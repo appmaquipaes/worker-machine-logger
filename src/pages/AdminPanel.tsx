@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -13,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from "sonner";
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
-import { Calendar } from "lucide-react";
+import { Calendar, Truck, User, Wrench } from "lucide-react";
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
@@ -133,6 +132,45 @@ const AdminPanel: React.FC = () => {
         <p className="text-muted-foreground mt-2">
           Visualiza y gestiona todos los reportes de la empresa
         </p>
+      </div>
+      
+      {/* Sección de navegación administrativa */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/machines')}>
+          <CardContent className="p-6 flex flex-col items-center text-center">
+            <div className="p-3 rounded-full bg-primary/10 mb-3">
+              <Wrench className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">Administración de Máquinas</h3>
+            <p className="text-sm text-muted-foreground">
+              Gestiona el inventario de equipos y maquinaria
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/users')}>
+          <CardContent className="p-6 flex flex-col items-center text-center">
+            <div className="p-3 rounded-full bg-primary/10 mb-3">
+              <User className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">Gestión de Usuarios</h3>
+            <p className="text-sm text-muted-foreground">
+              Administra las cuentas y permisos de los usuarios
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/volquetas')}>
+          <CardContent className="p-6 flex flex-col items-center text-center">
+            <div className="p-3 rounded-full bg-primary/10 mb-3">
+              <Truck className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">Administración de Volquetas</h3>
+            <p className="text-sm text-muted-foreground">
+              Gestiona materiales y tarifas de fletes
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
       <Card className="mb-8">
