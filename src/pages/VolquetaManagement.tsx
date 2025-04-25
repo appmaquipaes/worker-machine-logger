@@ -117,7 +117,8 @@ const VolquetaManagement: React.FC = () => {
   const handleAddMaterial = (data: z.infer<typeof materialSchema>) => {
     const newMaterial: Material = {
       id: Date.now().toString(),
-      ...data
+      nombre_material: data.nombre_material,
+      valor_por_m3: data.valor_por_m3
     };
     
     const updatedMateriales = [...materiales, newMaterial];
@@ -131,7 +132,11 @@ const VolquetaManagement: React.FC = () => {
     if (!editingMaterial) return;
     
     const updatedMateriales = materiales.map(material => 
-      material.id === editingMaterial.id ? { ...material, ...data } : material
+      material.id === editingMaterial.id ? { 
+        ...material, 
+        nombre_material: data.nombre_material,
+        valor_por_m3: data.valor_por_m3 
+      } : material
     );
     
     saveMateriales(updatedMateriales);
@@ -157,7 +162,9 @@ const VolquetaManagement: React.FC = () => {
   const handleAddTarifa = (data: z.infer<typeof tarifaSchema>) => {
     const newTarifa: Tarifa = {
       id: Date.now().toString(),
-      ...data
+      origen: data.origen,
+      destino: data.destino,
+      valor_flete: data.valor_flete
     };
     
     const updatedTarifas = [...tarifas, newTarifa];
@@ -171,7 +178,12 @@ const VolquetaManagement: React.FC = () => {
     if (!editingTarifa) return;
     
     const updatedTarifas = tarifas.map(tarifa => 
-      tarifa.id === editingTarifa.id ? { ...tarifa, ...data } : tarifa
+      tarifa.id === editingTarifa.id ? { 
+        ...tarifa, 
+        origen: data.origen,
+        destino: data.destino,
+        valor_flete: data.valor_flete
+      } : tarifa
     );
     
     saveTarifas(updatedTarifas);
@@ -589,3 +601,4 @@ const VolquetaManagement: React.FC = () => {
 };
 
 export default VolquetaManagement;
+
