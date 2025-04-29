@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from "sonner";
 import { Machine } from './MachineContext';
+import { loadTarifas } from '../models/Tarifas';
 
 // Tipos para los reportes
 export type ReportType = 'Horas Extras' | 'Horas Trabajadas' | 'Mantenimiento' | 'Combustible' | 'Novedades' | 'Viajes';
@@ -18,10 +20,11 @@ export type Report = {
   reportDate: Date; // Fecha del reporte que puede ser diferente a la fecha de creación
   trips?: number; // Campo opcional para número de viajes
   hours?: number; // Campo opcional para número de horas
-  value?: number; // This can now represent fuel or maintenance value
+  value?: number; // This can now represent fuel or maintenance value or viaje total value
   workSite?: string; // Campo opcional para el sitio de trabajo
   origin?: string; // Campo opcional para el origen del viaje
   destination?: string; // Campo opcional para el destino del viaje
+  cantidadM3?: number; // Nueva: cantidad en m³ para viajes de volqueta
 };
 
 // Tipo para el contexto de reportes
@@ -35,10 +38,11 @@ type ReportContextType = {
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number, // Can be fuel or maintenance value
+    value?: number,
     workSite?: string,
     origin?: string,
-    destination?: string
+    destination?: string,
+    cantidadM3?: number
   ) => void;
   getFilteredReports: (filters: {
     userId?: string;
@@ -89,14 +93,32 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     reportDate: Date,
     trips?: number,
     hours?: number,
-    value?: number, // Can be fuel or maintenance value
+    value?: number,
     workSite?: string,
     origin?: string,
-    destination?: string
+    destination?: string,
+    cantidadM3?: number
   ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
       return;
+    }
+
+    // Para reportes de viajes, calcular el valor total basado en la tarifa y m³
+    let reportValue = value;
+    
+    if (reportType === 'Viajes' && origin && destination && cantidadM3) {
+      // Buscar la tarifa correspondiente
+      const tarifas = loadTarifas();
+      const tarifa = tarifas.find(t => 
+        t.origen.toLowerCase() === origin.toLowerCase() && 
+        t.destino.toLowerCase() === destination.toLowerCase()
+      );
+      
+      if (tarifa) {
+        // Calcular valor_flete_total = valor_por_m3 × m³
+        reportValue = tarifa.valor_por_m3 * cantidadM3;
+      }
     }
 
     const newReport: Report = {
@@ -111,10 +133,11 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reportDate: reportDate,
       ...(trips !== undefined && { trips }),
       ...(hours !== undefined && { hours }),
-      ...(value !== undefined && { value }),
+      ...(reportValue !== undefined && { value: reportValue }),
       ...(workSite !== undefined && { workSite }),
       ...(origin !== undefined && { origin }),
       ...(destination !== undefined && { destination }),
+      ...(cantidadM3 !== undefined && { cantidadM3 }),
     };
 
     const updatedReports = [...reports, newReport];

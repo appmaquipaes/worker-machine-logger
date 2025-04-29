@@ -1,323 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useReport, Report, ReportType } from '@/context/ReportContext';
-import { useMachine, Machine } from '@/context/MachineContext';
-import { Button } from '@/components/ui/button';
+
+import React, { useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { toast } from "sonner";
-import { format } from 'date-fns';
-import { DatePicker } from '@/components/DatePicker';
-import { Calendar, Truck, User, Wrench } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
+import { Database, Truck, FileText, Users } from 'lucide-react';
 
 const AdminPanel: React.FC = () => {
-  const { user } = useAuth();
-  const { reports, getFilteredReports } = useReport();
-  const { machines } = useMachine();
   const navigate = useNavigate();
-  
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [userNameFilter, setUserNameFilter] = useState('');
-  const [machineFilter, setMachineFilter] = useState('all');
-  const [reportTypeFilter, setReportTypeFilter] = useState('all');
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  
-  // Redirigir si no hay un usuario o no es administrador
+  const { user } = useAuth();
+
+  // Redirigir si no hay usuario o no es administrador
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-    
+
     if (user.role !== 'Administrador') {
-      toast.error('No tienes permisos para acceder a esta página');
       navigate('/dashboard');
     }
   }, [user, navigate]);
-  
-  // Aplicar filtros
-  useEffect(() => {
-    let result = [...reports];
-    
-    if (userNameFilter) {
-      result = result.filter(report => 
-        report.userName.toLowerCase().includes(userNameFilter.toLowerCase())
-      );
-    }
-    
-    if (machineFilter && machineFilter !== 'all') {
-      result = result.filter(report => report.machineId === machineFilter);
-    }
-    
-    if (reportTypeFilter && reportTypeFilter !== 'all') {
-      result = result.filter(report => report.reportType === reportTypeFilter);
-    }
-    
-    if (startDate) {
-      result = result.filter(report => {
-        const reportDate = new Date(report.reportDate);
-        reportDate.setHours(0, 0, 0, 0);
-        return reportDate >= startDate;
-      });
-    }
-    
-    if (endDate) {
-      const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      result = result.filter(report => new Date(report.reportDate) <= endOfDay);
-    }
-    
-    // Ordenar por fecha descendente (más reciente primero)
-    result.sort((a, b) => b.reportDate.getTime() - a.reportDate.getTime());
-    
-    setFilteredReports(result);
-  }, [reports, userNameFilter, machineFilter, reportTypeFilter, startDate, endDate]);
-  
-  const handleExportCSV = () => {
-    try {
-      // Crear los datos en formato CSV
-      const headers = ['ID', 'Trabajador', 'Máquina', 'Tipo', 'Descripción', 'Fecha del Reporte', 'Fecha de Creación'];
-      const csvData = [
-        headers.join(','),
-        ...filteredReports.map(report => [
-          report.id,
-          report.userName,
-          report.machineName,
-          report.reportType,
-          `"${report.description.replace(/"/g, '""')}"`, // Escapar comillas en texto
-          format(report.reportDate, 'dd/MM/yyyy'),
-          format(report.createdAt, 'dd/MM/yyyy HH:mm')
-        ].join(','))
-      ].join('\n');
-      
-      // Crear un objeto blob con el CSV
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-      
-      // Crear un link para descargar
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `reportes-${format(new Date(), 'yyyyMMdd')}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success('Reporte exportado correctamente');
-    } catch (error) {
-      console.error('Error al exportar:', error);
-      toast.error('Error al exportar el reporte');
-    }
-  };
-  
-  const clearFilters = () => {
-    setUserNameFilter('');
-    setMachineFilter('all');
-    setReportTypeFilter('all');
-    setStartDate(undefined);
-    setEndDate(undefined);
-  };
-  
+
+  // Si el usuario no es admin, no mostrar nada
   if (!user || user.role !== 'Administrador') return null;
-  
+
+  // Opciones del panel de administración
+  const adminOptions = [
+    {
+      title: 'Gestión de Máquinas',
+      description: 'Agregar, editar o eliminar máquinas del sistema',
+      icon: <Database className="h-10 w-10 text-primary" />,
+      path: '/admin/machines'
+    },
+    {
+      title: 'Gestión de Usuarios',
+      description: 'Administrar usuarios y sus permisos',
+      icon: <Users className="h-10 w-10 text-primary" />,
+      path: '/admin/users'
+    },
+    {
+      title: 'Administración de Volquetas',
+      description: 'Configurar materiales y tarifas de transporte',
+      icon: <Truck className="h-10 w-10 text-primary" />,
+      path: '/admin/volquetas'
+    },
+    {
+      title: 'Compras de Material',
+      description: 'Registrar compras de material y actualizar inventario',
+      icon: <FileText className="h-10 w-10 text-primary" />,
+      path: '/admin/compras'
+    },
+    {
+      title: 'Inventario de Material',
+      description: 'Ver el stock disponible de materiales',
+      icon: <Database className="h-10 w-10 text-primary" />,
+      path: '/admin/inventario'
+    },
+    {
+      title: 'Ventas de Material',
+      description: 'Registrar ventas y actualizar inventario',
+      icon: <FileText className="h-10 w-10 text-primary" />,
+      path: '/admin/ventas'
+    }
+  ];
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-8">
         <h1 className="text-3xl font-bold">Panel de Administración</h1>
         <p className="text-muted-foreground mt-2">
-          Visualiza y gestiona todos los reportes de la empresa
+          Bienvenido al panel de administración, {user.name}
         </p>
       </div>
-      
-      {/* Sección de navegación administrativa */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/machines')}>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <div className="p-3 rounded-full bg-primary/10 mb-3">
-              <Wrench className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1">Administración de Máquinas</h3>
-            <p className="text-sm text-muted-foreground">
-              Gestiona el inventario de equipos y maquinaria
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/users')}>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <div className="p-3 rounded-full bg-primary/10 mb-3">
-              <User className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1">Gestión de Usuarios</h3>
-            <p className="text-sm text-muted-foreground">
-              Administra las cuentas y permisos de los usuarios
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/admin/volquetas')}>
-          <CardContent className="p-6 flex flex-col items-center text-center">
-            <div className="p-3 rounded-full bg-primary/10 mb-3">
-              <Truck className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1">Administración de Volquetas</h3>
-            <p className="text-sm text-muted-foreground">
-              Gestiona materiales y tarifas de fletes
-            </p>
-          </CardContent>
-        </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {adminOptions.map((option, index) => (
+          <Link to={option.path} key={index} className="block">
+            <Card className="h-full transition-all hover:shadow-md hover:border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-4">
+                  {option.icon}
+                  <span>{option.title}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>{option.description}</CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
-      
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription>
-            Filtra los reportes según tus necesidades
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="userName">Trabajador</Label>
-              <Input
-                id="userName"
-                placeholder="Nombre del trabajador"
-                value={userNameFilter}
-                onChange={(e) => setUserNameFilter(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="machine">Máquina</Label>
-              <Select value={machineFilter} onValueChange={setMachineFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las máquinas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las máquinas</SelectItem>
-                  {machines.map((machine) => (
-                    <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reportType">Tipo de Reporte</Label>
-              <Select value={reportTypeFilter} onValueChange={setReportTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
-                  <SelectItem value="Horas Trabajadas">Horas Trabajadas</SelectItem>
-                  <SelectItem value="Horas Extras">Horas Extras</SelectItem>
-                  <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                  <SelectItem value="Combustible">Combustible</SelectItem>
-                  <SelectItem value="Novedades">Novedades</SelectItem>
-                  <SelectItem value="Viajes">Viajes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div className="space-y-2">
-              <Label>Fecha Inicial</Label>
-              {startDate ? (
-                <DatePicker date={startDate} setDate={setStartDate} />
-              ) : (
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left font-normal text-muted-foreground"
-                  onClick={() => setStartDate(new Date())}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>Seleccionar fecha inicial</span>
-                </Button>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Fecha Final</Label>
-              {endDate ? (
-                <DatePicker date={endDate} setDate={setEndDate} />
-              ) : (
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left font-normal text-muted-foreground"
-                  onClick={() => setEndDate(new Date())}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>Seleccionar fecha final</span>
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-between">
-            <Button variant="outline" onClick={clearFilters}>
-              Limpiar Filtros
-            </Button>
-            <Button onClick={handleExportCSV} disabled={filteredReports.length === 0}>
-              Exportar a CSV
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Reportes</CardTitle>
-          <CardDescription>
-            {filteredReports.length} reportes encontrados
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredReports.length > 0 ? (
-            <div className="rounded-md border overflow-hidden overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Trabajador</TableHead>
-                    <TableHead>Máquina</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Fecha del Reporte</TableHead>
-                    <TableHead>Fecha de Creación</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReports.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell className="font-medium">{report.userName}</TableCell>
-                      <TableCell>{report.machineName}</TableCell>
-                      <TableCell>{report.reportType}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={report.description}>
-                        {report.description}
-                      </TableCell>
-                      <TableCell>
-                        {format(report.reportDate, 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        {format(report.createdAt, 'dd/MM/yyyy HH:mm')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground">No se encontraron reportes</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

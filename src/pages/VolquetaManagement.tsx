@@ -5,7 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,20 +14,8 @@ import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-// Definir tipos para materiales y tarifas
-type Material = {
-  id: string;
-  nombre_material: string;
-  valor_por_m3: number;
-};
-
-type Tarifa = {
-  id: string;
-  origen: string;
-  destino: string;
-  valor_flete: number;
-};
+import { Material, loadMateriales, saveMateriales } from '@/models/Materiales';
+import { Tarifa, loadTarifas, saveTarifas, migrateTarifas } from '@/models/Tarifas';
 
 // Esquemas de validación con Zod
 const materialSchema = z.object({
@@ -39,7 +26,7 @@ const materialSchema = z.object({
 const tarifaSchema = z.object({
   origen: z.string().min(1, { message: "El origen es obligatorio" }),
   destino: z.string().min(1, { message: "El destino es obligatorio" }),
-  valor_flete: z.coerce.number().min(0, { message: "El valor debe ser un número positivo" })
+  valor_por_m3: z.coerce.number().min(0, { message: "El valor debe ser un número positivo" })
 });
 
 const VolquetaManagement: React.FC = () => {
@@ -68,7 +55,7 @@ const VolquetaManagement: React.FC = () => {
     defaultValues: {
       origen: "",
       destino: "",
-      valor_flete: 0
+      valor_por_m3: 0
     }
   });
 
@@ -85,33 +72,15 @@ const VolquetaManagement: React.FC = () => {
     }
   }, [user, navigate]);
 
-  // Cargar datos desde localStorage al iniciar
+  // Cargar datos y migrar tarifas al iniciar
   useEffect(() => {
-    const loadMateriales = () => {
-      const storedMateriales = JSON.parse(localStorage.getItem('materiales_volquetas') || '[]');
-      setMateriales(storedMateriales);
-    };
+    // Migrar tarifas del formato antiguo al nuevo
+    migrateTarifas();
     
-    const loadTarifas = () => {
-      const storedTarifas = JSON.parse(localStorage.getItem('tarifas_flete') || '[]');
-      setTarifas(storedTarifas);
-    };
-    
-    loadMateriales();
-    loadTarifas();
+    // Cargar datos
+    setMateriales(loadMateriales());
+    setTarifas(loadTarifas());
   }, []);
-
-  // Función para guardar materiales en localStorage
-  const saveMateriales = (newMateriales: Material[]) => {
-    localStorage.setItem('materiales_volquetas', JSON.stringify(newMateriales));
-    setMateriales(newMateriales);
-  };
-
-  // Función para guardar tarifas en localStorage
-  const saveTarifas = (newTarifas: Tarifa[]) => {
-    localStorage.setItem('tarifas_flete', JSON.stringify(newTarifas));
-    setTarifas(newTarifas);
-  };
 
   // Funciones para materiales
   const handleAddMaterial = (data: z.infer<typeof materialSchema>) => {
@@ -123,6 +92,7 @@ const VolquetaManagement: React.FC = () => {
     
     const updatedMateriales = [...materiales, newMaterial];
     saveMateriales(updatedMateriales);
+    setMateriales(updatedMateriales);
     
     materialForm.reset();
     toast.success('Material agregado correctamente');
@@ -140,6 +110,7 @@ const VolquetaManagement: React.FC = () => {
     );
     
     saveMateriales(updatedMateriales);
+    setMateriales(updatedMateriales);
     setEditingMaterial(null);
     toast.success('Material actualizado correctamente');
   };
@@ -147,6 +118,7 @@ const VolquetaManagement: React.FC = () => {
   const handleDeleteMaterial = (id: string) => {
     const updatedMateriales = materiales.filter(material => material.id !== id);
     saveMateriales(updatedMateriales);
+    setMateriales(updatedMateriales);
     toast.success('Material eliminado correctamente');
   };
 
@@ -164,11 +136,12 @@ const VolquetaManagement: React.FC = () => {
       id: Date.now().toString(),
       origen: data.origen,
       destino: data.destino,
-      valor_flete: data.valor_flete
+      valor_por_m3: data.valor_por_m3
     };
     
     const updatedTarifas = [...tarifas, newTarifa];
     saveTarifas(updatedTarifas);
+    setTarifas(updatedTarifas);
     
     tarifaForm.reset();
     toast.success('Tarifa agregada correctamente');
@@ -182,11 +155,12 @@ const VolquetaManagement: React.FC = () => {
         ...tarifa, 
         origen: data.origen,
         destino: data.destino,
-        valor_flete: data.valor_flete
+        valor_por_m3: data.valor_por_m3
       } : tarifa
     );
     
     saveTarifas(updatedTarifas);
+    setTarifas(updatedTarifas);
     setEditingTarifa(null);
     toast.success('Tarifa actualizada correctamente');
   };
@@ -194,6 +168,7 @@ const VolquetaManagement: React.FC = () => {
   const handleDeleteTarifa = (id: string) => {
     const updatedTarifas = tarifas.filter(tarifa => tarifa.id !== id);
     saveTarifas(updatedTarifas);
+    setTarifas(updatedTarifas);
     toast.success('Tarifa eliminada correctamente');
   };
 
@@ -202,7 +177,7 @@ const VolquetaManagement: React.FC = () => {
     tarifaForm.reset({
       origen: tarifa.origen,
       destino: tarifa.destino,
-      valor_flete: tarifa.valor_flete
+      valor_por_m3: tarifa.valor_por_m3
     });
   };
 
@@ -405,7 +380,7 @@ const VolquetaManagement: React.FC = () => {
             <div>
               <CardTitle>Tarifas por Ruta</CardTitle>
               <CardDescription>
-                Gestiona las rutas y sus tarifas
+                Gestiona las rutas y sus tarifas por m³
               </CardDescription>
             </div>
             <Dialog>
@@ -452,10 +427,10 @@ const VolquetaManagement: React.FC = () => {
                     />
                     <FormField
                       control={tarifaForm.control}
-                      name="valor_flete"
+                      name="valor_por_m3"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Valor del flete</FormLabel>
+                          <FormLabel>Valor por m³</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0" {...field} />
                           </FormControl>
@@ -480,7 +455,7 @@ const VolquetaManagement: React.FC = () => {
                   <TableRow>
                     <TableHead>Origen</TableHead>
                     <TableHead>Destino</TableHead>
-                    <TableHead>Valor del Flete</TableHead>
+                    <TableHead>Valor por m³</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -489,7 +464,7 @@ const VolquetaManagement: React.FC = () => {
                     <TableRow key={tarifa.id}>
                       <TableCell className="font-medium">{tarifa.origen}</TableCell>
                       <TableCell>{tarifa.destino}</TableCell>
-                      <TableCell>${tarifa.valor_flete.toLocaleString()}</TableCell>
+                      <TableCell>${tarifa.valor_por_m3.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {/* Editar Tarifa */}
@@ -537,10 +512,10 @@ const VolquetaManagement: React.FC = () => {
                                     />
                                     <FormField
                                       control={tarifaForm.control}
-                                      name="valor_flete"
+                                      name="valor_por_m3"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Valor del Flete</FormLabel>
+                                          <FormLabel>Valor por m³</FormLabel>
                                           <FormControl>
                                             <Input type="number" {...field} />
                                           </FormControl>
@@ -601,4 +576,3 @@ const VolquetaManagement: React.FC = () => {
 };
 
 export default VolquetaManagement;
-

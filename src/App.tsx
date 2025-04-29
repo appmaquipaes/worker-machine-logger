@@ -20,6 +20,9 @@ import AdminPanel from "./pages/AdminPanel";
 import MachineManagement from "./pages/MachineManagement";
 import UserManagement from "./pages/UserManagement";
 import VolquetaManagement from "./pages/VolquetaManagement";
+import ComprasMaterialPage from "./pages/ComprasMaterialPage";
+import InventarioPage from "./pages/InventarioPage";
+import VentasMaterialPage from "./pages/VentasMaterialPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +51,9 @@ const App = () => (
                     <Route path="/admin/machines" element={<MachineManagement />} />
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/volquetas" element={<VolquetaManagement />} />
+                    <Route path="/admin/compras" element={<ComprasMaterialPage />} />
+                    <Route path="/admin/inventario" element={<InventarioPage />} />
+                    <Route path="/admin/ventas" element={<VentasMaterialPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
