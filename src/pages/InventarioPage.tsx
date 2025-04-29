@@ -38,6 +38,12 @@ const InventarioPage: React.FC = () => {
     setInventario(loadInventarioAcopio());
   }, []);
 
+  // Helper function to safely format numbers
+  const formatNumber = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return '0';
+    return value.toLocaleString();
+  };
+
   if (!user || user.role !== 'Administrador') return null;
 
   return (
@@ -83,9 +89,9 @@ const InventarioPage: React.FC = () => {
                   {inventario.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.tipo_material}</TableCell>
-                      <TableCell>{item.cantidad_disponible.toLocaleString()} m³</TableCell>
-                      <TableCell>${item.costo_promedio_m3.toLocaleString()}</TableCell>
-                      <TableCell>${(item.cantidad_disponible * item.costo_promedio_m3).toLocaleString()}</TableCell>
+                      <TableCell>{formatNumber(item.cantidad_disponible)} m³</TableCell>
+                      <TableCell>${formatNumber(item.costo_promedio_m3)}</TableCell>
+                      <TableCell>${formatNumber(item.cantidad_disponible * item.costo_promedio_m3)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

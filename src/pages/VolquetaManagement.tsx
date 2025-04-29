@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -96,6 +95,12 @@ const VolquetaManagement: React.FC = () => {
     
     materialForm.reset();
     toast.success('Material agregado correctamente');
+  };
+
+  // Helper function to safely format numbers
+  const formatNumber = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return '0';
+    return value.toLocaleString();
   };
 
   const handleUpdateMaterial = (data: z.infer<typeof materialSchema>) => {
@@ -278,7 +283,7 @@ const VolquetaManagement: React.FC = () => {
                   {materiales.map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium">{material.nombre_material}</TableCell>
-                      <TableCell>${material.valor_por_m3.toLocaleString()}</TableCell>
+                      <TableCell>${formatNumber(material.valor_por_m3)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {/* Editar Material */}
@@ -464,7 +469,7 @@ const VolquetaManagement: React.FC = () => {
                     <TableRow key={tarifa.id}>
                       <TableCell className="font-medium">{tarifa.origen}</TableCell>
                       <TableCell>{tarifa.destino}</TableCell>
-                      <TableCell>${tarifa.valor_por_m3.toLocaleString()}</TableCell>
+                      <TableCell>${formatNumber(tarifa.valor_por_m3)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {/* Editar Tarifa */}
