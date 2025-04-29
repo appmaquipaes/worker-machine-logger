@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft } from 'lucide-react';
 import { InventarioAcopio, loadInventarioAcopio } from '@/models/InventarioAcopio';
+import { toast } from "@/hooks/use-toast";
 
 const InventarioPage: React.FC = () => {
   const { user } = useAuth();
@@ -23,7 +24,11 @@ const InventarioPage: React.FC = () => {
     }
     
     if (user.role !== 'Administrador') {
-      toast.error('No tienes permisos para acceder a esta página');
+      toast({
+        title: "Acceso denegado",
+        description: "No tienes permisos para acceder a esta página",
+        variant: "destructive"
+      });
       navigate('/dashboard');
     }
   }, [user, navigate]);
