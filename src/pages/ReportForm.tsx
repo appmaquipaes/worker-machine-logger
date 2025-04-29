@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +24,13 @@ import {
   Save,
   Send
 } from 'lucide-react';
+import { Material, loadMateriales } from '@/models/Materiales';
+import { CompraMaterial, createCompraMaterial, loadComprasMaterial, saveComprasMaterial } from '@/models/ComprasMaterial';
+import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterCompra } from '@/models/InventarioAcopio';
+import { loadTarifas } from '@/models/Tarifas';
+
+// Constante para el destino especial que activa la automatización
+const ACOPIO_DESTINO = "ACOPIO MAQUIPAES";
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -40,6 +48,17 @@ const ReportForm = () => {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
+  const [cantidadM3, setCantidadM3] = useState<number | undefined>(undefined);
+  
+  // Nuevos estados para cargar datos de materiales y tarifas
+  const [materiales, setMateriales] = useState<Material[]>([]);
+  const [tarifas, setTarifas] = useState<any[]>([]);
+  
+  // Cargar materiales y tarifas al montar el componente
+  useEffect(() => {
+    setMateriales(loadMateriales());
+    setTarifas(loadTarifas());
+  }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
   useEffect(() => {
@@ -53,6 +72,64 @@ const ReportForm = () => {
       navigate('/machines');
     }
   }, [user, selectedMachine, navigate]);
+  
+  // Función para actualizar inventario cuando el destino es el acopio
+  const procesarCompraAcopio = (
+    fecha: Date,
+    origen: string,
+    tipoMaterial: string,
+    cantidadM3: number
+  ) => {
+    try {
+      // 1. Buscar datos adicionales (valores predefinidos)
+      const material = materiales.find(m => m.nombre_material === tipoMaterial);
+      const tarifa = tarifas.find(t => 
+        t.origen.toLowerCase() === origen.toLowerCase() && 
+        t.destino.toLowerCase() === ACOPIO_DESTINO.toLowerCase()
+      );
+      
+      // 2. Determinar valores
+      const valorPorM3 = material ? material.valor_por_m3 : 0;
+      const valorFlete = tarifa ? tarifa.valor_por_m3 * cantidadM3 : 0;
+      
+      // 3. Crear compra en compras_material
+      const nuevaCompra = createCompraMaterial(
+        fecha,
+        origen,
+        tipoMaterial,
+        cantidadM3,
+        valorPorM3,
+        valorFlete
+      );
+      
+      // Guardar la compra en localStorage
+      const comprasExistentes = loadComprasMaterial();
+      const comprasActualizadas = [...comprasExistentes, nuevaCompra];
+      saveComprasMaterial(comprasActualizadas);
+      
+      // 4. Actualizar inventario
+      const inventarioExistente = loadInventarioAcopio();
+      const inventarioActualizado = updateInventarioAfterCompra(
+        inventarioExistente,
+        {
+          tipo_material: tipoMaterial,
+          cantidad_m3: cantidadM3,
+          costo_unitario_total: nuevaCompra.costo_unitario_total
+        }
+      );
+      saveInventarioAcopio(inventarioActualizado);
+      
+      console.log('Compra e inventario actualizados automáticamente:', {
+        compra: nuevaCompra,
+        inventario: inventarioActualizado
+      });
+      
+      toast.success('Material registrado en inventario automáticamente');
+    } catch (error) {
+      console.error('Error al procesar compra de material:', error);
+      toast.error('Error al actualizar el inventario');
+    }
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +154,12 @@ const ReportForm = () => {
       // Para todos los camiones (volquetas), validar origen y destino
       if (selectedMachine.type === 'Camión' && (!origin.trim() || !destination.trim())) {
         toast.error('Debe ingresar el origen y destino del viaje');
+        return;
+      }
+
+      // Validar cantidad de m3 transportados para viajes
+      if (cantidadM3 === undefined || cantidadM3 <= 0) {
+        toast.error('Debe ingresar una cantidad válida de m³ transportados');
         return;
       }
     }
@@ -118,8 +201,22 @@ const ReportForm = () => {
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
       (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión') ? workSite : undefined,
       (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? origin : undefined,
-      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? destination : undefined
+      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? destination : undefined,
+      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? cantidadM3 : undefined
     );
+    
+    // Procesar actualización automática de inventario si es un viaje al acopio
+    if (reportType === 'Viajes' && 
+        destination.trim().toUpperCase() === ACOPIO_DESTINO.toUpperCase() && 
+        cantidadM3 !== undefined && 
+        cantidadM3 > 0) {
+      procesarCompraAcopio(
+        reportDate,
+        origin,
+        description, // Asumimos que la descripción contiene el tipo de material
+        cantidadM3
+      );
+    }
     
     // Mostrar confirmación
     toast.success('¡Reporte enviado con éxito!');
@@ -133,6 +230,7 @@ const ReportForm = () => {
     setOrigin('');
     setDestination('');
     setMaintenanceValue(undefined);
+    setCantidadM3(undefined);
     
     // Opcional: redirigir al dashboard después de enviar
     navigate('/dashboard');
@@ -149,7 +247,7 @@ const ReportForm = () => {
       case 'Horas Trabajadas':
         return <Clock size={28} />;
       case 'Horas Extras':
-        return <AlarmClock size={28} />;  // Changed from Alarm to AlarmClock
+        return <AlarmClock size={28} />;
       case 'Mantenimiento':
         return <ToolIcon size={28} />;
       case 'Combustible':
@@ -344,6 +442,29 @@ const ReportForm = () => {
                     required
                   />
                 </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Truck size={24} />
+                    <Label htmlFor="cantidad-m3" className="text-lg">Cantidad de m³ Transportados</Label>
+                  </div>
+                  <Input 
+                    id="cantidad-m3"
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    placeholder="Ej: 6"
+                    value={cantidadM3 === undefined ? '' : cantidadM3}
+                    onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
+                    className="text-lg p-6"
+                    required
+                  />
+                  {destination.trim().toUpperCase() === ACOPIO_DESTINO.toUpperCase() && (
+                    <p className="text-sm text-green-600 mt-1">
+                      ⚠️ Este material será registrado automáticamente en el inventario de acopio
+                    </p>
+                  )}
+                </div>
               </>
             )}
             
@@ -406,11 +527,13 @@ const ReportForm = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 {getReportTypeIcon(reportType)}
-                <Label htmlFor="description" className="text-lg">Descripción</Label>
+                <Label htmlFor="description" className="text-lg">
+                  {reportType === 'Viajes' ? 'Tipo de Material' : 'Descripción'}
+                </Label>
               </div>
               <Textarea
                 id="description"
-                placeholder="Ingrese los detalles del reporte"
+                placeholder={reportType === 'Viajes' ? "Ingrese el tipo de material transportado" : "Ingrese los detalles del reporte"}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
