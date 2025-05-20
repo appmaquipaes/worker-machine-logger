@@ -21,7 +21,6 @@ import { DatePicker } from '@/components/DatePicker';
 import { Proveedor, loadProveedores, saveProveedores, createProveedor, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
 import { Material, loadMateriales } from '@/models/Materiales';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 
 // Schema for provider validation
 const proveedorSchema = z.object({
@@ -42,7 +41,6 @@ const ProveedoresPage: React.FC = () => {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-  const [useCustomMaterial, setUseCustomMaterial] = useState(false);
   const [uniqueMaterialTypes, setUniqueMaterialTypes] = useState<string[]>([]);
   
   // Form setup
@@ -117,7 +115,6 @@ const ProveedoresPage: React.FC = () => {
     }
     
     form.reset();
-    setUseCustomMaterial(false);
     toast.success('Proveedor agregado correctamente');
   };
   
@@ -147,7 +144,6 @@ const ProveedoresPage: React.FC = () => {
     }
     
     setEditingProveedor(null);
-    setUseCustomMaterial(false);
     toast.success('Proveedor actualizado correctamente');
   };
   
@@ -252,15 +248,6 @@ const ProveedoresPage: React.FC = () => {
                       />
                     </div>
                     
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Switch 
-                        id="useCustomMaterial" 
-                        checked={useCustomMaterial}
-                        onCheckedChange={setUseCustomMaterial}
-                      />
-                      <Label htmlFor="useCustomMaterial">Digitar material manualmente</Label>
-                    </div>
-                    
                     <FormField
                       control={form.control}
                       name="tipo_material"
@@ -268,31 +255,10 @@ const ProveedoresPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Tipo de Material</FormLabel>
                           <FormControl>
-                            {useCustomMaterial ? (
-                              <Input
-                                {...field}
-                                placeholder="Ej: Arena fina"
-                              />
-                            ) : (
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona el tipo de material" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {[...materiales.map(m => m.nombre_material), ...uniqueMaterialTypes]
-                                    .filter((value, index, self) => self.indexOf(value) === index)
-                                    .map((material) => (
-                                      <SelectItem key={material} value={material}>
-                                        {material}
-                                      </SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
-                            )}
+                            <Input
+                              {...field}
+                              placeholder="Ej: Arena fina"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -437,15 +403,6 @@ const ProveedoresPage: React.FC = () => {
                                     />
                                   </div>
                                   
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <Switch 
-                                      id="useCustomMaterialEdit" 
-                                      checked={useCustomMaterial}
-                                      onCheckedChange={setUseCustomMaterial}
-                                    />
-                                    <Label htmlFor="useCustomMaterialEdit">Digitar material manualmente</Label>
-                                  </div>
-                                  
                                   <FormField
                                     control={form.control}
                                     name="tipo_material"
@@ -453,31 +410,10 @@ const ProveedoresPage: React.FC = () => {
                                       <FormItem>
                                         <FormLabel>Tipo de Material</FormLabel>
                                         <FormControl>
-                                          {useCustomMaterial ? (
-                                            <Input
-                                              {...field}
-                                              placeholder="Ej: Arena fina"
-                                            />
-                                          ) : (
-                                            <Select 
-                                              onValueChange={field.onChange} 
-                                              defaultValue={field.value}
-                                            >
-                                              <SelectTrigger>
-                                                <SelectValue placeholder="Selecciona el tipo de material" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {[...materiales.map(m => m.nombre_material), ...uniqueMaterialTypes]
-                                                  .filter((value, index, self) => self.indexOf(value) === index)
-                                                  .map((material) => (
-                                                    <SelectItem key={material} value={material}>
-                                                      {material}
-                                                    </SelectItem>
-                                                  ))
-                                                }
-                                              </SelectContent>
-                                            </Select>
-                                          )}
+                                          <Input
+                                            {...field}
+                                            placeholder="Ej: Arena fina"
+                                          />
                                         </FormControl>
                                         <FormMessage />
                                       </FormItem>
