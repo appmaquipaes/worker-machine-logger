@@ -17,6 +17,7 @@ import MachineManagement from './pages/MachineManagement';
 import UserManagement from './pages/UserManagement';
 import VolquetaManagement from './pages/VolquetaManagement';
 import ReportForm from './pages/ReportForm';
+import Reports from './pages/Reports'; // Import the new Reports page
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import InventarioPage from './pages/InventarioPage';
@@ -56,6 +57,7 @@ const App: React.FC = () => {
                 <Route path="/admin/proveedores" element={<ProveedoresPage />} />
                 <Route path="/admin/clientes" element={<ClientesPage />} />
                 <Route path="/report" element={<ReportForm />} />
+                <Route path="/reports" element={<Reports />} /> {/* Add the new route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Router>
