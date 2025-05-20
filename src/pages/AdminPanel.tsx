@@ -1,93 +1,118 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Database, Truck, FileText, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Truck, User, Building, Database, List, MapPin, Folder, Users } from 'lucide-react';
 
-const AdminPanel: React.FC = () => {
-  const navigate = useNavigate();
+const AdminPanel = () => {
   const { user } = useAuth();
-
-  // Redirigir si no hay usuario o no es administrador
+  const navigate = useNavigate();
+  
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-
+    
     if (user.role !== 'Administrador') {
       navigate('/dashboard');
     }
   }, [user, navigate]);
 
-  // Si el usuario no es admin, no mostrar nada
-  if (!user || user.role !== 'Administrador') return null;
-
-  // Opciones del panel de administración
-  const adminOptions = [
-    {
-      title: 'Gestión de Máquinas',
-      description: 'Agregar, editar o eliminar máquinas del sistema',
-      icon: <Database className="h-10 w-10 text-primary" />,
-      path: '/admin/machines'
-    },
+  const AdminOptions = [
     {
       title: 'Gestión de Usuarios',
-      description: 'Administrar usuarios y sus permisos',
-      icon: <Users className="h-10 w-10 text-primary" />,
+      description: 'Administrar operadores y sus permisos en el sistema',
+      icon: <User className="h-8 w-8" />,
       path: '/admin/users'
     },
     {
-      title: 'Administración de Volquetas',
-      description: 'Configurar materiales y tarifas de transporte',
-      icon: <Truck className="h-10 w-10 text-primary" />,
+      title: 'Gestión de Máquinas',
+      description: 'Administrar máquinas, volquetas y equipos',
+      icon: <Building className="h-8 w-8" />,
+      path: '/admin/machines'
+    },
+    {
+      title: 'Administrar Volquetas',
+      description: 'Configurar materiales y tarifas para volquetas',
+      icon: <Truck className="h-8 w-8" />,
       path: '/admin/volquetas'
     },
     {
-      title: 'Compras de Material',
-      description: 'Registrar compras de material y actualizar inventario',
-      icon: <FileText className="h-10 w-10 text-primary" />,
-      path: '/admin/compras'
+      title: 'Proveedores',
+      description: 'Administrar proveedores de material',
+      icon: <MapPin className="h-8 w-8" />,
+      path: '/admin/proveedores'
     },
     {
-      title: 'Inventario de Material',
-      description: 'Ver el stock disponible de materiales',
-      icon: <Database className="h-10 w-10 text-primary" />,
+      title: 'Clientes',
+      description: 'Gestionar clientes que reciben materiales',
+      icon: <Users className="h-8 w-8" />,
+      path: '/admin/clientes'
+    },
+    {
+      title: 'Inventario Acopio',
+      description: 'Ver y gestionar el inventario actual del acopio',
+      icon: <Database className="h-8 w-8" />,
       path: '/admin/inventario'
     },
     {
-      title: 'Ventas de Material',
-      description: 'Registrar ventas y actualizar inventario',
-      icon: <FileText className="h-10 w-10 text-primary" />,
-      path: '/admin/ventas'
-    }
+      title: 'Compras Material',
+      description: 'Historial y registro de material comprado',
+      icon: <List className="h-8 w-8" />,
+      path: '/admin/compras-material'
+    },
+    {
+      title: 'Ventas Material',
+      description: 'Historial y registro de ventas de material',
+      icon: <Folder className="h-8 w-8" />,
+      path: '/admin/ventas-material'
+    },
   ];
 
+  if (!user || user.role !== 'Administrador') return null;
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Panel de Administración</h1>
-        <p className="text-muted-foreground mt-2">
-          Bienvenido al panel de administración, {user.name}
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Panel de Administración</h1>
+          <Button 
+            variant="back" 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            Volver al dashboard
+          </Button>
+        </div>
+        <p className="text-muted-foreground">
+          Bienvenido, {user?.name}. Gestiona todos los aspectos del sistema desde aquí.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {adminOptions.map((option, index) => (
-          <Link to={option.path} key={index} className="block">
-            <Card className="h-full transition-all hover:shadow-md hover:border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-4">
-                  {option.icon}
-                  <span>{option.title}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{option.description}</CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {AdminOptions.map((option, index) => (
+          <Card key={index} className="overflow-hidden">
+            <div className="bg-primary/10 p-4 flex justify-center">
+              {option.icon}
+            </div>
+            <CardHeader>
+              <CardTitle>{option.title}</CardTitle>
+              <CardDescription>{option.description}</CardDescription>
+            </CardHeader>
+            <CardFooter className="pt-0">
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={() => navigate(option.path)}
+              >
+                Acceder
+              </Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>

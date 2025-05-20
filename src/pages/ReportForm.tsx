@@ -9,8 +9,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { toast } from "sonner";
 import { DatePicker } from '@/components/DatePicker';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
 import { 
   ArrowLeft, 
   Clock, 
@@ -21,16 +46,42 @@ import {
   Truck,
   Calendar,
   MapPin,
-  Save,
+  Plus,
   Send
 } from 'lucide-react';
 import { Material, loadMateriales } from '@/models/Materiales';
 import { CompraMaterial, createCompraMaterial, loadComprasMaterial, saveComprasMaterial } from '@/models/ComprasMaterial';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterCompra } from '@/models/InventarioAcopio';
 import { loadTarifas } from '@/models/Tarifas';
+import { Proveedor, loadProveedores, saveProveedores, createProveedor } from '@/models/Proveedores';
+import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente } from '@/models/Clientes';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useForm } from 'react-hook-form';
 
 // Constante para el destino especial que activa la automatización
 const ACOPIO_DESTINO = "ACOPIO MAQUIPAES";
+
+// Esquemas de validación con Zod
+const proveedorSchema = z.object({
+  nombre_proveedor: z.string().min(1, { message: "El nombre del proveedor es obligatorio" }),
+  tipo_material: z.string().min(1, { message: "El tipo de material es obligatorio" }),
+  cantidad: z.coerce.number().min(0, { message: "La cantidad debe ser un número positivo" }),
+  valor_unitario: z.coerce.number().min(0, { message: "El valor debe ser un número positivo" }),
+  ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
+  fecha_compra: z.date(),
+  observaciones: z.string().optional()
+});
+
+const clienteSchema = z.object({
+  nombre_cliente: z.string().min(1, { message: "El nombre del cliente es obligatorio" }),
+  ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
+  contacto_nombre: z.string().min(1, { message: "El nombre del contacto es obligatorio" }),
+  contacto_telefono: z.string().min(1, { message: "El teléfono del contacto es obligatorio" }),
+  direccion: z.string().optional(),
+  tipo_cliente: z.string().optional(),
+  observaciones: z.string().optional()
+});
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -50,14 +101,49 @@ const ReportForm = () => {
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
   const [cantidadM3, setCantidadM3] = useState<number | undefined>(undefined);
   
-  // Nuevos estados para cargar datos de materiales y tarifas
+  // Nuevos estados para proveedores y clientes
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
+  const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
+  
+  // Cargar materiales y tarifas al montar el componente
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [tarifas, setTarifas] = useState<any[]>([]);
   
-  // Cargar materiales y tarifas al montar el componente
+  // Formularios para agregar proveedor y cliente
+  const proveedorForm = useForm<z.infer<typeof proveedorSchema>>({
+    resolver: zodResolver(proveedorSchema),
+    defaultValues: {
+      nombre_proveedor: "",
+      tipo_material: "",
+      cantidad: 0,
+      valor_unitario: 0,
+      ciudad: "",
+      fecha_compra: new Date(),
+      observaciones: ""
+    }
+  });
+  
+  const clienteForm = useForm<z.infer<typeof clienteSchema>>({
+    resolver: zodResolver(clienteSchema),
+    defaultValues: {
+      nombre_cliente: "",
+      ciudad: "",
+      contacto_nombre: "",
+      contacto_telefono: "",
+      direccion: "",
+      tipo_cliente: "",
+      observaciones: ""
+    }
+  });
+  
+  // Cargar datos
   useEffect(() => {
     setMateriales(loadMateriales());
     setTarifas(loadTarifas());
+    setProveedores(loadProveedores());
+    setClientes(loadClientes());
   }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -72,6 +158,46 @@ const ReportForm = () => {
       navigate('/machines');
     }
   }, [user, selectedMachine, navigate]);
+  
+  // Función para agregar nuevo proveedor
+  const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
+    const nuevoProveedor = createProveedor(
+      data.nombre_proveedor,
+      data.tipo_material,
+      data.cantidad,
+      data.valor_unitario,
+      data.ciudad,
+      data.fecha_compra,
+      data.observaciones
+    );
+    
+    const proveedoresActualizados = [...proveedores, nuevoProveedor];
+    saveProveedores(proveedoresActualizados);
+    setProveedores(proveedoresActualizados);
+    setOrigin(nuevoProveedor.nombre_proveedor);
+    setProveedorDialogOpen(false);
+    toast.success('Proveedor agregado correctamente');
+  };
+  
+  // Función para agregar nuevo cliente
+  const handleAddCliente = (data: z.infer<typeof clienteSchema>) => {
+    const nuevoCliente = createCliente(
+      data.nombre_cliente,
+      data.ciudad,
+      data.contacto_nombre,
+      data.contacto_telefono,
+      data.direccion,
+      data.tipo_cliente,
+      data.observaciones
+    );
+    
+    const clientesActualizados = [...clientes, nuevoCliente];
+    saveClientes(clientesActualizados);
+    setClientes(clientesActualizados);
+    setDestination(nuevoCliente.nombre_cliente);
+    setClienteDialogOpen(false);
+    toast.success('Cliente agregado correctamente');
+  };
   
   // Función para actualizar inventario cuando el destino es el acopio
   const procesarCompraAcopio = (
@@ -263,6 +389,12 @@ const ReportForm = () => {
   
   if (!user || !selectedMachine) return null;
   
+  // Helper function to safely format numbers
+  const formatNumber = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return '0';
+    return value.toLocaleString();
+  };
+  
   return (
     <div className="container max-w-xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
@@ -413,34 +545,308 @@ const ReportForm = () => {
             {shouldShowOriginDestination && (
               <>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin size={24} />
-                    <Label htmlFor="origin" className="text-lg">Origen</Label>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={24} />
+                      <Label htmlFor="origin" className="text-lg">Origen (Proveedor)</Label>
+                    </div>
+                    {user.role === 'Administrador' && (
+                      <Dialog open={proveedorDialogOpen} onOpenChange={setProveedorDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Plus size={18} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Agregar Nuevo Proveedor</DialogTitle>
+                            <DialogDescription>
+                              Llena los datos del nuevo proveedor de material
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Form {...proveedorForm}>
+                            <form onSubmit={proveedorForm.handleSubmit(handleAddProveedor)} className="space-y-4">
+                              <FormField
+                                control={proveedorForm.control}
+                                name="nombre_proveedor"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Nombre del Proveedor</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ej: Cantera Los Alpes" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={proveedorForm.control}
+                                name="tipo_material"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Tipo de Material</FormLabel>
+                                    <FormControl>
+                                      <Select 
+                                        onValueChange={field.onChange} 
+                                        defaultValue={field.value}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Selecciona el tipo de material" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {materiales.map((material) => (
+                                            <SelectItem key={material.id} value={material.nombre_material}>
+                                              {material.nombre_material}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={proveedorForm.control}
+                                  name="cantidad"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Cantidad (m³)</FormLabel>
+                                      <FormControl>
+                                        <Input type="number" {...field} placeholder="0" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={proveedorForm.control}
+                                  name="valor_unitario"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Valor Unitario</FormLabel>
+                                      <FormControl>
+                                        <Input type="number" {...field} placeholder="0" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <FormField
+                                control={proveedorForm.control}
+                                name="ciudad"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Ciudad</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ej: Medellín" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={proveedorForm.control}
+                                name="observaciones"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Observaciones</FormLabel>
+                                    <FormControl>
+                                      <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <DialogFooter>
+                                <Button type="submit">Guardar Proveedor</Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
-                  <Input 
-                    id="origin"
-                    type="text"
-                    placeholder="Lugar de origen"
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
-                    className="text-lg p-6"
-                    required
-                  />
+                  <Select onValueChange={setOrigin} value={origin}>
+                    <SelectTrigger className="text-lg p-6">
+                      <SelectValue placeholder="Selecciona un proveedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proveedores.map((proveedor) => (
+                        <SelectItem key={proveedor.id} value={proveedor.nombre_proveedor}>
+                          {proveedor.nombre_proveedor}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+                
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin size={24} />
-                    <Label htmlFor="destination" className="text-lg">Destino</Label>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={24} />
+                      <Label htmlFor="destination" className="text-lg">Destino (Cliente)</Label>
+                    </div>
+                    {user.role === 'Administrador' && (
+                      <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Plus size={18} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
+                            <DialogDescription>
+                              Llena los datos del nuevo cliente
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Form {...clienteForm}>
+                            <form onSubmit={clienteForm.handleSubmit(handleAddCliente)} className="space-y-4">
+                              <FormField
+                                control={clienteForm.control}
+                                name="nombre_cliente"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Nombre del Cliente</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ej: Constructora XYZ" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={clienteForm.control}
+                                name="ciudad"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Ciudad</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ej: Medellín" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={clienteForm.control}
+                                  name="contacto_nombre"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Nombre de Contacto</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} placeholder="Ej: Juan Pérez" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={clienteForm.control}
+                                  name="contacto_telefono"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Teléfono</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} placeholder="Ej: 301 234 5678" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <FormField
+                                control={clienteForm.control}
+                                name="direccion"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Dirección</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Dirección (opcional)" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={clienteForm.control}
+                                name="tipo_cliente"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Tipo de Cliente</FormLabel>
+                                    <FormControl>
+                                      <Select 
+                                        onValueChange={field.onChange} 
+                                        defaultValue={field.value}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Seleccionar tipo (opcional)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {tiposCliente.map((tipo) => (
+                                            <SelectItem key={tipo} value={tipo}>
+                                              {tipo}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={clienteForm.control}
+                                name="observaciones"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Observaciones</FormLabel>
+                                    <FormControl>
+                                      <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <DialogFooter>
+                                <Button type="submit">Guardar Cliente</Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
-                  <Input 
-                    id="destination"
-                    type="text"
-                    placeholder="Lugar de destino"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="text-lg p-6"
-                    required
-                  />
+                  <Select onValueChange={setDestination} value={destination}>
+                    <SelectTrigger className="text-lg p-6">
+                      <SelectValue placeholder="Selecciona un cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ACOPIO_DESTINO}>{ACOPIO_DESTINO}</SelectItem>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                          {cliente.nombre_cliente}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
