@@ -18,8 +18,10 @@ import { useForm } from 'react-hook-form';
 import { ArrowLeft, Plus, Edit, Trash2, MapPin, Building } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DatePicker } from '@/components/DatePicker';
-import { Proveedor, loadProveedores, saveProveedores, createProveedor } from '@/models/Proveedores';
+import { Proveedor, loadProveedores, saveProveedores, createProveedor, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
 import { Material, loadMateriales } from '@/models/Materiales';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 
 // Schema for provider validation
 const proveedorSchema = z.object({
@@ -40,6 +42,8 @@ const ProveedoresPage: React.FC = () => {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
+  const [useCustomMaterial, setUseCustomMaterial] = useState(false);
+  const [uniqueMaterialTypes, setUniqueMaterialTypes] = useState<string[]>([]);
   
   // Form setup
   const form = useForm<z.infer<typeof proveedorSchema>>({
@@ -68,8 +72,12 @@ const ProveedoresPage: React.FC = () => {
       return;
     }
     
-    setProveedores(loadProveedores());
+    const loadedProveedores = loadProveedores();
+    setProveedores(loadedProveedores);
     setMateriales(loadMateriales());
+    
+    // Get unique material types from existing providers
+    setUniqueMaterialTypes(getUniqueProviderMaterialTypes());
   }, [user, navigate]);
   
   // Helper function to safely format numbers
@@ -102,7 +110,14 @@ const ProveedoresPage: React.FC = () => {
     const proveedoresActualizados = [...proveedores, nuevoProveedor];
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
+    
+    // Update unique material types
+    if (!uniqueMaterialTypes.includes(data.tipo_material)) {
+      setUniqueMaterialTypes([...uniqueMaterialTypes, data.tipo_material]);
+    }
+    
     form.reset();
+    setUseCustomMaterial(false);
     toast.success('Proveedor agregado correctamente');
   };
   
@@ -125,7 +140,14 @@ const ProveedoresPage: React.FC = () => {
     
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
+    
+    // Update unique material types
+    if (!uniqueMaterialTypes.includes(data.tipo_material)) {
+      setUniqueMaterialTypes([...uniqueMaterialTypes, data.tipo_material]);
+    }
+    
     setEditingProveedor(null);
+    setUseCustomMaterial(false);
     toast.success('Proveedor actualizado correctamente');
   };
   
@@ -135,6 +157,9 @@ const ProveedoresPage: React.FC = () => {
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
     toast.success('Proveedor eliminado correctamente');
+    
+    // Update unique material types
+    setUniqueMaterialTypes(getUniqueProviderMaterialTypes());
   };
   
   // Function to open edit provider dialog
@@ -227,6 +252,15 @@ const ProveedoresPage: React.FC = () => {
                       />
                     </div>
                     
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Switch 
+                        id="useCustomMaterial" 
+                        checked={useCustomMaterial}
+                        onCheckedChange={setUseCustomMaterial}
+                      />
+                      <Label htmlFor="useCustomMaterial">Digitar material manualmente</Label>
+                    </div>
+                    
                     <FormField
                       control={form.control}
                       name="tipo_material"
@@ -234,21 +268,31 @@ const ProveedoresPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Tipo de Material</FormLabel>
                           <FormControl>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecciona el tipo de material" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {materiales.map((material) => (
-                                  <SelectItem key={material.id} value={material.nombre_material}>
-                                    {material.nombre_material}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {useCustomMaterial ? (
+                              <Input
+                                {...field}
+                                placeholder="Ej: Arena fina"
+                              />
+                            ) : (
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona el tipo de material" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[...materiales.map(m => m.nombre_material), ...uniqueMaterialTypes]
+                                    .filter((value, index, self) => self.indexOf(value) === index)
+                                    .map((material) => (
+                                      <SelectItem key={material} value={material}>
+                                        {material}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                            )}
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -393,6 +437,15 @@ const ProveedoresPage: React.FC = () => {
                                     />
                                   </div>
                                   
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <Switch 
+                                      id="useCustomMaterialEdit" 
+                                      checked={useCustomMaterial}
+                                      onCheckedChange={setUseCustomMaterial}
+                                    />
+                                    <Label htmlFor="useCustomMaterialEdit">Digitar material manualmente</Label>
+                                  </div>
+                                  
                                   <FormField
                                     control={form.control}
                                     name="tipo_material"
@@ -400,21 +453,31 @@ const ProveedoresPage: React.FC = () => {
                                       <FormItem>
                                         <FormLabel>Tipo de Material</FormLabel>
                                         <FormControl>
-                                          <Select 
-                                            onValueChange={field.onChange} 
-                                            defaultValue={field.value}
-                                          >
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Selecciona el tipo de material" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {materiales.map((material) => (
-                                                <SelectItem key={material.id} value={material.nombre_material}>
-                                                  {material.nombre_material}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
+                                          {useCustomMaterial ? (
+                                            <Input
+                                              {...field}
+                                              placeholder="Ej: Arena fina"
+                                            />
+                                          ) : (
+                                            <Select 
+                                              onValueChange={field.onChange} 
+                                              defaultValue={field.value}
+                                            >
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Selecciona el tipo de material" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {[...materiales.map(m => m.nombre_material), ...uniqueMaterialTypes]
+                                                  .filter((value, index, self) => self.indexOf(value) === index)
+                                                  .map((material) => (
+                                                    <SelectItem key={material} value={material}>
+                                                      {material}
+                                                    </SelectItem>
+                                                  ))
+                                                }
+                                              </SelectContent>
+                                            </Select>
+                                          )}
                                         </FormControl>
                                         <FormMessage />
                                       </FormItem>

@@ -59,3 +59,10 @@ export const createProveedor = (
 export const getProveedoresNames = (): string[] => {
   return loadProveedores().map(proveedor => proveedor.nombre_proveedor);
 };
+
+// Get unique material types from providers
+export const getUniqueProviderMaterialTypes = (): string[] => {
+  const providers = loadProveedores();
+  const materialTypes = providers.map(provider => provider.tipo_material);
+  return [...new Set(materialTypes)];
+};
