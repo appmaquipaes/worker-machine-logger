@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ReportProvider } from './context/ReportContext';
 import { MachineProvider } from './context/MachineContext';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ThemeProvider } from './components/ui/theme-provider';
 
 import Index from './pages/Index';
 import Login from './pages/Login';
@@ -25,12 +25,12 @@ import VentasMaterialPage from './pages/VentasMaterialPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import ClientesPage from './pages/ClientesPage';
 
-import { initialSetup } from './utils/initialSetup';
+import { createInitialAdminUser } from './utils/initialSetup';
 import { Toaster } from './components/ui/sonner';
 
 const App: React.FC = () => {
   useEffect(() => {
-    initialSetup();
+    createInitialAdminUser();
   }, []);
 
   return (
