@@ -56,10 +56,10 @@ const Reports = () => {
                 <CardHeader className="bg-muted/50">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xl">
-                      {report.machineName} - {report.type}
+                      {report.machineName} - {report.reportType}
                     </CardTitle>
                     <span className="text-sm text-muted-foreground">
-                      {formatDate(report.date)}
+                      {formatDate(report.reportDate.toString())}
                     </span>
                   </div>
                 </CardHeader>
@@ -104,7 +104,7 @@ const Reports = () => {
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      Reportado por: {user?.email}
+                      Reportado por: {report.userName}
                     </p>
                   </div>
                 </CardContent>
