@@ -99,13 +99,16 @@ const ReportForm = () => {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
-  const [cantidadM3, setCantidadM3] = useState<number | undefined>(undefined);
+  const [cantidadM3, setCantidadM3] = useState<number | undefined>(15); // Default value set to 15
   
   // Nuevos estados para proveedores y clientes
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
   const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
+  
+  // Nuevo estado para guardar el tipo de material del proveedor seleccionado
+  const [materialTipoProveedor, setMaterialTipoProveedor] = useState<string>('');
   
   // Cargar materiales y tarifas al montar el componente
   const [materiales, setMateriales] = useState<Material[]>([]);
@@ -158,6 +161,17 @@ const ReportForm = () => {
       navigate('/machines');
     }
   }, [user, selectedMachine, navigate]);
+  
+  // Actualizar el tipo de material cuando cambia el proveedor seleccionado
+  useEffect(() => {
+    if (origin) {
+      const proveedorSeleccionado = proveedores.find(p => p.nombre_proveedor === origin);
+      if (proveedorSeleccionado) {
+        setMaterialTipoProveedor(proveedorSeleccionado.tipo_material);
+        setDescription(proveedorSeleccionado.tipo_material); // Auto-fill the description (material type)
+      }
+    }
+  }, [origin, proveedores]);
   
   // Función para agregar nuevo proveedor
   const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
@@ -339,7 +353,7 @@ const ReportForm = () => {
       procesarCompraAcopio(
         reportDate,
         origin,
-        description, // Asumimos que la descripción contiene el tipo de material
+        description, // Usamos la descripción que ahora será igual al tipo de material del proveedor
         cantidadM3
       );
     }
@@ -356,7 +370,7 @@ const ReportForm = () => {
     setOrigin('');
     setDestination('');
     setMaintenanceValue(undefined);
-    setCantidadM3(undefined);
+    setCantidadM3(15); // Reset to default 15
     
     // Opcional: redirigir al dashboard después de enviar
     navigate('/dashboard');
@@ -937,15 +951,33 @@ const ReportForm = () => {
                   {reportType === 'Viajes' ? 'Tipo de Material' : 'Descripción'}
                 </Label>
               </div>
-              <Textarea
-                id="description"
-                placeholder={reportType === 'Viajes' ? "Ingrese el tipo de material transportado" : "Ingrese los detalles del reporte"}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="text-lg p-4"
-                required
-              />
+              
+              {reportType === 'Viajes' && selectedMachine?.type === 'Camión' ? (
+                <div className="relative">
+                  <Input
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="text-lg p-6"
+                    readOnly
+                    disabled
+                    required
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Este campo muestra automáticamente el tipo de material del proveedor seleccionado
+                  </p>
+                </div>
+              ) : (
+                <Textarea
+                  id="description"
+                  placeholder="Ingrese los detalles del reporte"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  className="text-lg p-4"
+                  required
+                />
+              )}
             </div>
             
             <div className="flex justify-between pt-4">
