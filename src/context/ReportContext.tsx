@@ -97,7 +97,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     workSite?: string,
     origin?: string,
     destination?: string,
-    cantidadM3?: number
+    cantidadM3: number = 15 // Default value for truck reports
   ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");

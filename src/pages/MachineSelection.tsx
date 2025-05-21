@@ -24,8 +24,15 @@ const MachineSelection: React.FC = () => {
 
   const handleSelectMachine = (machine: typeof machines[0]) => {
     selectMachine(machine);
-    toast.success(`Máquina ${machine.name} seleccionada`);
-    navigate('/report'); // Redirect to the report form instead of reports page
+    
+    // Mensaje personalizado según el tipo de máquina
+    if (machine.type === 'Camión') {
+      toast.success(`Volqueta ${machine.name} seleccionada`);
+    } else {
+      toast.success(`Máquina ${machine.name} seleccionada`);
+    }
+    
+    navigate('/report'); // Redirect to the report form
   };
 
   if (!user) return null;
