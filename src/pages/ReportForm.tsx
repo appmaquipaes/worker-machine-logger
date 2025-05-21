@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -53,7 +52,7 @@ import { Material, loadMateriales } from '@/models/Materiales';
 import { CompraMaterial, createCompraMaterial, loadComprasMaterial, saveComprasMaterial } from '@/models/ComprasMaterial';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterCompra } from '@/models/InventarioAcopio';
 import { loadTarifas } from '@/models/Tarifas';
-import { Proveedor, loadProveedores, saveProveedores, createProveedor } from '@/models/Proveedores';
+import { Proveedor, loadProveedores, saveProveedores, createProveedor, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
 import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente } from '@/models/Clientes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -108,7 +107,7 @@ const ReportForm = () => {
   const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
   
   // Nuevo estado para guardar el tipo de material del proveedor seleccionado
-  const [materialTipoProveedor, setMaterialTipoProveedor] = useState<string>('');
+  const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
   
   // Cargar materiales y tarifas al montar el componente
   const [materiales, setMateriales] = useState<Material[]>([]);
@@ -167,11 +166,20 @@ const ReportForm = () => {
     if (origin) {
       const proveedorSeleccionado = proveedores.find(p => p.nombre_proveedor === origin);
       if (proveedorSeleccionado) {
-        setMaterialTipoProveedor(proveedorSeleccionado.tipo_material);
-        setDescription(proveedorSeleccionado.tipo_material); // Auto-fill the description (material type)
+        // Only set the default material type when first selecting a provider
+        if (!selectedMaterialType) {
+          setSelectedMaterialType(proveedorSeleccionado.tipo_material);
+        }
       }
     }
-  }, [origin, proveedores]);
+  }, [origin, proveedores, selectedMaterialType]);
+
+  // Update description when material type changes
+  useEffect(() => {
+    if (reportType === 'Viajes' && selectedMachine?.type === 'Camión') {
+      setDescription(selectedMaterialType);
+    }
+  }, [selectedMaterialType, reportType, selectedMachine]);
   
   // Función para agregar nuevo proveedor
   const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
@@ -353,7 +361,7 @@ const ReportForm = () => {
       procesarCompraAcopio(
         reportDate,
         origin,
-        description, // Usamos la descripción que ahora será igual al tipo de material del proveedor
+        selectedMaterialType, // Using the selected material type
         cantidadM3
       );
     }
@@ -371,6 +379,9 @@ const ReportForm = () => {
     setDestination('');
     setMaintenanceValue(undefined);
     setCantidadM3(15); // Reset to default 15
+    
+    // Reset the material type selection also
+    setSelectedMaterialType('');
     
     // Opcional: redirigir al dashboard después de enviar
     navigate('/dashboard');
@@ -953,18 +964,24 @@ const ReportForm = () => {
               </div>
               
               {reportType === 'Viajes' && selectedMachine?.type === 'Camión' ? (
-                <div className="relative">
-                  <Input
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="text-lg p-6"
-                    readOnly
-                    disabled
-                    required
-                  />
+                <div className="space-y-2">
+                  <Select 
+                    value={selectedMaterialType} 
+                    onValueChange={setSelectedMaterialType}
+                  >
+                    <SelectTrigger className="text-lg p-6">
+                      <SelectValue placeholder="Selecciona tipo de material" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getUniqueProviderMaterialTypes().map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {tipo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Este campo muestra automáticamente el tipo de material del proveedor seleccionado
+                    Seleccione el tipo de material transportado
                   </p>
                 </div>
               ) : (
