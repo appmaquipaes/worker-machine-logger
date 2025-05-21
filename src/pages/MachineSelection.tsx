@@ -25,7 +25,7 @@ const MachineSelection: React.FC = () => {
   const handleSelectMachine = (machine: typeof machines[0]) => {
     selectMachine(machine);
     toast.success(`Máquina ${machine.name} seleccionada`);
-    navigate('/reports');
+    navigate('/report'); // Redirect to the report form instead of reports page
   };
 
   if (!user) return null;
