@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, ArrowLeft } from 'lucide-react';
 
 const MachineManagement: React.FC = () => {
   const { user } = useAuth();
@@ -69,7 +69,17 @@ const MachineManagement: React.FC = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Gestión de Máquinas</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Gestión de Máquinas</h1>
+          <Button 
+            variant="back" 
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            Volver al panel admin
+          </Button>
+        </div>
         <p className="text-muted-foreground mt-2">
           Añade o elimina máquinas del sistema
         </p>

@@ -4,22 +4,19 @@
 export interface Cliente {
   id: string;
   nombre_cliente: string;
+  tipo_cliente: string;
   ciudad: string;
-  contacto_nombre: string;
-  contacto_telefono: string;
-  direccion?: string;
-  tipo_cliente?: string;
+  fecha_registro: Date;
   observaciones?: string;
 }
 
-// Client types
 export const tiposCliente = [
-  "Construcción",
-  "Industrial",
-  "Residencial",
-  "Gubernamental",
-  "Comercial",
-  "Otro"
+  'Floristeria',
+  'Particular', 
+  'Finca',
+  'Constructora',
+  'Firma Ingenieria',
+  'Acopio de Material'
 ];
 
 // Load clients from localStorage
@@ -28,7 +25,10 @@ export const loadClientes = (): Cliente[] => {
   if (!clientesString) return [];
 
   try {
-    return JSON.parse(clientesString);
+    return JSON.parse(clientesString).map((cliente: any) => ({
+      ...cliente,
+      fecha_registro: new Date(cliente.fecha_registro)
+    }));
   } catch (error) {
     console.error('Error loading clients:', error);
     return [];
@@ -43,21 +43,17 @@ export const saveClientes = (clientes: Cliente[]): void => {
 // Create a new client
 export const createCliente = (
   nombre_cliente: string,
+  tipo_cliente: string,
   ciudad: string,
-  contacto_nombre: string,
-  contacto_telefono: string,
-  direccion?: string,
-  tipo_cliente?: string,
+  fecha_registro: Date,
   observaciones?: string
 ): Cliente => {
   return {
     id: Date.now().toString(),
     nombre_cliente,
-    ciudad,
-    contacto_nombre,
-    contacto_telefono,
-    direccion,
     tipo_cliente,
+    ciudad,
+    fecha_registro,
     observaciones
   };
 };

@@ -300,7 +300,7 @@ const ProveedoresPage: React.FC = () => {
                       name="fecha_compra"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Fecha de Compra</FormLabel>
+                          <FormLabel>Fecha de Registro</FormLabel>
                           <FormControl>
                             <DatePicker date={field.value} setDate={(date) => field.onChange(date)} />
                           </FormControl>
@@ -343,7 +343,7 @@ const ProveedoresPage: React.FC = () => {
                     <TableHead>Material</TableHead>
                     <TableHead>Cantidad</TableHead>
                     <TableHead>Valor Unitario</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fecha Registro</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
