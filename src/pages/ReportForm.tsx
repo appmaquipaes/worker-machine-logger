@@ -190,11 +190,12 @@ const ReportForm = () => {
     navigate('/dashboard');
   };
   
-  const isShowingTripInput = reportType === 'Viajes' && isTransportVehicle();
+  const isShowingTripInput = reportType === 'Viajes';
   const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && !isTransportVehicle();
   const shouldShowOriginDestination = reportType === 'Viajes' && isTransportVehicle();
+  const shouldShowM3Input = reportType === 'Viajes' && isTransportVehicle();
   const shouldShowProveedorInput = reportType === 'Mantenimiento' && isTransportVehicle();
   const shouldShowKilometrajeInput = reportType === 'Combustible' && isTransportVehicle();
   
@@ -314,19 +315,17 @@ const ReportForm = () => {
                   <span className="text-lg">Novedades</span>
                 </Button>
                 
-                {isTransportVehicle() && (
-                  <Button
-                    type="button"
-                    variant={reportType === 'Viajes' ? 'default' : 'outline'}
-                    className={`flex flex-col items-center gap-2 h-auto py-4 ${
-                      reportType === 'Viajes' ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setReportType('Viajes')}
-                  >
-                    <Truck size={36} />
-                    <span className="text-lg">Viajes</span>
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant={reportType === 'Viajes' ? 'default' : 'outline'}
+                  className={`flex flex-col items-center gap-2 h-auto py-4 ${
+                    reportType === 'Viajes' ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => setReportType('Viajes')}
+                >
+                  <Truck size={36} />
+                  <span className="text-lg">Viajes</span>
+                </Button>
               </div>
             </div>
             
@@ -399,25 +398,27 @@ const ReportForm = () => {
                     required
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Truck size={24} />
-                    <Label htmlFor="cantidad-m3" className="text-lg">Cantidad de m³ Transportados</Label>
-                  </div>
-                  <Input 
-                    id="cantidad-m3"
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="Ej: 6"
-                    value={cantidadM3 === undefined ? '' : cantidadM3}
-                    onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
-                    className="text-lg p-6"
-                    required
-                  />
-                </div>
               </>
+            )}
+
+            {shouldShowM3Input && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Truck size={24} />
+                  <Label htmlFor="cantidad-m3" className="text-lg">Cantidad de m³ Transportados</Label>
+                </div>
+                <Input 
+                  id="cantidad-m3"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  placeholder="Ej: 6"
+                  value={cantidadM3 === undefined ? '' : cantidadM3}
+                  onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
+                  className="text-lg p-6"
+                  required
+                />
+              </div>
             )}
             
             {shouldShowHoursInput && (
