@@ -21,8 +21,8 @@ const InformesPage: React.FC = () => {
 
   const [selectedMachine, setSelectedMachine] = useState<string>('all');
   const [selectedReportType, setSelectedReportType] = useState<string>('all');
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
   const [reportData, setReportData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -181,12 +181,12 @@ const InformesPage: React.FC = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Fecha Inicio</label>
-              <DatePicker date={startDate} onDateChange={setStartDate} />
+              <DatePicker date={startDate} setDate={setStartDate} />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Fecha Fin</label>
-              <DatePicker date={endDate} onDateChange={setEndDate} />
+              <DatePicker date={endDate} setDate={setEndDate} />
             </div>
           </div>
 
