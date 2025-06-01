@@ -6,7 +6,7 @@ import { useReport, Report, ReportType } from "@/context/ReportContext";
 import { useMachine } from "@/context/MachineContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, FileSpreadsheet, Filter, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Filter, RefreshCw, Users, MapPin } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/DatePicker";
 import * as XLSX from 'xlsx';
 import { toast } from "sonner";
+import { loadClientes, getClienteByName } from '@/models/Clientes';
+import { getFincasByCliente } from '@/models/Fincas';
 
 const Reports = () => {
   const { user } = useAuth();
@@ -30,8 +32,14 @@ const Reports = () => {
   const [filterUserId, setFilterUserId] = useState<string>("");
   const [filterMachineId, setFilterMachineId] = useState<string>("");
   const [filterReportType, setFilterReportType] = useState<string>("");
+  const [filterCliente, setFilterCliente] = useState<string>("");
+  const [filterFinca, setFilterFinca] = useState<string>("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  
+  // State for clientes and fincas
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [fincas, setFincas] = useState<any[]>([]);
   
   // Get unique users from reports
   const uniqueUsers = Array.from(new Set(reports.map((report) => report.userId)))
@@ -42,6 +50,29 @@ const Reports = () => {
         name: report?.userName || userId,
       };
     });
+
+  // Load clientes
+  useEffect(() => {
+    const clientesData = loadClientes();
+    setClientes(clientesData);
+  }, []);
+
+  // Load fincas when cliente changes
+  useEffect(() => {
+    if (filterCliente) {
+      const cliente = getClienteByName(filterCliente);
+      if (cliente) {
+        const fincasData = getFincasByCliente(cliente.id);
+        setFincas(fincasData);
+      } else {
+        setFincas([]);
+      }
+      setFilterFinca(""); // Reset finca selection
+    } else {
+      setFincas([]);
+      setFilterFinca("");
+    }
+  }, [filterCliente]);
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -56,17 +87,57 @@ const Reports = () => {
     }
   }, [user, navigate]);
 
+  // Helper functions to extract cliente and finca from destination
+  const extractClienteFromDestination = (destination: string): string => {
+    if (!destination) return '';
+    return destination.split(' - ')[0] || '';
+  };
+
+  const extractFincaFromDestination = (destination: string): string => {
+    if (!destination) return '';
+    return destination.split(' - ')[1] || '';
+  };
+
   // Apply filters when they change
   useEffect(() => {
-    const filtered = getFilteredReports({
-      userId: filterUserId || undefined,
-      machineId: filterMachineId || undefined,
-      reportType: filterReportType as ReportType || undefined,
-      startDate: startDate,
-      endDate: endDate,
-    });
+    let filtered = [...reports];
+
+    if (filterUserId) {
+      filtered = filtered.filter(report => report.userId === filterUserId);
+    }
+
+    if (filterMachineId) {
+      filtered = filtered.filter(report => report.machineId === filterMachineId);
+    }
+
+    if (filterReportType) {
+      filtered = filtered.filter(report => report.reportType === filterReportType);
+    }
+
+    if (filterCliente) {
+      filtered = filtered.filter(report => {
+        const reportCliente = report.workSite || extractClienteFromDestination(report.destination);
+        return reportCliente === filterCliente;
+      });
+    }
+
+    if (filterFinca) {
+      filtered = filtered.filter(report => {
+        const reportFinca = extractFincaFromDestination(report.destination);
+        return reportFinca === filterFinca;
+      });
+    }
+
+    if (startDate) {
+      filtered = filtered.filter(report => report.reportDate >= startDate);
+    }
+
+    if (endDate) {
+      filtered = filtered.filter(report => report.reportDate <= endDate);
+    }
+
     setFilteredReports(filtered);
-  }, [filterUserId, filterMachineId, filterReportType, startDate, endDate, reports, getFilteredReports]);
+  }, [filterUserId, filterMachineId, filterReportType, filterCliente, filterFinca, startDate, endDate, reports]);
 
   // Format date function
   const formatDate = (dateString: string) => {
@@ -86,21 +157,20 @@ const Reports = () => {
         "Usuario": report.userName,
         "Máquina": report.machineName,
         "Tipo de Reporte": report.reportType,
+        "Cliente": report.workSite || extractClienteFromDestination(report.destination),
+        "Finca": extractFincaFromDestination(report.destination),
         "Descripción": report.description,
         "Fecha": formatDate(report.reportDate.toString()),
         "Viajes": report.trips || "",
         "Horas": report.hours || "",
         "Valor": report.value ? `$${report.value.toLocaleString()}` : "",
-        "Sitio": report.workSite || "",
         "Origen": report.origin || "",
         "Destino": report.destination || "",
         "Cantidad (m³)": report.cantidadM3 || "",
+        "Proveedor": report.proveedor || "",
+        "Kilometraje": report.kilometraje || "",
       }))
     );
-
-    // Auto-fit columns
-    const maxWidths: { [key: string]: number } = {};
-    const header = Object.keys(filteredReports[0] || {});
 
     // Create workbook and download
     const workbook = XLSX.utils.book_new();
@@ -119,6 +189,8 @@ const Reports = () => {
     setFilterUserId("");
     setFilterMachineId("");
     setFilterReportType("");
+    setFilterCliente("");
+    setFilterFinca("");
     setStartDate(undefined);
     setEndDate(undefined);
     setFilteredReports(reports);
@@ -144,7 +216,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* User filter */}
               <div className="space-y-2">
                 <Label htmlFor="filter-user">Usuario</Label>
@@ -200,6 +272,58 @@ const Reports = () => {
                 </Select>
               </div>
 
+              {/* Cliente filter */}
+              <div className="space-y-2">
+                <Label htmlFor="filter-cliente" className="flex items-center gap-1">
+                  <Users size={16} />
+                  Cliente
+                </Label>
+                <Select value={filterCliente} onValueChange={setFilterCliente}>
+                  <SelectTrigger id="filter-cliente">
+                    <SelectValue placeholder="Todos los clientes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos los clientes</SelectItem>
+                    {clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                        {cliente.nombre_cliente}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Finca filter */}
+              <div className="space-y-2">
+                <Label htmlFor="filter-finca" className="flex items-center gap-1">
+                  <MapPin size={16} />
+                  Finca
+                </Label>
+                <Select 
+                  value={filterFinca} 
+                  onValueChange={setFilterFinca}
+                  disabled={!filterCliente || fincas.length === 0}
+                >
+                  <SelectTrigger id="filter-finca">
+                    <SelectValue placeholder={
+                      !filterCliente 
+                        ? "Primero seleccione un cliente" 
+                        : fincas.length === 0 
+                          ? "El cliente no tiene fincas"
+                          : "Todas las fincas"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas las fincas</SelectItem>
+                    {fincas.map((finca) => (
+                      <SelectItem key={finca.id} value={finca.nombre_finca}>
+                        {finca.nombre_finca} - {finca.ciudad}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Date filter */}
               <div className="space-y-2">
                 <Label>Fecha Desde</Label>
@@ -237,7 +361,7 @@ const Reports = () => {
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
           Mostrando {filteredReports.length} {filteredReports.length === 1 ? 'reporte' : 'reportes'} 
-          {filterUserId || filterMachineId || filterReportType || startDate || endDate ? ' con los filtros aplicados' : ''}
+          {filterUserId || filterMachineId || filterReportType || filterCliente || filterFinca || startDate || endDate ? ' con los filtros aplicados' : ''}
         </div>
 
         <div className="grid gap-6">
@@ -266,6 +390,26 @@ const Reports = () => {
                   <div className="space-y-4">
                     <p>{report.description}</p>
                     
+                    {/* Show client and finca information */}
+                    {(report.workSite || report.destination) && (
+                      <div className="flex gap-4 text-sm bg-muted/30 p-3 rounded">
+                        {(report.workSite || extractClienteFromDestination(report.destination)) && (
+                          <div className="flex items-center gap-1">
+                            <Users size={14} />
+                            <span className="font-semibold">Cliente:</span> 
+                            {report.workSite || extractClienteFromDestination(report.destination)}
+                          </div>
+                        )}
+                        {extractFincaFromDestination(report.destination) && (
+                          <div className="flex items-center gap-1">
+                            <MapPin size={14} />
+                            <span className="font-semibold">Finca:</span> 
+                            {extractFincaFromDestination(report.destination)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     {/* Conditional rendering based on report type */}
                     {report.trips && (
                       <p>
@@ -282,24 +426,24 @@ const Reports = () => {
                         <span className="font-semibold">Valor:</span> ${report.value.toLocaleString()}
                       </p>
                     )}
-                    {report.workSite && (
-                      <p>
-                        <span className="font-semibold">Sitio:</span> {report.workSite}
-                      </p>
-                    )}
                     {report.origin && (
                       <p>
                         <span className="font-semibold">Origen:</span> {report.origin}
                       </p>
                     )}
-                    {report.destination && (
-                      <p>
-                        <span className="font-semibold">Destino:</span> {report.destination}
-                      </p>
-                    )}
                     {report.cantidadM3 && (
                       <p>
                         <span className="font-semibold">Cantidad:</span> {report.cantidadM3} m³
+                      </p>
+                    )}
+                    {report.proveedor && (
+                      <p>
+                        <span className="font-semibold">Proveedor:</span> {report.proveedor}
+                      </p>
+                    )}
+                    {report.kilometraje && (
+                      <p>
+                        <span className="font-semibold">Kilometraje:</span> {report.kilometraje} km
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground">

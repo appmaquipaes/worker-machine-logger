@@ -157,6 +157,17 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       .reduce((total, report) => total + report.value, 0);
   };
 
+  // Helper functions to extract cliente and finca from destination
+  const extractClienteFromDestination = (destination: string): string => {
+    if (!destination) return '';
+    return destination.split(' - ')[0] || '';
+  };
+
+  const extractFincaFromDestination = (destination: string): string => {
+    if (!destination) return '';
+    return destination.split(' - ')[1] || '';
+  };
+
   const getFilteredReports = (filters: any) => {
     let filtered = [...reports];
     
@@ -166,6 +177,26 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     
     if (filters.machineId && filters.machineId !== 'all') {
       filtered = filtered.filter(report => report.machineId === filters.machineId);
+    }
+
+    if (filters.userId && filters.userId !== 'all') {
+      filtered = filtered.filter(report => report.userId === filters.userId);
+    }
+
+    // Filter by cliente
+    if (filters.cliente && filters.cliente !== 'all') {
+      filtered = filtered.filter(report => {
+        const reportCliente = report.workSite || extractClienteFromDestination(report.destination);
+        return reportCliente === filters.cliente;
+      });
+    }
+
+    // Filter by finca
+    if (filters.finca && filters.finca !== 'all') {
+      filtered = filtered.filter(report => {
+        const reportFinca = extractFincaFromDestination(report.destination);
+        return reportFinca === filters.finca;
+      });
     }
     
     if (filters.startDate) {
