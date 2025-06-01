@@ -134,9 +134,9 @@ const ReportForm = () => {
       return;
     }
     
-    // Validar sitio de trabajo para horas trabajadas (solo para máquinas que no son vehículos de transporte)
-    if (reportType === 'Horas Trabajadas' && !isTransportVehicle() && !workSite.trim()) {
-      toast.error('Debe ingresar el sitio de trabajo');
+    // Validar sitio de trabajo para horas trabajadas
+    if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
+      toast.error('Debe seleccionar el sitio de trabajo');
       return;
     }
     
@@ -147,8 +147,8 @@ const ReportForm = () => {
         return;
       }
       
-      // Para vehículos de transporte, validar kilometraje
-      if (isTransportVehicle() && (kilometraje === undefined || kilometraje <= 0)) {
+      // Validar kilometraje actual
+      if (kilometraje === undefined || kilometraje <= 0) {
         toast.error('Debe ingresar el kilometraje actual del vehículo');
         return;
       }
@@ -161,8 +161,8 @@ const ReportForm = () => {
         return;
       }
       
-      // Para vehículos de transporte, validar proveedor
-      if (isTransportVehicle() && !proveedor.trim()) {
+      // Validar proveedor
+      if (!proveedor.trim()) {
         toast.error('Debe seleccionar un proveedor para el mantenimiento');
         return;
       }
@@ -179,12 +179,12 @@ const ReportForm = () => {
       (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
       reportType === 'Combustible' ? value : 
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-      (reportType === 'Horas Trabajadas' && !isTransportVehicle()) ? workSite : undefined,
+      reportType === 'Horas Trabajadas' ? workSite : undefined,
       reportType === 'Viajes' ? origin : undefined,
       reportType === 'Viajes' ? destination : undefined,
       reportType === 'Viajes' ? cantidadM3 : undefined,
-      (reportType === 'Mantenimiento' && isTransportVehicle()) ? proveedor : undefined,
-      (reportType === 'Combustible' && isTransportVehicle()) ? kilometraje : undefined
+      reportType === 'Mantenimiento' ? proveedor : undefined,
+      reportType === 'Combustible' ? kilometraje : undefined
     );
     
     // Mostrar confirmación
@@ -211,11 +211,11 @@ const ReportForm = () => {
   const isShowingTripInput = reportType === 'Viajes';
   const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
   const shouldShowValueInput = reportType === 'Combustible';
-  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && !isTransportVehicle();
+  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
   const shouldShowOriginDestination = reportType === 'Viajes';
   const shouldShowM3Input = reportType === 'Viajes' && isTransportVehicle();
-  const shouldShowProveedorInput = reportType === 'Mantenimiento' && isTransportVehicle();
-  const shouldShowKilometrajeInput = reportType === 'Combustible' && isTransportVehicle();
+  const shouldShowProveedorInput = reportType === 'Mantenimiento';
+  const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowTipoMateriaInput = reportType === 'Viajes';
   
   const getReportTypeIcon = (type: ReportType) => {
@@ -352,17 +352,20 @@ const ReportForm = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
                   <MapPin size={24} />
-                  <Label htmlFor="work-site" className="text-lg">Sitio de Trabajo</Label>
+                  <Label htmlFor="work-site" className="text-lg">Sitio de Trabajo (Cliente)</Label>
                 </div>
-                <Input 
-                  id="work-site"
-                  type="text"
-                  placeholder="Ej: Obra Norte"
-                  value={workSite}
-                  onChange={(e) => setWorkSite(e.target.value)}
-                  className="text-lg p-6"
-                  required
-                />
+                <Select onValueChange={setWorkSite} value={workSite}>
+                  <SelectTrigger className="text-lg p-6">
+                    <SelectValue placeholder="Selecciona el sitio de trabajo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                        {cliente.nombre_cliente} - {cliente.ciudad}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             
