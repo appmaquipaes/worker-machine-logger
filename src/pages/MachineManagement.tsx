@@ -15,12 +15,13 @@ import { Trash2, Plus, ArrowLeft } from 'lucide-react';
 
 const MachineManagement: React.FC = () => {
   const { user } = useAuth();
-  const { machines, removeMachine, addMachine } = useMachine();
+  const { machines, deleteMachine, addMachine } = useMachine();
   const navigate = useNavigate();
   
   const [newMachine, setNewMachine] = useState<Omit<Machine, 'id'>>({
     name: '',
     type: 'Excavadora',
+    status: 'available',
   });
 
   // Redirigir si no hay un usuario o no es administrador
@@ -37,7 +38,7 @@ const MachineManagement: React.FC = () => {
   }, [user, navigate]);
 
   const handleRemoveMachine = (id: string) => {
-    removeMachine(id);
+    deleteMachine(id);
   };
 
   const handleAddMachine = () => {
@@ -51,10 +52,11 @@ const MachineManagement: React.FC = () => {
     setNewMachine({
       name: '',
       type: 'Excavadora',
+      status: 'available',
     });
   };
 
-  const machineTypes = [
+  const machineTypes: Machine['type'][] = [
     'Excavadora',
     'Bulldozer',
     'Compactador',
@@ -64,7 +66,8 @@ const MachineManagement: React.FC = () => {
     'Camión',
     'Volqueta',
     'Camabaja',
-    'Semirremolque, Tractomula',
+    'Semirremolque',
+    'Tractomula',
   ];
 
   if (!user || user.role !== 'Administrador') return null;
@@ -110,7 +113,7 @@ const MachineManagement: React.FC = () => {
               <Label htmlFor="type">Tipo</Label>
               <Select 
                 value={newMachine.type} 
-                onValueChange={(value) => setNewMachine({...newMachine, type: value})}
+                onValueChange={(value: Machine['type']) => setNewMachine({...newMachine, type: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un tipo" />
