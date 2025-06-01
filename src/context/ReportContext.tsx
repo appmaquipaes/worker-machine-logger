@@ -1,12 +1,14 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
+
+export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes';
 
 export interface Report {
   id: string;
   machineId: string;
+  machineName: string;
   userName: string;
-  reportType: 'Viajes' | 'Combustible' | 'Lubricantes' | 'Mantenimiento' | 'Otros';
+  reportType: ReportType;
   description: string;
   value: number;
   createdAt: Date;
@@ -14,11 +16,31 @@ export interface Report {
   origin?: string;
   destination?: string;
   cantidadM3?: number;
+  trips?: number;
+  hours?: number;
+  workSite?: string;
+  proveedor?: string;
+  kilometraje?: number;
 }
 
 interface ReportContextType {
   reports: Report[];
-  addReport: (report: Omit<Report, 'id' | 'createdAt'>) => void;
+  addReport: (
+    machineId: string,
+    machineName: string,
+    reportType: ReportType,
+    description: string,
+    reportDate: Date,
+    trips?: number,
+    hours?: number,
+    value?: number,
+    workSite?: string,
+    origin?: string,
+    destination?: string,
+    cantidadM3?: number,
+    proveedor?: string,
+    kilometraje?: number
+  ) => void;
   updateReport: (id: string, updatedReport: Partial<Report>) => void;
   deleteReport: (id: string) => void;
   getReportsByMachine: (machineId: string) => Report[];
@@ -27,13 +49,16 @@ interface ReportContextType {
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
-export const useReports = () => {
+export const useReport = () => {
   const context = useContext(ReportContext);
   if (!context) {
-    throw new Error('useReports must be used within a ReportProvider');
+    throw new Error('useReport debe ser utilizado dentro de un ReportProvider');
   }
   return context;
 };
+
+// Keep useReports for backward compatibility
+export const useReports = useReport;
 
 interface ReportProviderProps {
   children: ReactNode;
@@ -59,11 +84,40 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     localStorage.setItem('reports', JSON.stringify(newReports));
   };
 
-  const addReport = (reportData: Omit<Report, 'id' | 'createdAt'>) => {
+  const addReport = (
+    machineId: string,
+    machineName: string,
+    reportType: ReportType,
+    description: string,
+    reportDate: Date,
+    trips?: number,
+    hours?: number,
+    value?: number,
+    workSite?: string,
+    origin?: string,
+    destination?: string,
+    cantidadM3?: number,
+    proveedor?: string,
+    kilometraje?: number
+  ) => {
     const newReport: Report = {
-      ...reportData,
       id: Date.now().toString(),
+      machineId,
+      machineName,
+      userName: 'Current User', // This should come from auth context
+      reportType,
+      description,
+      reportDate,
       createdAt: new Date(),
+      value: value || 0,
+      trips,
+      hours,
+      workSite,
+      origin,
+      destination,
+      cantidadM3,
+      proveedor,
+      kilometraje,
     };
     
     const updatedReports = [...reports, newReport];
