@@ -52,7 +52,7 @@ import { Material, loadMateriales } from '@/models/Materiales';
 import { CompraMaterial, createCompraMaterial, loadComprasMaterial, saveComprasMaterial } from '@/models/ComprasMaterial';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterCompra } from '@/models/InventarioAcopio';
 import { loadTarifas } from '@/models/Tarifas';
-import { Proveedor, loadProveedores, saveProveedores, createProveedor, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
+import { Proveedor, loadProveedores, saveProveedores, createProveedor, ProductoProveedor, loadProductosProveedores } from '@/models/Proveedores';
 import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente } from '@/models/Clientes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -63,12 +63,13 @@ const ACOPIO_DESTINO = "ACOPIO MAQUIPAES";
 
 // Esquemas de validación con Zod
 const proveedorSchema = z.object({
-  nombre_proveedor: z.string().min(1, { message: "El nombre del proveedor es obligatorio" }),
-  tipo_material: z.string().min(1, { message: "El tipo de material es obligatorio" }),
-  cantidad: z.coerce.number().min(0, { message: "La cantidad debe ser un número positivo" }),
-  valor_unitario: z.coerce.number().min(0, { message: "El valor debe ser un número positivo" }),
+  nombre: z.string().min(1, { message: "El nombre del proveedor es obligatorio" }),
   ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
-  fecha_compra: z.date(),
+  contacto: z.string().min(1, { message: "El contacto es obligatorio" }),
+  correo_electronico: z.string().email({ message: "Correo electrónico inválido" }),
+  nit: z.string().min(1, { message: "El NIT es obligatorio" }),
+  tipo_proveedor: z.enum(['Materiales', 'Lubricantes', 'Repuestos', 'Servicios', 'Otros']),
+  forma_pago: z.string().min(1, { message: "La forma de pago es obligatoria" }),
   observaciones: z.string().optional()
 });
 
@@ -112,17 +113,19 @@ const ReportForm = () => {
   // Cargar materiales y tarifas al montar el componente
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [tarifas, setTarifas] = useState<any[]>([]);
+  const [productosProveedores, setProductosProveedores] = useState<ProductoProveedor[]>([]);
   
   // Formularios para agregar proveedor y cliente
   const proveedorForm = useForm<z.infer<typeof proveedorSchema>>({
     resolver: zodResolver(proveedorSchema),
     defaultValues: {
-      nombre_proveedor: "",
-      tipo_material: "",
-      cantidad: 0,
-      valor_unitario: 0,
+      nombre: "",
       ciudad: "",
-      fecha_compra: new Date(),
+      contacto: "",
+      correo_electronico: "",
+      nit: "",
+      tipo_proveedor: "Materiales",
+      forma_pago: "",
       observaciones: ""
     }
   });
@@ -146,6 +149,7 @@ const ReportForm = () => {
     setTarifas(loadTarifas());
     setProveedores(loadProveedores());
     setClientes(loadClientes());
+    setProductosProveedores(loadProductosProveedores());
   }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -164,15 +168,20 @@ const ReportForm = () => {
   // Actualizar el tipo de material cuando cambia el proveedor seleccionado
   useEffect(() => {
     if (origin) {
-      const proveedorSeleccionado = proveedores.find(p => p.nombre_proveedor === origin);
+      const proveedorSeleccionado = proveedores.find(p => p.nombre === origin);
       if (proveedorSeleccionado) {
-        // Only set the default material type when first selecting a provider
-        if (!selectedMaterialType) {
-          setSelectedMaterialType(proveedorSeleccionado.tipo_material);
+        // Get products for this provider to determine material types
+        const productosProveedor = productosProveedores.filter(p => p.proveedor_id === proveedorSeleccionado.id);
+        if (productosProveedor.length > 0 && !selectedMaterialType) {
+          // Set first material product as default
+          const primerMaterial = productosProveedor.find(p => p.tipo_insumo === 'Material');
+          if (primerMaterial) {
+            setSelectedMaterialType(primerMaterial.nombre_producto);
+          }
         }
       }
     }
-  }, [origin, proveedores, selectedMaterialType]);
+  }, [origin, proveedores, productosProveedores, selectedMaterialType]);
 
   // Update description when material type changes
   useEffect(() => {
@@ -184,19 +193,20 @@ const ReportForm = () => {
   // Función para agregar nuevo proveedor
   const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
     const nuevoProveedor = createProveedor(
-      data.nombre_proveedor,
-      data.tipo_material,
-      data.cantidad,
-      data.valor_unitario,
+      data.nombre,
       data.ciudad,
-      data.fecha_compra,
+      data.contacto,
+      data.correo_electronico,
+      data.nit,
+      data.tipo_proveedor,
+      data.forma_pago,
       data.observaciones
     );
     
     const proveedoresActualizados = [...proveedores, nuevoProveedor];
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
-    setOrigin(nuevoProveedor.nombre_proveedor);
+    setOrigin(nuevoProveedor.nombre);
     setProveedorDialogOpen(false);
     toast.success('Proveedor agregado correctamente');
   };
@@ -219,6 +229,13 @@ const ReportForm = () => {
     setDestination(nuevoCliente.nombre_cliente);
     setClienteDialogOpen(false);
     toast.success('Cliente agregado correctamente');
+  };
+  
+  // Función para obtener tipos de materiales únicos de productos de proveedores
+  const getUniqueProviderMaterialTypes = (): string[] => {
+    const materialProducts = productosProveedores.filter(p => p.tipo_insumo === 'Material');
+    const materialTypes = materialProducts.map(p => p.nombre_producto);
+    return [...new Set(materialTypes)];
   };
   
   // Función para actualizar inventario cuando el destino es el acopio
@@ -586,14 +603,14 @@ const ReportForm = () => {
                           <DialogHeader>
                             <DialogTitle>Agregar Nuevo Proveedor</DialogTitle>
                             <DialogDescription>
-                              Llena los datos del nuevo proveedor de material
+                              Llena los datos del nuevo proveedor
                             </DialogDescription>
                           </DialogHeader>
                           <Form {...proveedorForm}>
                             <form onSubmit={proveedorForm.handleSubmit(handleAddProveedor)} className="space-y-4">
                               <FormField
                                 control={proveedorForm.control}
-                                name="nombre_proveedor"
+                                name="nombre"
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Nombre del Proveedor</FormLabel>
@@ -607,26 +624,12 @@ const ReportForm = () => {
                               
                               <FormField
                                 control={proveedorForm.control}
-                                name="tipo_material"
+                                name="ciudad"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Tipo de Material</FormLabel>
+                                    <FormLabel>Ciudad</FormLabel>
                                     <FormControl>
-                                      <Select 
-                                        onValueChange={field.onChange} 
-                                        defaultValue={field.value}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Selecciona el tipo de material" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {materiales.map((material) => (
-                                            <SelectItem key={material.id} value={material.nombre_material}>
-                                              {material.nombre_material}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                      <Input {...field} placeholder="Ej: Medellín" />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -636,12 +639,12 @@ const ReportForm = () => {
                               <div className="grid grid-cols-2 gap-4">
                                 <FormField
                                   control={proveedorForm.control}
-                                  name="cantidad"
+                                  name="contacto"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Cantidad (m³)</FormLabel>
+                                      <FormLabel>Contacto</FormLabel>
                                       <FormControl>
-                                        <Input type="number" {...field} placeholder="0" />
+                                        <Input {...field} placeholder="Nombre contacto" />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -650,12 +653,53 @@ const ReportForm = () => {
                                 
                                 <FormField
                                   control={proveedorForm.control}
-                                  name="valor_unitario"
+                                  name="correo_electronico"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Valor Unitario</FormLabel>
+                                      <FormLabel>Correo</FormLabel>
                                       <FormControl>
-                                        <Input type="number" {...field} placeholder="0" />
+                                        <Input type="email" {...field} placeholder="correo@ejemplo.com" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={proveedorForm.control}
+                                  name="nit"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>NIT</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} placeholder="123456789-0" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={proveedorForm.control}
+                                  name="tipo_proveedor"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Tipo</FormLabel>
+                                      <FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Materiales">Materiales</SelectItem>
+                                            <SelectItem value="Lubricantes">Lubricantes</SelectItem>
+                                            <SelectItem value="Repuestos">Repuestos</SelectItem>
+                                            <SelectItem value="Servicios">Servicios</SelectItem>
+                                            <SelectItem value="Otros">Otros</SelectItem>
+                                          </SelectContent>
+                                        </Select>
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -665,12 +709,12 @@ const ReportForm = () => {
                               
                               <FormField
                                 control={proveedorForm.control}
-                                name="ciudad"
+                                name="forma_pago"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Ciudad</FormLabel>
+                                    <FormLabel>Forma de Pago</FormLabel>
                                     <FormControl>
-                                      <Input {...field} placeholder="Ej: Medellín" />
+                                      <Input {...field} placeholder="Ej: Contado, 30 días" />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -706,8 +750,8 @@ const ReportForm = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {proveedores.map((proveedor) => (
-                        <SelectItem key={proveedor.id} value={proveedor.nombre_proveedor}>
-                          {proveedor.nombre_proveedor}
+                        <SelectItem key={proveedor.id} value={proveedor.nombre}>
+                          {proveedor.nombre}
                         </SelectItem>
                       ))}
                     </SelectContent>
