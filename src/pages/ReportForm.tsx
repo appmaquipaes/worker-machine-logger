@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from "sonner";
 import { DatePicker } from '@/components/DatePicker';
+import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 import { 
   ArrowLeft, 
   Clock, 
@@ -32,7 +33,6 @@ import {
   Gauge
 } from 'lucide-react';
 import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
-import { loadClientes } from '@/models/Clientes';
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -49,21 +49,21 @@ const ReportForm = () => {
   const [workSite, setWorkSite] = useState<string>('');
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
+  const [selectedCliente, setSelectedCliente] = useState<string>('');
+  const [selectedFinca, setSelectedFinca] = useState<string>('');
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
   const [cantidadM3, setCantidadM3] = useState<number | undefined>(15);
   const [proveedor, setProveedor] = useState<string>('');
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
   const [tipoMateria, setTipoMateria] = useState<string>('');
   
-  // Cargar proveedores, clientes, tipos de materia e inventario
+  // Cargar proveedores, tipos de materia e inventario
   const [proveedores, setProveedores] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]);
   const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
   const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
   
   useEffect(() => {
     setProveedores(loadProveedores());
-    setClientes(loadClientes());
     setTiposMaterial(getUniqueProviderMaterialTypes());
     
     // Cargar inventario de acopio para mostrar materiales disponibles
@@ -90,6 +90,23 @@ const ReportForm = () => {
   const isTransportVehicle = () => {
     return selectedMachine && ['Volqueta', 'Camabaja', 'Semirremolque', 'Tractomula'].includes(selectedMachine.type);
   };
+
+  // Manejar cambio de cliente para viajes (workSite)
+  const handleClienteChangeForWorkSite = (cliente: string) => {
+    setWorkSite(cliente);
+  };
+
+  // Manejar cambio de cliente para viajes (destino)
+  const handleClienteChangeForDestination = (cliente: string) => {
+    setSelectedCliente(cliente);
+    setDestination(''); // Reset destination when client changes
+  };
+
+  // Manejar cambio de finca para viajes (destino)
+  const handleFincaChangeForDestination = (finca: string) => {
+    setSelectedFinca(finca);
+    setDestination(finca);
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +116,7 @@ const ReportForm = () => {
       return;
     }
     
-    if (!description.trim()) {
+    if (!description.trim() && !(reportType === 'Viajes' && origin === 'Acopio Maquipaes')) {
       toast.error('La descripción no puede estar vacía');
       return;
     }
@@ -117,9 +134,14 @@ const ReportForm = () => {
         return;
       }
 
-      // Validar destino desde clientes
-      if (!destination.trim()) {
-        toast.error('Debe seleccionar el destino del viaje');
+      // Validar destino (cliente y finca)
+      if (!selectedCliente.trim()) {
+        toast.error('Debe seleccionar el cliente destino');
+        return;
+      }
+
+      if (!selectedFinca.trim()) {
+        toast.error('Debe seleccionar la finca destino');
         return;
       }
 
@@ -170,7 +192,7 @@ const ReportForm = () => {
     
     // Validar sitio de trabajo para horas trabajadas
     if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
-      toast.error('Debe seleccionar el sitio de trabajo');
+      toast.error('Debe seleccionar el cliente para el sitio de trabajo');
       return;
     }
     
@@ -202,10 +224,14 @@ const ReportForm = () => {
       }
     }
     
-    // Enviar el reporte - para viajes desde acopio, usar el material seleccionado como descripción
+    // Preparar descripción y destino final
     const reportDescription = (reportType === 'Viajes' && origin === 'Acopio Maquipaes') 
       ? tipoMateria 
       : description;
+    
+    const finalDestination = reportType === 'Viajes' 
+      ? `${selectedCliente} - ${selectedFinca}`
+      : destination;
     
     addReport(
       selectedMachine.id,
@@ -219,7 +245,7 @@ const ReportForm = () => {
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
       reportType === 'Horas Trabajadas' ? workSite : undefined,
       reportType === 'Viajes' ? origin : undefined,
-      reportType === 'Viajes' ? destination : undefined,
+      reportType === 'Viajes' ? finalDestination : undefined,
       reportType === 'Viajes' ? cantidadM3 : undefined,
       reportType === 'Mantenimiento' ? proveedor : undefined,
       reportType === 'Combustible' ? kilometraje : undefined
@@ -235,6 +261,8 @@ const ReportForm = () => {
     setValue(undefined);
     setWorkSite('');
     setOrigin('');
+    setSelectedCliente('');
+    setSelectedFinca('');
     setDestination('');
     setMaintenanceValue(undefined);
     setCantidadM3(15);
@@ -391,20 +419,14 @@ const ReportForm = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
                   <MapPin size={24} />
-                  <Label htmlFor="work-site" className="text-lg">Sitio de Trabajo (Cliente)</Label>
+                  <Label className="text-lg">Cliente del Sitio de Trabajo</Label>
                 </div>
-                <Select onValueChange={setWorkSite} value={workSite}>
-                  <SelectTrigger className="text-lg p-6">
-                    <SelectValue placeholder="Selecciona el sitio de trabajo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
-                        {cliente.nombre_cliente} - {cliente.ciudad}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ClienteFincaSelector
+                  selectedCliente={workSite}
+                  selectedFinca=""
+                  onClienteChange={handleClienteChangeForWorkSite}
+                  onFincaChange={() => {}} // No necesitamos finca para sitio de trabajo
+                />
               </div>
             )}
             
@@ -450,20 +472,14 @@ const ReportForm = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin size={24} />
-                    <Label htmlFor="destination" className="text-lg">Destino (Cliente)</Label>
+                    <Label className="text-lg">Destino (Cliente y Finca)</Label>
                   </div>
-                  <Select onValueChange={setDestination} value={destination}>
-                    <SelectTrigger className="text-lg p-6">
-                      <SelectValue placeholder="Selecciona el destino" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
-                          {cliente.nombre_cliente} - {cliente.ciudad}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ClienteFincaSelector
+                    selectedCliente={selectedCliente}
+                    selectedFinca={selectedFinca}
+                    onClienteChange={handleClienteChangeForDestination}
+                    onFincaChange={handleFincaChangeForDestination}
+                  />
                 </div>
               </>
             )}
