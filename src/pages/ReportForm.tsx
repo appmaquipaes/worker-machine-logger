@@ -54,15 +54,22 @@ const ReportForm = () => {
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
   const [tipoMateria, setTipoMateria] = useState<string>('');
   
-  // Cargar proveedores, clientes y tipos de materia
+  // Cargar proveedores, clientes, tipos de materia e inventario
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
+  const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
   
   useEffect(() => {
     setProveedores(loadProveedores());
     setClientes(loadClientes());
     setTiposMaterial(getUniqueProviderMaterialTypes());
+    
+    // Cargar inventario de acopio para mostrar materiales disponibles
+    const inventario = localStorage.getItem('inventario_acopio');
+    if (inventario) {
+      setInventarioAcopio(JSON.parse(inventario));
+    }
   }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -115,16 +122,42 @@ const ReportForm = () => {
         return;
       }
 
-      // Validar tipo de materia
-      if (!tipoMateria.trim()) {
-        toast.error('Debe seleccionar el tipo de materia');
-        return;
-      }
-
-      // Validar cantidad de m3 para vehículos de transporte
-      if (isTransportVehicle() && (cantidadM3 === undefined || cantidadM3 <= 0)) {
-        toast.error('Debe ingresar una cantidad válida de m³ transportados');
-        return;
+      // Para viajes desde Acopio Maquipaes, validar material del inventario
+      if (origin === 'Acopio Maquipaes') {
+        if (!tipoMateria.trim()) {
+          toast.error('Debe seleccionar el tipo de material desde el inventario');
+          return;
+        }
+        
+        // Validar cantidad de m3 
+        if (cantidadM3 === undefined || cantidadM3 <= 0) {
+          toast.error('Debe ingresar una cantidad válida de m³ transportados');
+          return;
+        }
+        
+        // Verificar que hay suficiente material en inventario
+        const materialEnInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+        if (!materialEnInventario) {
+          toast.error('El material seleccionado no está disponible en el inventario');
+          return;
+        }
+        
+        if (materialEnInventario.cantidad_disponible < cantidadM3) {
+          toast.error(`Solo hay ${materialEnInventario.cantidad_disponible} m³ disponibles de ${tipoMateria}`);
+          return;
+        }
+      } else {
+        // Para otros orígenes, validar tipo de materia general
+        if (!tipoMateria.trim()) {
+          toast.error('Debe seleccionar el tipo de materia');
+          return;
+        }
+        
+        // Validar cantidad de m3 para vehículos de transporte
+        if (isTransportVehicle() && (cantidadM3 === undefined || cantidadM3 <= 0)) {
+          toast.error('Debe ingresar una cantidad válida de m³ transportados');
+          return;
+        }
       }
     }
     
@@ -168,12 +201,16 @@ const ReportForm = () => {
       }
     }
     
-    // Enviar el reporte
+    // Enviar el reporte - para viajes desde acopio, usar el material seleccionado como descripción
+    const reportDescription = (reportType === 'Viajes' && origin === 'Acopio Maquipaes') 
+      ? tipoMateria 
+      : description;
+    
     addReport(
       selectedMachine.id,
       selectedMachine.name,
       reportType,
-      description,
+      reportDescription,
       reportDate,
       reportType === 'Viajes' ? trips : undefined,
       (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
@@ -213,10 +250,9 @@ const ReportForm = () => {
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
   const shouldShowOriginDestination = reportType === 'Viajes';
-  const shouldShowM3Input = reportType === 'Viajes' && isTransportVehicle();
-  const shouldShowProveedorInput = reportType === 'Mantenimiento';
-  const shouldShowKilometrajeInput = reportType === 'Combustible';
-  const shouldShowTipoMateriaInput = reportType === 'Viajes';
+  const shouldShowM3Input = reportType === 'Viajes' && (isTransportVehicle() || origin === 'Acopio Maquipaes');
+  const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes';
+  const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
   
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
@@ -429,6 +465,27 @@ const ReportForm = () => {
               </>
             )}
 
+            {shouldShowInventoryMaterialSelect && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <ToolIcon size={24} />
+                  <Label htmlFor="material-inventario" className="text-lg">Material del Inventario</Label>
+                </div>
+                <Select onValueChange={setTipoMateria} value={tipoMateria}>
+                  <SelectTrigger className="text-lg p-6">
+                    <SelectValue placeholder="Selecciona el material del inventario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inventarioAcopio.map((item) => (
+                      <SelectItem key={item.id} value={item.tipo_material}>
+                        {item.tipo_material} ({item.cantidad_disponible} m³ disponibles)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {shouldShowTipoMateriaInput && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
@@ -454,13 +511,22 @@ const ReportForm = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
                   <Truck size={24} />
-                  <Label htmlFor="cantidad-m3" className="text-lg">Cantidad de m³ Transportados</Label>
+                  <Label htmlFor="cantidad-m3" className="text-lg">
+                    Cantidad de m³ Transportados
+                    {shouldShowInventoryMaterialSelect && tipoMateria && (
+                      <span className="text-sm text-muted-foreground ml-2">
+                        (Disponibles: {inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible || 0} m³)
+                      </span>
+                    )}
+                  </Label>
                 </div>
                 <Input 
                   id="cantidad-m3"
                   type="number"
                   min="0.1"
                   step="0.1"
+                  max={shouldShowInventoryMaterialSelect && tipoMateria ? 
+                    inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible : undefined}
                   placeholder="Ej: 6"
                   value={cantidadM3 === undefined ? '' : cantidadM3}
                   onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
@@ -470,43 +536,6 @@ const ReportForm = () => {
               </div>
             )}
             
-            {shouldShowHoursInput && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock size={24} />
-                  <Label htmlFor="hours" className="text-lg">Número de Horas</Label>
-                </div>
-                <Input 
-                  id="hours"
-                  type="number"
-                  min="1"
-                  step="0.5"
-                  placeholder="Ej: 8"
-                  value={hours === undefined ? '' : hours}
-                  onChange={(e) => setHours(parseFloat(e.target.value) || undefined)}
-                  className="text-lg p-6"
-                />
-              </div>
-            )}
-            
-            {shouldShowValueInput && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Fuel size={24} />
-                  <Label htmlFor="value" className="text-lg">Valor del Combustible</Label>
-                </div>
-                <Input 
-                  id="value"
-                  type="number"
-                  min="1"
-                  placeholder="Ej: 50000"
-                  value={value === undefined ? '' : value}
-                  onChange={(e) => setValue(parseFloat(e.target.value) || undefined)}
-                  className="text-lg p-6"
-                />
-              </div>
-            )}
-
             {shouldShowKilometrajeInput && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
@@ -571,17 +600,21 @@ const ReportForm = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 {getReportTypeIcon(reportType)}
-                <Label htmlFor="description" className="text-lg">Descripción</Label>
+                <Label htmlFor="description" className="text-lg">
+                  {shouldShowInventoryMaterialSelect ? 'Observaciones adicionales' : 'Descripción'}
+                </Label>
               </div>
               
               <Textarea
                 id="description"
-                placeholder="Ingrese los detalles del reporte"
+                placeholder={shouldShowInventoryMaterialSelect ? 
+                  'Observaciones adicionales del viaje (opcional)' : 
+                  'Ingrese los detalles del reporte'}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 className="text-lg p-4"
-                required
+                required={!shouldShowInventoryMaterialSelect}
               />
             </div>
             

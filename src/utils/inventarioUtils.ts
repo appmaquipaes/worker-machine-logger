@@ -18,6 +18,21 @@ export const actualizarInventarioPorViaje = (report: Report): boolean => {
       const inventario = loadInventarioAcopio();
       console.log('Inventario actual antes del descuento:', inventario);
       
+      // Buscar el material exacto en el inventario
+      const materialEncontrado = inventario.find(item => item.tipo_material === report.description);
+      
+      if (!materialEncontrado) {
+        console.log('✗ Material no encontrado en inventario:', report.description);
+        console.log('Materiales disponibles:', inventario.map(item => item.tipo_material));
+        return false;
+      }
+      
+      if (materialEncontrado.cantidad_disponible < report.cantidadM3) {
+        console.log('✗ Cantidad insuficiente en inventario');
+        console.log(`Solicitado: ${report.cantidadM3} m³, Disponible: ${materialEncontrado.cantidad_disponible} m³`);
+        return false;
+      }
+      
       const inventarioActualizado = updateInventarioAfterViaje(inventario, {
         material: report.description,
         cantidad_m3: report.cantidadM3
