@@ -81,3 +81,22 @@ export const updateInventarioAfterVenta = (
     return item;
   });
 };
+
+// Función para actualizar el inventario después de un viaje desde acopio
+export const updateInventarioAfterViaje = (
+  inventario: InventarioAcopio[],
+  viaje: {
+    material: string;
+    cantidad_m3: number;
+  }
+): InventarioAcopio[] => {
+  return inventario.map(item => {
+    if (item.tipo_material === viaje.material) {
+      return {
+        ...item,
+        cantidad_disponible: Math.max(0, item.cantidad_disponible - viaje.cantidad_m3)
+      };
+    }
+    return item;
+  });
+};

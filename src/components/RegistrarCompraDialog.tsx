@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -198,18 +197,18 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
 
       // Si el destino es "Acopio Maquipaes" y el tipo es "Material", actualizar inventario
       if (destinoInsumo === 'Acopio Maquipaes' && tipoInsumo === 'Material') {
-        const inventario = loadInventarioAcopio();
+        let inventario = loadInventarioAcopio();
         
         // Procesar cada detalle que sea material
         detallesConId.forEach(detalle => {
-          const inventarioActualizado = updateInventarioAfterCompra(inventario, {
+          inventario = updateInventarioAfterCompra(inventario, {
             tipo_material: detalle.nombre_producto,
             cantidad_m3: detalle.cantidad,
             costo_unitario_total: detalle.precio_unitario
           });
-          saveInventarioAcopio(inventarioActualizado);
         });
         
+        saveInventarioAcopio(inventario);
         toast.success('Compra registrada e inventario actualizado');
       } else {
         toast.success('Compra registrada exitosamente');
