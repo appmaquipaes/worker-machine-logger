@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -27,6 +26,7 @@ import InformesPage from './pages/InformesPage';
 
 import { createInitialAdminUser } from './utils/initialSetup';
 import { Toaster } from './components/ui/sonner';
+import ComprasPage from './pages/ComprasPage';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -53,6 +53,7 @@ const App: React.FC = () => {
                 <Route path="/admin/inventario" element={<InventarioPage />} />
                 <Route path="/admin/proveedores" element={<ProveedoresPage />} />
                 <Route path="/admin/clientes" element={<ClientesPage />} />
+                <Route path="/admin/compras" element={<ComprasPage />} />
                 <Route path="/report" element={<ReportForm />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/informes" element={<InformesPage />} />

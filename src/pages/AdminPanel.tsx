@@ -53,6 +53,12 @@ const AdminPanel = () => {
       path: '/admin/clientes'
     },
     {
+      title: 'Compras',
+      description: 'Registrar y gestionar compras de materiales y servicios',
+      icon: <Database className="h-8 w-8" />,
+      path: '/admin/compras'
+    },
+    {
       title: 'Inventario Acopio',
       description: 'Ver y gestionar el inventario actual del acopio',
       icon: <Database className="h-8 w-8" />,
