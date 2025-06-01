@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Truck, User, Building, Database, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Truck, User, Building, Database, MapPin, Users, ShoppingCart } from 'lucide-react';
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -57,6 +57,12 @@ const AdminPanel = () => {
       description: 'Registrar y gestionar compras de materiales y servicios',
       icon: <Database className="h-8 w-8" />,
       path: '/admin/compras'
+    },
+    {
+      title: 'Ventas',
+      description: 'Gestionar ventas de material y servicios de transporte',
+      icon: <ShoppingCart className="h-8 w-8" />,
+      path: '/admin/ventas'
     },
     {
       title: 'Inventario Acopio',

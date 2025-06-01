@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -23,6 +24,7 @@ import InventarioPage from './pages/InventarioPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import ClientesPage from './pages/ClientesPage';
 import InformesPage from './pages/InformesPage';
+import VentasPage from './pages/VentasPage';
 
 import { createInitialAdminUser } from './utils/initialSetup';
 import { Toaster } from './components/ui/sonner';
@@ -54,6 +56,7 @@ const App: React.FC = () => {
                 <Route path="/admin/proveedores" element={<ProveedoresPage />} />
                 <Route path="/admin/clientes" element={<ClientesPage />} />
                 <Route path="/admin/compras" element={<ComprasPage />} />
+                <Route path="/admin/ventas" element={<VentasPage />} />
                 <Route path="/report" element={<ReportForm />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/informes" element={<InformesPage />} />
