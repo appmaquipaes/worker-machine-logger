@@ -17,14 +17,13 @@ import MachineManagement from './pages/MachineManagement';
 import UserManagement from './pages/UserManagement';
 import VolquetaManagement from './pages/VolquetaManagement';
 import ReportForm from './pages/ReportForm';
-import Reports from './pages/Reports'; // Import the new Reports page
+import Reports from './pages/Reports';
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import InventarioPage from './pages/InventarioPage';
-import ComprasMaterialPage from './pages/ComprasMaterialPage';
-import VentasMaterialPage from './pages/VentasMaterialPage';
 import ProveedoresPage from './pages/ProveedoresPage';
 import ClientesPage from './pages/ClientesPage';
+import InformesPage from './pages/InformesPage';
 
 import { createInitialAdminUser } from './utils/initialSetup';
 import { Toaster } from './components/ui/sonner';
@@ -52,12 +51,11 @@ const App: React.FC = () => {
                 <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/volquetas" element={<VolquetaManagement />} />
                 <Route path="/admin/inventario" element={<InventarioPage />} />
-                <Route path="/admin/compras-material" element={<ComprasMaterialPage />} />
-                <Route path="/admin/ventas-material" element={<VentasMaterialPage />} />
                 <Route path="/admin/proveedores" element={<ProveedoresPage />} />
                 <Route path="/admin/clientes" element={<ClientesPage />} />
                 <Route path="/report" element={<ReportForm />} />
-                <Route path="/reports" element={<Reports />} /> {/* Add the new route */}
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/informes" element={<InformesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Router>

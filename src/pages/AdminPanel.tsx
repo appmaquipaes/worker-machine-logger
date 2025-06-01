@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Truck, User, Building, Database, List, MapPin, Folder, Users } from 'lucide-react';
+import { ArrowLeft, Truck, User, Building, Database, MapPin, Users } from 'lucide-react';
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -58,18 +58,6 @@ const AdminPanel = () => {
       icon: <Database className="h-8 w-8" />,
       path: '/admin/inventario'
     },
-    {
-      title: 'Compras Material',
-      description: 'Historial y registro de material comprado',
-      icon: <List className="h-8 w-8" />,
-      path: '/admin/compras-material'
-    },
-    {
-      title: 'Ventas Material',
-      description: 'Historial y registro de ventas de material',
-      icon: <Folder className="h-8 w-8" />,
-      path: '/admin/ventas-material'
-    },
   ];
 
   if (!user || user.role !== 'Administrador') return null;
@@ -80,7 +68,7 @@ const AdminPanel = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Panel de Administración</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2"
           >

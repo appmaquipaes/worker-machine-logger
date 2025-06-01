@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
   Wrench, 
-  ClipboardList, 
   BarChart3, 
-  ArrowRight
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
@@ -59,20 +59,20 @@ const Dashboard: React.FC = () => {
           </Button>
         </Card>
 
-        {/* Tarjeta para reportes */}
+        {/* Tarjeta para informes */}
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <Button
             variant="ghost"
-            onClick={() => navigate('/reports')}
+            onClick={() => navigate('/informes')}
             className="w-full h-auto flex flex-col items-center gap-4 py-8"
           >
             <div className="bg-primary/20 w-24 h-24 rounded-full flex items-center justify-center">
-              <ClipboardList size={56} className="text-primary" />
+              <FileText size={56} className="text-primary" />
             </div>
             <div className="text-center">
-              <h3 className="text-2xl font-bold mb-2">Enviar Reportes</h3>
+              <h3 className="text-2xl font-bold mb-2">Informes</h3>
               <p className="text-muted-foreground">
-                Registra horas, mantenimientos y otras actividades
+                Genera reportes basados en los datos de las máquinas
               </p>
             </div>
             <ArrowRight size={24} className="mt-2" />

@@ -62,6 +62,9 @@ const MachineManagement: React.FC = () => {
     'Motoniveladora',
     'Paladraga',
     'Camión',
+    'Volqueta',
+    'Camabaja',
+    'Semirremolque, Tractomula',
   ];
 
   if (!user || user.role !== 'Administrador') return null;
@@ -72,7 +75,7 @@ const MachineManagement: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Gestión de Máquinas</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/admin')}
             className="flex items-center gap-2"
           >
