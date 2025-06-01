@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 
@@ -8,6 +9,7 @@ export interface Report {
   machineId: string;
   machineName: string;
   userName: string;
+  userId?: string;
   reportType: ReportType;
   description: string;
   value: number;
@@ -45,6 +47,7 @@ interface ReportContextType {
   deleteReport: (id: string) => void;
   getReportsByMachine: (machineId: string) => Report[];
   getTotalByType: (type: string) => number;
+  getFilteredReports: (filters: any) => Report[];
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -154,6 +157,28 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       .reduce((total, report) => total + report.value, 0);
   };
 
+  const getFilteredReports = (filters: any) => {
+    let filtered = [...reports];
+    
+    if (filters.reportType && filters.reportType !== 'all') {
+      filtered = filtered.filter(report => report.reportType === filters.reportType);
+    }
+    
+    if (filters.machineId && filters.machineId !== 'all') {
+      filtered = filtered.filter(report => report.machineId === filters.machineId);
+    }
+    
+    if (filters.startDate) {
+      filtered = filtered.filter(report => report.reportDate >= new Date(filters.startDate));
+    }
+    
+    if (filters.endDate) {
+      filtered = filtered.filter(report => report.reportDate <= new Date(filters.endDate));
+    }
+    
+    return filtered;
+  };
+
   const value: ReportContextType = {
     reports,
     addReport,
@@ -161,6 +186,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     deleteReport,
     getReportsByMachine,
     getTotalByType,
+    getFilteredReports,
   };
 
   return (

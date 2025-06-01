@@ -168,6 +168,11 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
     }
 
     try {
+      console.log('=== REGISTRANDO COMPRA ===');
+      console.log('Destino del insumo:', destinoInsumo);
+      console.log('Tipo de insumo:', tipoInsumo);
+      console.log('Detalles:', detalles);
+      
       // Crear la compra
       let nuevaCompra = createCompra(
         new Date(fecha),
@@ -197,10 +202,15 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
 
       // Si el destino es "Acopio Maquipaes" y el tipo es "Material", actualizar inventario
       if (destinoInsumo === 'Acopio Maquipaes' && tipoInsumo === 'Material') {
+        console.log('✓ Compra de Material con destino Acopio Maquipaes detectada');
+        
         let inventario = loadInventarioAcopio();
+        console.log('Inventario antes de la compra:', inventario);
         
         // Procesar cada detalle que sea material
         detallesConId.forEach(detalle => {
+          console.log(`Agregando al inventario: ${detalle.cantidad} m³ de ${detalle.nombre_producto} a $${detalle.precio_unitario}`);
+          
           inventario = updateInventarioAfterCompra(inventario, {
             tipo_material: detalle.nombre_producto,
             cantidad_m3: detalle.cantidad,
@@ -208,9 +218,13 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
           });
         });
         
+        console.log('Inventario después de la compra:', inventario);
         saveInventarioAcopio(inventario);
         toast.success('Compra registrada e inventario actualizado');
       } else {
+        console.log('✗ Compra no aplica para inventario de acopio');
+        console.log('- Destino correcto?', destinoInsumo === 'Acopio Maquipaes');
+        console.log('- Tipo correcto?', tipoInsumo === 'Material');
         toast.success('Compra registrada exitosamente');
       }
 
