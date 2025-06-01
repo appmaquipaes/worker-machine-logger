@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from "sonner";
@@ -25,6 +24,8 @@ export type Report = {
   origin?: string; // Campo opcional para el origen del viaje
   destination?: string; // Campo opcional para el destino del viaje
   cantidadM3?: number; // Nueva: cantidad en m³ para viajes de volqueta
+  proveedor?: string; // Nuevo: proveedor para mantenimiento
+  kilometraje?: number; // Nuevo: kilometraje actual para combustible
 };
 
 // Tipo para el contexto de reportes
@@ -42,7 +43,9 @@ type ReportContextType = {
     workSite?: string,
     origin?: string,
     destination?: string,
-    cantidadM3?: number
+    cantidadM3?: number,
+    proveedor?: string,
+    kilometraje?: number
   ) => void;
   getFilteredReports: (filters: {
     userId?: string;
@@ -97,7 +100,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     workSite?: string,
     origin?: string,
     destination?: string,
-    cantidadM3: number = 15 // Default value for truck reports
+    cantidadM3: number = 15, // Default value for truck reports
+    proveedor?: string,
+    kilometraje?: number
   ) => {
     if (!user) {
       toast.error("Debe iniciar sesión para enviar reportes");
@@ -138,6 +143,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...(origin !== undefined && { origin }),
       ...(destination !== undefined && { destination }),
       ...(cantidadM3 !== undefined && { cantidadM3 }),
+      ...(proveedor !== undefined && { proveedor }),
+      ...(kilometraje !== undefined && { kilometraje }),
     };
 
     const updatedReports = [...reports, newReport];

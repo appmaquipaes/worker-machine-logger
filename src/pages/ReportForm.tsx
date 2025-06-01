@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -18,24 +19,6 @@ import {
 import { toast } from "sonner";
 import { DatePicker } from '@/components/DatePicker';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { 
   ArrowLeft, 
   Clock, 
   AlarmClock, 
@@ -45,43 +28,10 @@ import {
   Truck,
   Calendar,
   MapPin,
-  Plus,
-  Send
+  Send,
+  Gauge
 } from 'lucide-react';
-import { Material, loadMateriales } from '@/models/Materiales';
-import { CompraMaterial, createCompraMaterial, loadComprasMaterial, saveComprasMaterial } from '@/models/ComprasMaterial';
-import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterCompra } from '@/models/InventarioAcopio';
-import { loadTarifas } from '@/models/Tarifas';
-import { Proveedor, loadProveedores, saveProveedores, createProveedor, ProductoProveedor, loadProductosProveedores } from '@/models/Proveedores';
-import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente } from '@/models/Clientes';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useForm } from 'react-hook-form';
-
-// Constante para el destino especial que activa la automatización
-const ACOPIO_DESTINO = "ACOPIO MAQUIPAES";
-
-// Esquemas de validación con Zod
-const proveedorSchema = z.object({
-  nombre: z.string().min(1, { message: "El nombre del proveedor es obligatorio" }),
-  ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
-  contacto: z.string().min(1, { message: "El contacto es obligatorio" }),
-  correo_electronico: z.string().email({ message: "Correo electrónico inválido" }),
-  nit: z.string().min(1, { message: "El NIT es obligatorio" }),
-  tipo_proveedor: z.enum(['Materiales', 'Lubricantes', 'Repuestos', 'Servicios', 'Otros']),
-  forma_pago: z.string().min(1, { message: "La forma de pago es obligatoria" }),
-  observaciones: z.string().optional()
-});
-
-const clienteSchema = z.object({
-  nombre_cliente: z.string().min(1, { message: "El nombre del cliente es obligatorio" }),
-  ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
-  contacto_nombre: z.string().min(1, { message: "El nombre del contacto es obligatorio" }),
-  contacto_telefono: z.string().min(1, { message: "El teléfono del contacto es obligatorio" }),
-  direccion: z.string().optional(),
-  tipo_cliente: z.string().optional(),
-  observaciones: z.string().optional()
-});
+import { loadProveedores } from '@/models/Proveedores';
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -99,57 +49,15 @@ const ReportForm = () => {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
-  const [cantidadM3, setCantidadM3] = useState<number | undefined>(15); // Default value set to 15
+  const [cantidadM3, setCantidadM3] = useState<number | undefined>(15);
+  const [proveedor, setProveedor] = useState<string>('');
+  const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
   
-  // Nuevos estados para proveedores y clientes
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
-  const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
+  // Cargar proveedores
+  const [proveedores, setProveedores] = useState<any[]>([]);
   
-  // Nuevo estado para guardar el tipo de material del proveedor seleccionado
-  const [selectedMaterialType, setSelectedMaterialType] = useState<string>('');
-  
-  // Cargar materiales y tarifas al montar el componente
-  const [materiales, setMateriales] = useState<Material[]>([]);
-  const [tarifas, setTarifas] = useState<any[]>([]);
-  const [productosProveedores, setProductosProveedores] = useState<ProductoProveedor[]>([]);
-  
-  // Formularios para agregar proveedor y cliente
-  const proveedorForm = useForm<z.infer<typeof proveedorSchema>>({
-    resolver: zodResolver(proveedorSchema),
-    defaultValues: {
-      nombre: "",
-      ciudad: "",
-      contacto: "",
-      correo_electronico: "",
-      nit: "",
-      tipo_proveedor: "Materiales",
-      forma_pago: "",
-      observaciones: ""
-    }
-  });
-  
-  const clienteForm = useForm<z.infer<typeof clienteSchema>>({
-    resolver: zodResolver(clienteSchema),
-    defaultValues: {
-      nombre_cliente: "",
-      ciudad: "",
-      contacto_nombre: "",
-      contacto_telefono: "",
-      direccion: "",
-      tipo_cliente: "",
-      observaciones: ""
-    }
-  });
-  
-  // Cargar datos
   useEffect(() => {
-    setMateriales(loadMateriales());
-    setTarifas(loadTarifas());
     setProveedores(loadProveedores());
-    setClientes(loadClientes());
-    setProductosProveedores(loadProductosProveedores());
   }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -165,135 +73,9 @@ const ReportForm = () => {
     }
   }, [user, selectedMachine, navigate]);
   
-  // Actualizar el tipo de material cuando cambia el proveedor seleccionado
-  useEffect(() => {
-    if (origin) {
-      const proveedorSeleccionado = proveedores.find(p => p.nombre === origin);
-      if (proveedorSeleccionado) {
-        // Get products for this provider to determine material types
-        const productosProveedor = productosProveedores.filter(p => p.proveedor_id === proveedorSeleccionado.id);
-        if (productosProveedor.length > 0 && !selectedMaterialType) {
-          // Set first material product as default
-          const primerMaterial = productosProveedor.find(p => p.tipo_insumo === 'Material');
-          if (primerMaterial) {
-            setSelectedMaterialType(primerMaterial.nombre_producto);
-          }
-        }
-      }
-    }
-  }, [origin, proveedores, productosProveedores, selectedMaterialType]);
-
-  // Update description when material type changes
-  useEffect(() => {
-    if (reportType === 'Viajes' && selectedMachine?.type === 'Camión') {
-      setDescription(selectedMaterialType);
-    }
-  }, [selectedMaterialType, reportType, selectedMachine]);
-  
-  // Función para agregar nuevo proveedor
-  const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
-    const nuevoProveedor = createProveedor(
-      data.nombre,
-      data.ciudad,
-      data.contacto,
-      data.correo_electronico,
-      data.nit,
-      data.tipo_proveedor,
-      data.forma_pago,
-      data.observaciones
-    );
-    
-    const proveedoresActualizados = [...proveedores, nuevoProveedor];
-    saveProveedores(proveedoresActualizados);
-    setProveedores(proveedoresActualizados);
-    setOrigin(nuevoProveedor.nombre);
-    setProveedorDialogOpen(false);
-    toast.success('Proveedor agregado correctamente');
-  };
-  
-  // Función para agregar nuevo cliente
-  const handleAddCliente = (data: z.infer<typeof clienteSchema>) => {
-    const nuevoCliente = createCliente(
-      data.nombre_cliente,
-      data.ciudad,
-      data.contacto_nombre,
-      data.contacto_telefono,
-      data.direccion,
-      data.tipo_cliente,
-      data.observaciones
-    );
-    
-    const clientesActualizados = [...clientes, nuevoCliente];
-    saveClientes(clientesActualizados);
-    setClientes(clientesActualizados);
-    setDestination(nuevoCliente.nombre_cliente);
-    setClienteDialogOpen(false);
-    toast.success('Cliente agregado correctamente');
-  };
-  
-  // Función para obtener tipos de materiales únicos de productos de proveedores
-  const getUniqueProviderMaterialTypes = (): string[] => {
-    const materialProducts = productosProveedores.filter(p => p.tipo_insumo === 'Material');
-    const materialTypes = materialProducts.map(p => p.nombre_producto);
-    return [...new Set(materialTypes)];
-  };
-  
-  // Función para actualizar inventario cuando el destino es el acopio
-  const procesarCompraAcopio = (
-    fecha: Date,
-    origen: string,
-    tipoMaterial: string,
-    cantidadM3: number
-  ) => {
-    try {
-      // 1. Buscar datos adicionales (valores predefinidos)
-      const material = materiales.find(m => m.nombre_material === tipoMaterial);
-      const tarifa = tarifas.find(t => 
-        t.origen.toLowerCase() === origen.toLowerCase() && 
-        t.destino.toLowerCase() === ACOPIO_DESTINO.toLowerCase()
-      );
-      
-      // 2. Determinar valores
-      const valorPorM3 = material ? material.valor_por_m3 : 0;
-      const valorFlete = tarifa ? tarifa.valor_por_m3 * cantidadM3 : 0;
-      
-      // 3. Crear compra en compras_material
-      const nuevaCompra = createCompraMaterial(
-        fecha,
-        origen,
-        tipoMaterial,
-        cantidadM3,
-        valorPorM3,
-        valorFlete
-      );
-      
-      // Guardar la compra en localStorage
-      const comprasExistentes = loadComprasMaterial();
-      const comprasActualizadas = [...comprasExistentes, nuevaCompra];
-      saveComprasMaterial(comprasActualizadas);
-      
-      // 4. Actualizar inventario
-      const inventarioExistente = loadInventarioAcopio();
-      const inventarioActualizado = updateInventarioAfterCompra(
-        inventarioExistente,
-        {
-          tipo_material: tipoMaterial,
-          cantidad_m3: cantidadM3,
-          costo_unitario_total: nuevaCompra.costo_unitario_total
-        }
-      );
-      saveInventarioAcopio(inventarioActualizado);
-      
-      console.log('Compra e inventario actualizados automáticamente:', {
-        compra: nuevaCompra,
-        inventario: inventarioActualizado
-      });
-      
-      toast.success('Material registrado en inventario automáticamente');
-    } catch (error) {
-      console.error('Error al procesar compra de material:', error);
-      toast.error('Error al actualizar el inventario');
-    }
+  // Función para determinar si es un vehículo de transporte
+  const isTransportVehicle = () => {
+    return selectedMachine && ['Volqueta', 'Camabaja', 'Semirremolque', 'Tractomula'].includes(selectedMachine.type);
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -309,48 +91,64 @@ const ReportForm = () => {
       return;
     }
     
-    // Si el tipo de reporte es "Viajes" y es un camión, validar el número de viajes
+    // Validaciones específicas para cada tipo de reporte
     if (reportType === 'Viajes') {
       if (trips === undefined || trips <= 0) {
         toast.error('Debe ingresar un número válido de viajes');
         return;
       }
       
-      // Para todos los camiones (volquetas), validar origen y destino
-      if (selectedMachine.type === 'Camión' && (!origin.trim() || !destination.trim())) {
+      // Para vehículos de transporte, validar origen y destino
+      if (isTransportVehicle() && (!origin.trim() || !destination.trim())) {
         toast.error('Debe ingresar el origen y destino del viaje');
         return;
       }
 
-      // Validar cantidad de m3 transportados para viajes
-      if (cantidadM3 === undefined || cantidadM3 <= 0) {
+      // Validar cantidad de m3 para vehículos de transporte
+      if (isTransportVehicle() && (cantidadM3 === undefined || cantidadM3 <= 0)) {
         toast.error('Debe ingresar una cantidad válida de m³ transportados');
         return;
       }
     }
     
-    // Validar el número de horas para tipos de reporte relevantes
+    // Validar horas para tipos de reporte relevantes
     if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
       toast.error('Debe ingresar un número válido de horas');
       return;
     }
     
-    // Validar el sitio de trabajo para horas trabajadas (solo para máquinas que no son camiones)
-    if (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión' && !workSite.trim()) {
+    // Validar sitio de trabajo para horas trabajadas (solo para máquinas que no son vehículos de transporte)
+    if (reportType === 'Horas Trabajadas' && !isTransportVehicle() && !workSite.trim()) {
       toast.error('Debe ingresar el sitio de trabajo');
       return;
     }
     
-    // Validar el valor para reportes de combustible
-    if (reportType === 'Combustible' && (value === undefined || value <= 0)) {
-      toast.error('Debe ingresar un valor válido para el combustible');
-      return;
+    // Validar combustible
+    if (reportType === 'Combustible') {
+      if (value === undefined || value <= 0) {
+        toast.error('Debe ingresar un valor válido para el combustible');
+        return;
+      }
+      
+      // Para vehículos de transporte, validar kilometraje
+      if (isTransportVehicle() && (kilometraje === undefined || kilometraje <= 0)) {
+        toast.error('Debe ingresar el kilometraje actual del vehículo');
+        return;
+      }
     }
 
-    // Add validation for maintenance value
-    if (reportType === 'Mantenimiento' && (maintenanceValue === undefined || maintenanceValue <= 0)) {
-      toast.error('Debe ingresar un valor válido para el mantenimiento');
-      return;
+    // Validar mantenimiento
+    if (reportType === 'Mantenimiento') {
+      if (maintenanceValue === undefined || maintenanceValue <= 0) {
+        toast.error('Debe ingresar un valor válido para el mantenimiento');
+        return;
+      }
+      
+      // Para vehículos de transporte, validar proveedor
+      if (isTransportVehicle() && !proveedor.trim()) {
+        toast.error('Debe seleccionar un proveedor para el mantenimiento');
+        return;
+      }
     }
     
     // Enviar el reporte
@@ -364,24 +162,13 @@ const ReportForm = () => {
       (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
       reportType === 'Combustible' ? value : 
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-      (reportType === 'Horas Trabajadas' && selectedMachine.type !== 'Camión') ? workSite : undefined,
-      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? origin : undefined,
-      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? destination : undefined,
-      (reportType === 'Viajes' && selectedMachine.type === 'Camión') ? cantidadM3 : undefined
+      (reportType === 'Horas Trabajadas' && !isTransportVehicle()) ? workSite : undefined,
+      (reportType === 'Viajes' && isTransportVehicle()) ? origin : undefined,
+      (reportType === 'Viajes' && isTransportVehicle()) ? destination : undefined,
+      (reportType === 'Viajes' && isTransportVehicle()) ? cantidadM3 : undefined,
+      (reportType === 'Mantenimiento' && isTransportVehicle()) ? proveedor : undefined,
+      (reportType === 'Combustible' && isTransportVehicle()) ? kilometraje : undefined
     );
-    
-    // Procesar actualización automática de inventario si es un viaje al acopio
-    if (reportType === 'Viajes' && 
-        destination.trim().toUpperCase() === ACOPIO_DESTINO.toUpperCase() && 
-        cantidadM3 !== undefined && 
-        cantidadM3 > 0) {
-      procesarCompraAcopio(
-        reportDate,
-        origin,
-        selectedMaterialType, // Using the selected material type
-        cantidadM3
-      );
-    }
     
     // Mostrar confirmación
     toast.success('¡Reporte enviado con éxito!');
@@ -395,20 +182,21 @@ const ReportForm = () => {
     setOrigin('');
     setDestination('');
     setMaintenanceValue(undefined);
-    setCantidadM3(15); // Reset to default 15
+    setCantidadM3(15);
+    setProveedor('');
+    setKilometraje(undefined);
     
-    // Reset the material type selection also
-    setSelectedMaterialType('');
-    
-    // Opcional: redirigir al dashboard después de enviar
+    // Redirigir al dashboard
     navigate('/dashboard');
   };
   
-  const isShowingTripInput = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
+  const isShowingTripInput = reportType === 'Viajes' && isTransportVehicle();
   const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
   const shouldShowValueInput = reportType === 'Combustible';
-  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && selectedMachine?.type !== 'Camión';
-  const shouldShowOriginDestination = reportType === 'Viajes' && selectedMachine?.type === 'Camión';
+  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && !isTransportVehicle();
+  const shouldShowOriginDestination = reportType === 'Viajes' && isTransportVehicle();
+  const shouldShowProveedorInput = reportType === 'Mantenimiento' && isTransportVehicle();
+  const shouldShowKilometrajeInput = reportType === 'Combustible' && isTransportVehicle();
   
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
@@ -431,12 +219,6 @@ const ReportForm = () => {
   
   if (!user || !selectedMachine) return null;
   
-  // Helper function to safely format numbers
-  const formatNumber = (value: number | undefined | null): string => {
-    if (value === undefined || value === null) return '0';
-    return value.toLocaleString();
-  };
-  
   return (
     <div className="container max-w-xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
@@ -449,7 +231,7 @@ const ReportForm = () => {
         </p>
         
         <Button 
-          variant="back" 
+          variant="outline" 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-lg mt-4 mx-auto"
         >
@@ -532,7 +314,7 @@ const ReportForm = () => {
                   <span className="text-lg">Novedades</span>
                 </Button>
                 
-                {selectedMachine.type === 'Camión' && (
+                {isTransportVehicle() && (
                   <Button
                     type="button"
                     variant={reportType === 'Viajes' ? 'default' : 'outline'}
@@ -587,335 +369,35 @@ const ReportForm = () => {
             {shouldShowOriginDestination && (
               <>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={24} />
-                      <Label htmlFor="origin" className="text-lg">Origen (Proveedor)</Label>
-                    </div>
-                    {user.role === 'Administrador' && (
-                      <Dialog open={proveedorDialogOpen} onOpenChange={setProveedorDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Plus size={18} />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Agregar Nuevo Proveedor</DialogTitle>
-                            <DialogDescription>
-                              Llena los datos del nuevo proveedor
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Form {...proveedorForm}>
-                            <form onSubmit={proveedorForm.handleSubmit(handleAddProveedor)} className="space-y-4">
-                              <FormField
-                                control={proveedorForm.control}
-                                name="nombre"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Nombre del Proveedor</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Ej: Cantera Los Alpes" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={proveedorForm.control}
-                                name="ciudad"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Ciudad</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Ej: Medellín" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                  control={proveedorForm.control}
-                                  name="contacto"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Contacto</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} placeholder="Nombre contacto" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                
-                                <FormField
-                                  control={proveedorForm.control}
-                                  name="correo_electronico"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Correo</FormLabel>
-                                      <FormControl>
-                                        <Input type="email" {...field} placeholder="correo@ejemplo.com" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                  control={proveedorForm.control}
-                                  name="nit"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>NIT</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} placeholder="123456789-0" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                
-                                <FormField
-                                  control={proveedorForm.control}
-                                  name="tipo_proveedor"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Tipo</FormLabel>
-                                      <FormControl>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                          <SelectTrigger>
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="Materiales">Materiales</SelectItem>
-                                            <SelectItem value="Lubricantes">Lubricantes</SelectItem>
-                                            <SelectItem value="Repuestos">Repuestos</SelectItem>
-                                            <SelectItem value="Servicios">Servicios</SelectItem>
-                                            <SelectItem value="Otros">Otros</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                              
-                              <FormField
-                                control={proveedorForm.control}
-                                name="forma_pago"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Forma de Pago</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Ej: Contado, 30 días" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={proveedorForm.control}
-                                name="observaciones"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Observaciones</FormLabel>
-                                    <FormControl>
-                                      <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <DialogFooter>
-                                <Button type="submit">Guardar Proveedor</Button>
-                              </DialogFooter>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin size={24} />
+                    <Label htmlFor="origin" className="text-lg">Origen</Label>
                   </div>
-                  <Select onValueChange={setOrigin} value={origin}>
-                    <SelectTrigger className="text-lg p-6">
-                      <SelectValue placeholder="Selecciona un proveedor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {proveedores.map((proveedor) => (
-                        <SelectItem key={proveedor.id} value={proveedor.nombre}>
-                          {proveedor.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input 
+                    id="origin"
+                    type="text"
+                    placeholder="Punto de origen"
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                    className="text-lg p-6"
+                    required
+                  />
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={24} />
-                      <Label htmlFor="destination" className="text-lg">Destino (Cliente)</Label>
-                    </div>
-                    {user.role === 'Administrador' && (
-                      <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Plus size={18} />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
-                            <DialogDescription>
-                              Llena los datos del nuevo cliente
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Form {...clienteForm}>
-                            <form onSubmit={clienteForm.handleSubmit(handleAddCliente)} className="space-y-4">
-                              <FormField
-                                control={clienteForm.control}
-                                name="nombre_cliente"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Nombre del Cliente</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Ej: Constructora XYZ" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={clienteForm.control}
-                                name="ciudad"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Ciudad</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Ej: Medellín" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                  control={clienteForm.control}
-                                  name="contacto_nombre"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Nombre de Contacto</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} placeholder="Ej: Juan Pérez" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                
-                                <FormField
-                                  control={clienteForm.control}
-                                  name="contacto_telefono"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Teléfono</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} placeholder="Ej: 301 234 5678" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                              
-                              <FormField
-                                control={clienteForm.control}
-                                name="direccion"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Dirección</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="Dirección (opcional)" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={clienteForm.control}
-                                name="tipo_cliente"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Tipo de Cliente</FormLabel>
-                                    <FormControl>
-                                      <Select 
-                                        onValueChange={field.onChange} 
-                                        defaultValue={field.value}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Seleccionar tipo (opcional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {tiposCliente.map((tipo) => (
-                                            <SelectItem key={tipo} value={tipo}>
-                                              {tipo}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={clienteForm.control}
-                                name="observaciones"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Observaciones</FormLabel>
-                                    <FormControl>
-                                      <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <DialogFooter>
-                                <Button type="submit">Guardar Cliente</Button>
-                              </DialogFooter>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin size={24} />
+                    <Label htmlFor="destination" className="text-lg">Destino</Label>
                   </div>
-                  <Select onValueChange={setDestination} value={destination}>
-                    <SelectTrigger className="text-lg p-6">
-                      <SelectValue placeholder="Selecciona un cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ACOPIO_DESTINO}>{ACOPIO_DESTINO}</SelectItem>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
-                          {cliente.nombre_cliente}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input 
+                    id="destination"
+                    type="text"
+                    placeholder="Punto de destino"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    className="text-lg p-6"
+                    required
+                  />
                 </div>
                 
                 <div className="space-y-2">
@@ -934,11 +416,6 @@ const ReportForm = () => {
                     className="text-lg p-6"
                     required
                   />
-                  {destination.trim().toUpperCase() === ACOPIO_DESTINO.toUpperCase() && (
-                    <p className="text-sm text-green-600 mt-1">
-                      ⚠️ Este material será registrado automáticamente en el inventario de acopio
-                    </p>
-                  )}
                 </div>
               </>
             )}
@@ -980,71 +457,88 @@ const ReportForm = () => {
               </div>
             )}
 
-            {reportType === 'Mantenimiento' && (
+            {shouldShowKilometrajeInput && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <ToolIcon size={24} />
-                  <Label htmlFor="maintenance-value" className="text-lg">Valor del Mantenimiento</Label>
+                  <Gauge size={24} />
+                  <Label htmlFor="kilometraje" className="text-lg">Kilometraje Actual</Label>
                 </div>
                 <Input 
-                  id="maintenance-value"
+                  id="kilometraje"
                   type="number"
-                  min="1"
-                  placeholder="Ej: 100000"
-                  value={maintenanceValue === undefined ? '' : maintenanceValue}
-                  onChange={(e) => setMaintenanceValue(parseFloat(e.target.value) || undefined)}
+                  min="0"
+                  placeholder="Ej: 150000"
+                  value={kilometraje === undefined ? '' : kilometraje}
+                  onChange={(e) => setKilometraje(parseFloat(e.target.value) || undefined)}
                   className="text-lg p-6"
                   required
                 />
               </div>
             )}
+
+            {reportType === 'Mantenimiento' && (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ToolIcon size={24} />
+                    <Label htmlFor="maintenance-value" className="text-lg">Valor del Mantenimiento</Label>
+                  </div>
+                  <Input 
+                    id="maintenance-value"
+                    type="number"
+                    min="1"
+                    placeholder="Ej: 100000"
+                    value={maintenanceValue === undefined ? '' : maintenanceValue}
+                    onChange={(e) => setMaintenanceValue(parseFloat(e.target.value) || undefined)}
+                    className="text-lg p-6"
+                    required
+                  />
+                </div>
+
+                {shouldShowProveedorInput && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ToolIcon size={24} />
+                      <Label htmlFor="proveedor" className="text-lg">Proveedor</Label>
+                    </div>
+                    <Select onValueChange={setProveedor} value={proveedor}>
+                      <SelectTrigger className="text-lg p-6">
+                        <SelectValue placeholder="Selecciona un proveedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {proveedores.map((prov) => (
+                          <SelectItem key={prov.id} value={prov.nombre}>
+                            {prov.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            )}
             
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 {getReportTypeIcon(reportType)}
-                <Label htmlFor="description" className="text-lg">
-                  {reportType === 'Viajes' ? 'Tipo de Material' : 'Descripción'}
-                </Label>
+                <Label htmlFor="description" className="text-lg">Descripción</Label>
               </div>
               
-              {reportType === 'Viajes' && selectedMachine?.type === 'Camión' ? (
-                <div className="space-y-2">
-                  <Select 
-                    value={selectedMaterialType} 
-                    onValueChange={setSelectedMaterialType}
-                  >
-                    <SelectTrigger className="text-lg p-6">
-                      <SelectValue placeholder="Selecciona tipo de material" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getUniqueProviderMaterialTypes().map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {tipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Seleccione el tipo de material transportado
-                  </p>
-                </div>
-              ) : (
-                <Textarea
-                  id="description"
-                  placeholder="Ingrese los detalles del reporte"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="text-lg p-4"
-                  required
-                />
-              )}
+              <Textarea
+                id="description"
+                placeholder="Ingrese los detalles del reporte"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="text-lg p-4"
+                required
+              />
             </div>
             
             <div className="flex justify-between pt-4">
               <Button 
                 type="button" 
-                variant="back" 
+                variant="outline" 
                 onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-2 text-lg py-6 px-6"
               >

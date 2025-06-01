@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -79,6 +78,8 @@ const InformesPage: React.FC = () => {
       'Origen': report.origin || '',
       'Destino': report.destination || '',
       'M³': report.cantidadM3 || '',
+      'Proveedor': report.proveedor || '',
+      'Kilometraje': report.kilometraje || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -154,7 +155,7 @@ const InformesPage: React.FC = () => {
                   <SelectItem value="all">Todas las máquinas</SelectItem>
                   {machines.map((machine) => (
                     <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name}
+                      {machine.name} ({machine.type})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -266,6 +267,8 @@ const InformesPage: React.FC = () => {
                     <TableHead>Horas</TableHead>
                     <TableHead>Viajes</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Km</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -279,6 +282,8 @@ const InformesPage: React.FC = () => {
                       <TableCell>{report.hours || '-'}</TableCell>
                       <TableCell>{report.trips || '-'}</TableCell>
                       <TableCell>{report.value ? `$${report.value.toLocaleString()}` : '-'}</TableCell>
+                      <TableCell>{report.proveedor || '-'}</TableCell>
+                      <TableCell>{report.kilometraje || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
