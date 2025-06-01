@@ -5,7 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,21 +14,39 @@ import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Building } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Package, Building, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DatePicker } from '@/components/DatePicker';
-import { Proveedor, loadProveedores, saveProveedores, createProveedor, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
-import { Material, loadMateriales } from '@/models/Materiales';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Proveedor, 
+  ProductoProveedor,
+  loadProveedores, 
+  saveProveedores, 
+  createProveedor,
+  loadProductosProveedores,
+  saveProductosProveedores,
+  createProductoProveedor,
+  getProductosByProveedorId
+} from '@/models/Proveedores';
 
 // Schema for provider validation
 const proveedorSchema = z.object({
-  nombre_proveedor: z.string().min(1, { message: "El nombre del proveedor es obligatorio" }),
-  tipo_material: z.string().min(1, { message: "El tipo de material es obligatorio" }),
-  cantidad: z.coerce.number().min(0, { message: "La cantidad debe ser un número positivo" }),
-  valor_unitario: z.coerce.number().min(0, { message: "El valor debe ser un número positivo" }),
+  nombre: z.string().min(1, { message: "El nombre es obligatorio" }),
   ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
-  fecha_compra: z.date(),
+  contacto: z.string().min(1, { message: "El contacto es obligatorio" }),
+  correo_electronico: z.string().email({ message: "Ingrese un correo válido" }),
+  nit: z.string().min(1, { message: "El NIT es obligatorio" }),
+  tipo_proveedor: z.enum(['Materiales', 'Lubricantes', 'Repuestos', 'Servicios', 'Otros']),
+  forma_pago: z.string().min(1, { message: "La forma de pago es obligatoria" }),
+  observaciones: z.string().optional()
+});
+
+// Schema for product validation
+const productoSchema = z.object({
+  tipo_insumo: z.enum(['Material', 'Lubricante', 'Repuesto', 'Servicio']),
+  nombre_producto: z.string().min(1, { message: "El nombre del producto es obligatorio" }),
+  unidad: z.string().min(1, { message: "La unidad es obligatoria" }),
+  precio_unitario: z.coerce.number().min(0, { message: "El precio debe ser positivo" }),
   observaciones: z.string().optional()
 });
 
@@ -39,20 +56,35 @@ const ProveedoresPage: React.FC = () => {
   
   // States
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [materiales, setMateriales] = useState<Material[]>([]);
+  const [productos, setProductos] = useState<ProductoProveedor[]>([]);
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-  const [uniqueMaterialTypes, setUniqueMaterialTypes] = useState<string[]>([]);
+  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
+  const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null);
+  const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showProveedorDialog, setShowProveedorDialog] = useState(false);
   
   // Form setup
-  const form = useForm<z.infer<typeof proveedorSchema>>({
+  const proveedorForm = useForm<z.infer<typeof proveedorSchema>>({
     resolver: zodResolver(proveedorSchema),
     defaultValues: {
-      nombre_proveedor: "",
-      tipo_material: "",
-      cantidad: 0,
-      valor_unitario: 0,
+      nombre: "",
       ciudad: "",
-      fecha_compra: new Date(),
+      contacto: "",
+      correo_electronico: "",
+      nit: "",
+      tipo_proveedor: "Materiales",
+      forma_pago: "",
+      observaciones: ""
+    }
+  });
+
+  const productoForm = useForm<z.infer<typeof productoSchema>>({
+    resolver: zodResolver(productoSchema),
+    defaultValues: {
+      tipo_insumo: "Material",
+      nombre_producto: "",
+      unidad: "",
+      precio_unitario: 0,
       observaciones: ""
     }
   });
@@ -70,21 +102,15 @@ const ProveedoresPage: React.FC = () => {
       return;
     }
     
-    const loadedProveedores = loadProveedores();
-    setProveedores(loadedProveedores);
-    setMateriales(loadMateriales());
-    
-    // Get unique material types from existing providers
-    setUniqueMaterialTypes(getUniqueProviderMaterialTypes());
+    setProveedores(loadProveedores());
+    setProductos(loadProductosProveedores());
   }, [user, navigate]);
   
-  // Helper function to safely format numbers
-  const formatNumber = (value: number | undefined | null): string => {
-    if (value === undefined || value === null) return '0';
+  // Helper functions
+  const formatNumber = (value: number): string => {
     return value.toLocaleString();
   };
   
-  // Helper function to format dates
   const formatDate = (date: Date): string => {
     return new Intl.DateTimeFormat('es-CO', {
       year: 'numeric', 
@@ -93,15 +119,16 @@ const ProveedoresPage: React.FC = () => {
     }).format(date);
   };
   
-  // Function to add a new provider
+  // Provider functions
   const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
     const nuevoProveedor = createProveedor(
-      data.nombre_proveedor,
-      data.tipo_material,
-      data.cantidad,
-      data.valor_unitario,
+      data.nombre,
       data.ciudad,
-      data.fecha_compra,
+      data.contacto,
+      data.correo_electronico,
+      data.nit,
+      data.tipo_proveedor,
+      data.forma_pago,
       data.observaciones
     );
     
@@ -109,67 +136,99 @@ const ProveedoresPage: React.FC = () => {
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
     
-    // Update unique material types
-    if (!uniqueMaterialTypes.includes(data.tipo_material)) {
-      setUniqueMaterialTypes([...uniqueMaterialTypes, data.tipo_material]);
-    }
-    
-    form.reset();
+    proveedorForm.reset();
+    setShowProveedorDialog(false);
     toast.success('Proveedor agregado correctamente');
   };
   
-  // Function to update a provider
   const handleUpdateProveedor = (data: z.infer<typeof proveedorSchema>) => {
     if (!editingProveedor) return;
     
     const proveedoresActualizados = proveedores.map(proveedor => 
       proveedor.id === editingProveedor.id ? {
         ...proveedor,
-        nombre_proveedor: data.nombre_proveedor,
-        tipo_material: data.tipo_material,
-        cantidad: data.cantidad,
-        valor_unitario: data.valor_unitario,
-        ciudad: data.ciudad,
-        fecha_compra: data.fecha_compra,
-        observaciones: data.observaciones
+        ...data
       } : proveedor
     );
     
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
-    
-    // Update unique material types
-    if (!uniqueMaterialTypes.includes(data.tipo_material)) {
-      setUniqueMaterialTypes([...uniqueMaterialTypes, data.tipo_material]);
-    }
-    
     setEditingProveedor(null);
+    setShowProveedorDialog(false);
     toast.success('Proveedor actualizado correctamente');
   };
   
-  // Function to delete a provider
   const handleDeleteProveedor = (id: string) => {
     const proveedoresActualizados = proveedores.filter(proveedor => proveedor.id !== id);
-    saveProveedores(proveedoresActualizados);
-    setProveedores(proveedoresActualizados);
-    toast.success('Proveedor eliminado correctamente');
+    const productosActualizados = productos.filter(producto => producto.proveedor_id !== id);
     
-    // Update unique material types
-    setUniqueMaterialTypes(getUniqueProviderMaterialTypes());
+    saveProveedores(proveedoresActualizados);
+    saveProductosProveedores(productosActualizados);
+    setProveedores(proveedoresActualizados);
+    setProductos(productosActualizados);
+    toast.success('Proveedor eliminado correctamente');
   };
   
-  // Function to open edit provider dialog
   const openEditProveedor = (proveedor: Proveedor) => {
     setEditingProveedor(proveedor);
-    form.reset({
-      nombre_proveedor: proveedor.nombre_proveedor,
-      tipo_material: proveedor.tipo_material,
-      cantidad: proveedor.cantidad,
-      valor_unitario: proveedor.valor_unitario,
-      ciudad: proveedor.ciudad,
-      fecha_compra: proveedor.fecha_compra,
-      observaciones: proveedor.observaciones || ""
-    });
+    proveedorForm.reset(proveedor);
+    setShowProveedorDialog(true);
+  };
+
+  // Product functions
+  const handleAddProducto = (data: z.infer<typeof productoSchema>) => {
+    if (!selectedProveedor) return;
+    
+    const nuevoProducto = createProductoProveedor(
+      selectedProveedor.id,
+      data.tipo_insumo,
+      data.nombre_producto,
+      data.unidad,
+      data.precio_unitario,
+      data.observaciones
+    );
+    
+    const productosActualizados = [...productos, nuevoProducto];
+    saveProductosProveedores(productosActualizados);
+    setProductos(productosActualizados);
+    
+    productoForm.reset();
+    setShowProductDialog(false);
+    toast.success('Producto agregado correctamente');
+  };
+
+  const handleUpdateProducto = (data: z.infer<typeof productoSchema>) => {
+    if (!editingProducto) return;
+    
+    const productosActualizados = productos.map(producto => 
+      producto.id === editingProducto.id ? {
+        ...producto,
+        ...data
+      } : producto
+    );
+    
+    saveProductosProveedores(productosActualizados);
+    setProductos(productosActualizados);
+    setEditingProducto(null);
+    setShowProductDialog(false);
+    toast.success('Producto actualizado correctamente');
+  };
+
+  const handleDeleteProducto = (id: string) => {
+    const productosActualizados = productos.filter(producto => producto.id !== id);
+    saveProductosProveedores(productosActualizados);
+    setProductos(productosActualizados);
+    toast.success('Producto eliminado correctamente');
+  };
+
+  const openEditProducto = (producto: ProductoProveedor) => {
+    setEditingProducto(producto);
+    productoForm.reset(producto);
+    setShowProductDialog(true);
+  };
+
+  const getProveedorProductos = (proveedorId: string) => {
+    return productos.filter(producto => producto.proveedor_id === proveedorId);
   };
   
   if (!user || user.role !== 'Administrador') return null;
@@ -180,7 +239,7 @@ const ProveedoresPage: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Gestión de Proveedores</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/admin')}
             className="flex items-center gap-2"
           >
@@ -189,345 +248,514 @@ const ProveedoresPage: React.FC = () => {
           </Button>
         </div>
         <p className="text-muted-foreground mt-2">
-          Administra los proveedores de material
+          Administra los proveedores y sus productos/servicios asociados
         </p>
       </div>
-      
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Proveedores de Material</CardTitle>
-              <CardDescription>
-                Gestiona los proveedores y sus datos
-              </CardDescription>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar nuevo proveedor
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Agregar Proveedor</DialogTitle>
-                  <DialogDescription>
-                    Ingresa los datos del nuevo proveedor
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleAddProveedor)} className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="nombre_proveedor"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nombre del Proveedor</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Ej: Cantera Los Alpes" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="ciudad"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ciudad</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Ej: Medellín" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="tipo_material"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de Material</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Ej: Arena fina"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="cantidad"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cantidad (m³)</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} placeholder="0" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="valor_unitario"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Valor Unitario</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} placeholder="0" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="fecha_compra"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fecha de Registro</FormLabel>
-                          <FormControl>
-                            <DatePicker date={field.value} setDate={(date) => field.onChange(date)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="observaciones"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Observaciones</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <DialogFooter>
-                      <Button type="submit">Guardar Proveedor</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {proveedores.length > 0 ? (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Proveedor</TableHead>
-                    <TableHead>Ciudad</TableHead>
-                    <TableHead>Material</TableHead>
-                    <TableHead>Cantidad</TableHead>
-                    <TableHead>Valor Unitario</TableHead>
-                    <TableHead>Fecha Registro</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {proveedores.map((proveedor) => (
-                    <TableRow key={proveedor.id}>
-                      <TableCell className="font-medium">{proveedor.nombre_proveedor}</TableCell>
-                      <TableCell>{proveedor.ciudad}</TableCell>
-                      <TableCell>{proveedor.tipo_material}</TableCell>
-                      <TableCell>{formatNumber(proveedor.cantidad)} m³</TableCell>
-                      <TableCell>${formatNumber(proveedor.valor_unitario)}</TableCell>
-                      <TableCell>{formatDate(proveedor.fecha_compra)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => openEditProveedor(proveedor)}>
+
+      <Tabs defaultValue="proveedores" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
+          <TabsTrigger value="productos">Productos y Servicios</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="proveedores">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Lista de Proveedores</CardTitle>
+                  <CardDescription>
+                    Gestiona la información de tus proveedores
+                  </CardDescription>
+                </div>
+                <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => {
+                      setEditingProveedor(null);
+                      proveedorForm.reset();
+                    }}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Agregar Proveedor
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingProveedor ? 'Editar Proveedor' : 'Agregar Proveedor'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {editingProveedor ? 'Modifica los datos del proveedor' : 'Ingresa los datos del nuevo proveedor'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...proveedorForm}>
+                      <form onSubmit={proveedorForm.handleSubmit(editingProveedor ? handleUpdateProveedor : handleAddProveedor)} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={proveedorForm.control}
+                            name="nombre"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nombre</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Nombre del proveedor" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={proveedorForm.control}
+                            name="ciudad"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ciudad</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Ciudad" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={proveedorForm.control}
+                            name="contacto"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contacto</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Nombre del contacto" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={proveedorForm.control}
+                            name="correo_electronico"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Correo Electrónico</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="email" placeholder="correo@ejemplo.com" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={proveedorForm.control}
+                            name="nit"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>NIT</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="123456789-0" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={proveedorForm.control}
+                            name="tipo_proveedor"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tipo de Proveedor</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Seleccionar tipo" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="Materiales">Materiales</SelectItem>
+                                    <SelectItem value="Lubricantes">Lubricantes</SelectItem>
+                                    <SelectItem value="Repuestos">Repuestos</SelectItem>
+                                    <SelectItem value="Servicios">Servicios</SelectItem>
+                                    <SelectItem value="Otros">Otros</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={proveedorForm.control}
+                          name="forma_pago"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Forma de Pago</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Ej: Contado, 30 días, 60 días" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={proveedorForm.control}
+                          name="observaciones"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Observaciones</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <DialogFooter>
+                          <Button type="submit">
+                            {editingProveedor ? 'Actualizar' : 'Guardar'} Proveedor
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {proveedores.length > 0 ? (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Ciudad</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Contacto</TableHead>
+                        <TableHead>NIT</TableHead>
+                        <TableHead>Productos</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {proveedores.map((proveedor) => (
+                        <TableRow key={proveedor.id}>
+                          <TableCell className="font-medium">{proveedor.nombre}</TableCell>
+                          <TableCell>{proveedor.ciudad}</TableCell>
+                          <TableCell>{proveedor.tipo_proveedor}</TableCell>
+                          <TableCell>{proveedor.contacto}</TableCell>
+                          <TableCell>{proveedor.nit}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {getProveedorProductos(proveedor.id).length} productos
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedProveedor(proveedor);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditProveedor(proveedor)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px]">
-                              <DialogHeader>
-                                <DialogTitle>Editar Proveedor</DialogTitle>
-                                <DialogDescription>
-                                  Modifica los datos del proveedor
-                                </DialogDescription>
-                              </DialogHeader>
-                              <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleUpdateProveedor)} className="space-y-4 py-4">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                      control={form.control}
-                                      name="nombre_proveedor"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Nombre del Proveedor</FormLabel>
-                                          <FormControl>
-                                            <Input {...field} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    
-                                    <FormField
-                                      control={form.control}
-                                      name="ciudad"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Ciudad</FormLabel>
-                                          <FormControl>
-                                            <Input {...field} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  </div>
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="tipo_material"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Tipo de Material</FormLabel>
-                                        <FormControl>
-                                          <Input
-                                            {...field}
-                                            placeholder="Ej: Arena fina"
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                      control={form.control}
-                                      name="cantidad"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Cantidad (m³)</FormLabel>
-                                          <FormControl>
-                                            <Input type="number" {...field} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    
-                                    <FormField
-                                      control={form.control}
-                                      name="valor_unitario"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Valor Unitario</FormLabel>
-                                          <FormControl>
-                                            <Input type="number" {...field} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  </div>
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="fecha_compra"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Fecha de Compra</FormLabel>
-                                        <FormControl>
-                                          <DatePicker date={field.value} setDate={(date) => field.onChange(date)} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="observaciones"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Observaciones</FormLabel>
-                                        <FormControl>
-                                          <Textarea {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <DialogFooter>
-                                    <Button type="submit">Actualizar Proveedor</Button>
-                                  </DialogFooter>
-                                </form>
-                              </Form>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
-                                <Trash2 className="h-4 w-4" />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción eliminará permanentemente el proveedor "{proveedor.nombre}" y todos sus productos asociados.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteProveedor(proveedor.id)}
+                                      className="bg-destructive text-destructive-foreground"
+                                    >
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <Building size={32} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium">No hay proveedores registrados</h3>
+                  <p className="text-muted-foreground mt-2">Agrega un nuevo proveedor para comenzar</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="productos">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Productos y Servicios</CardTitle>
+                  <CardDescription>
+                    Gestiona los productos y servicios de tus proveedores
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedProveedor?.id || ""}
+                    onValueChange={(value) => {
+                      const proveedor = proveedores.find(p => p.id === value);
+                      setSelectedProveedor(proveedor || null);
+                    }}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Seleccionar proveedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proveedores.map((proveedor) => (
+                        <SelectItem key={proveedor.id} value={proveedor.id}>
+                          {proveedor.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {selectedProveedor && (
+                    <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => {
+                          setEditingProducto(null);
+                          productoForm.reset();
+                        }}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Agregar Producto
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {editingProducto ? 'Editar Producto' : 'Agregar Producto'}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {editingProducto ? 'Modifica el producto o servicio' : `Agregar producto para ${selectedProveedor.nombre}`}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <Form {...productoForm}>
+                          <form onSubmit={productoForm.handleSubmit(editingProducto ? handleUpdateProducto : handleAddProducto)} className="space-y-4">
+                            <FormField
+                              control={productoForm.control}
+                              name="tipo_insumo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tipo de Insumo</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar tipo" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Material">Material</SelectItem>
+                                      <SelectItem value="Lubricante">Lubricante</SelectItem>
+                                      <SelectItem value="Repuesto">Repuesto</SelectItem>
+                                      <SelectItem value="Servicio">Servicio</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={productoForm.control}
+                              name="nombre_producto"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Nombre del Producto</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Ej: Arena fina, Aceite 15W40" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={productoForm.control}
+                                name="unidad"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Unidad</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="m³, galón, unidad" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={productoForm.control}
+                                name="precio_unitario"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Precio Unitario</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" {...field} placeholder="0" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <FormField
+                              control={productoForm.control}
+                              name="observaciones"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Observaciones</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <DialogFooter>
+                              <Button type="submit">
+                                {editingProducto ? 'Actualizar' : 'Guardar'} Producto
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción eliminará permanentemente el proveedor "{proveedor.nombre_proveedor}".
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteProveedor(proveedor.id)}
-                                  className="bg-destructive text-destructive-foreground"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                <Building size={32} className="text-muted-foreground" />
+                            </DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               </div>
-              <h3 className="text-lg font-medium">No hay proveedores registrados</h3>
-              <p className="text-muted-foreground mt-2">Agrega un nuevo proveedor para comenzar</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              {selectedProveedor ? (
+                <div>
+                  <div className="mb-4 p-4 bg-muted rounded-lg">
+                    <h3 className="font-medium">Productos de: {selectedProveedor.nombre}</h3>
+                    <p className="text-sm text-muted-foreground">Tipo: {selectedProveedor.tipo_proveedor}</p>
+                  </div>
+                  
+                  {getProveedorProductos(selectedProveedor.id).length > 0 ? (
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Producto</TableHead>
+                            <TableHead>Unidad</TableHead>
+                            <TableHead>Precio</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {getProveedorProductos(selectedProveedor.id).map((producto) => (
+                            <TableRow key={producto.id}>
+                              <TableCell>{producto.tipo_insumo}</TableCell>
+                              <TableCell className="font-medium">{producto.nombre_producto}</TableCell>
+                              <TableCell>{producto.unidad}</TableCell>
+                              <TableCell>${formatNumber(producto.precio_unitario)}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEditProducto(producto)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="sm">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Esta acción eliminará permanentemente el producto "{producto.nombre_producto}".
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteProducto(producto.id)}
+                                          className="bg-destructive text-destructive-foreground"
+                                        >
+                                          Eliminar
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                        <Package size={32} className="text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-medium">No hay productos registrados</h3>
+                      <p className="text-muted-foreground mt-2">Agrega productos para este proveedor</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <Package size={32} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium">Selecciona un proveedor</h3>
+                  <p className="text-muted-foreground mt-2">Selecciona un proveedor para ver y gestionar sus productos</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
