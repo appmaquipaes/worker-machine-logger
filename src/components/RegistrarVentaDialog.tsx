@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,10 +39,10 @@ import {
   loadVentas,
   saveVentas
 } from '@/models/Ventas';
-import { loadClientes } from '@/models/Clientes';
 import { loadInventarioAcopio, updateInventarioAfterVenta, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { loadTarifas } from '@/models/Tarifas';
 import { loadMateriales } from '@/models/Materiales';
+import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 
 interface RegistrarVentaDialogProps {
   open: boolean;
@@ -59,6 +58,7 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
   // Estados principales
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [cliente, setCliente] = useState('');
+  const [finca, setFinca] = useState('');
   const [ciudadEntrega, setCiudadEntrega] = useState('');
   const [tipoVenta, setTipoVenta] = useState('');
   const [origenMaterial, setOrigenMaterial] = useState('');
@@ -74,25 +74,13 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
   const [valorUnitario, setValorUnitario] = useState<number>(0);
 
   // Datos auxiliares
-  const [clientes, setClientes] = useState<string[]>([]);
   const [materiales, setMateriales] = useState<any[]>([]);
   const [tarifas, setTarifas] = useState<any[]>([]);
 
   useEffect(() => {
-    setClientes(loadClientes().map(c => c.nombre_cliente));
     setMateriales(loadMateriales());
     setTarifas(loadTarifas());
   }, []);
-
-  // Cargar ciudad del cliente seleccionado
-  useEffect(() => {
-    if (cliente) {
-      const clienteData = loadClientes().find(c => c.nombre_cliente === cliente);
-      if (clienteData) {
-        setCiudadEntrega(clienteData.ciudad);
-      }
-    }
-  }, [cliente]);
 
   // Calcular valor unitario automático para fletes
   useEffect(() => {
@@ -115,6 +103,7 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
   const resetForm = () => {
     setFecha(new Date().toISOString().split('T')[0]);
     setCliente('');
+    setFinca('');
     setCiudadEntrega('');
     setTipoVenta('');
     setOrigenMaterial('');
@@ -160,19 +149,22 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!fecha || !cliente || !tipoVenta || !formaPago || detalles.length === 0) {
-      toast.error('Complete todos los campos obligatorios');
+    if (!fecha || !cliente || !finca || !tipoVenta || !formaPago || detalles.length === 0) {
+      toast.error('Complete todos los campos obligatorios incluyendo cliente y finca');
       return;
     }
 
     try {
+      // Crear destino combinando cliente y finca
+      const destinoCompleto = `${cliente} - ${finca}`;
+      
       const nuevaVenta = createVenta(
         new Date(fecha),
         cliente,
         ciudadEntrega,
         tipoVenta,
         origenMaterial,
-        destinoMaterial,
+        destinoCompleto,
         formaPago,
         observaciones
       );
@@ -236,32 +228,6 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="cliente">Cliente *</Label>
-                <Select onValueChange={setCliente} value={cliente}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((clienteNombre) => (
-                      <SelectItem key={clienteNombre} value={clienteNombre}>
-                        {clienteNombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="ciudad-entrega">Ciudad de Entrega</Label>
-                <Input
-                  id="ciudad-entrega"
-                  value={ciudadEntrega}
-                  onChange={(e) => setCiudadEntrega(e.target.value)}
-                  placeholder="Ciudad de entrega"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="tipo-venta">Tipo de Venta *</Label>
                 <Select onValueChange={setTipoVenta} value={tipoVenta}>
                   <SelectTrigger>
@@ -275,6 +241,24 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <ClienteFincaSelector
+                selectedCliente={cliente}
+                selectedFinca={finca}
+                onClienteChange={setCliente}
+                onFincaChange={setFinca}
+                onCiudadChange={setCiudadEntrega}
+              />
+
+              <div>
+                <Label htmlFor="ciudad-entrega">Ciudad de Entrega</Label>
+                <Input
+                  id="ciudad-entrega"
+                  value={ciudadEntrega}
+                  onChange={(e) => setCiudadEntrega(e.target.value)}
+                  placeholder="Ciudad de entrega"
+                />
               </div>
 
               <div>
@@ -291,16 +275,6 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="destino-material">Destino del Material</Label>
-                <Input
-                  id="destino-material"
-                  value={destinoMaterial}
-                  onChange={(e) => setDestinoMaterial(e.target.value)}
-                  placeholder="Destino del material"
-                />
               </div>
 
               <div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -10,22 +9,27 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Edit, Trash2, User, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, User, Users, MapPin } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente } from '@/models/Clientes';
+import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente, tiposPersona } from '@/models/Clientes';
+import { getFincasByCliente } from '@/models/Fincas';
+import FincasManagement from '@/components/FincasManagement';
 
 // Schema for client validation
 const clienteSchema = z.object({
   nombre_cliente: z.string().min(1, { message: "El nombre del cliente es obligatorio" }),
+  tipo_persona: z.enum(['Natural', 'Empresa'], { message: "Seleccione el tipo de persona" }),
+  nit_cedula: z.string().min(1, { message: "El NIT o cédula es obligatorio" }),
+  correo_electronico: z.string().email({ message: "Ingrese un correo válido" }).optional().or(z.literal("")),
+  telefono_contacto: z.string().min(1, { message: "El teléfono es obligatorio" }),
+  persona_contacto: z.string().min(1, { message: "La persona de contacto es obligatoria" }),
   ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
-  contacto_nombre: z.string().min(1, { message: "El nombre del contacto es obligatorio" }),
-  contacto_telefono: z.string().min(1, { message: "El teléfono del contacto es obligatorio" }),
-  direccion: z.string().optional(),
   tipo_cliente: z.string().optional(),
   observaciones: z.string().optional()
 });
@@ -37,16 +41,20 @@ const ClientesPage: React.FC = () => {
   // States
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [showFincasDialog, setShowFincasDialog] = useState(false);
   
   // Form setup
   const form = useForm<z.infer<typeof clienteSchema>>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
       nombre_cliente: "",
+      tipo_persona: "Natural",
+      nit_cedula: "",
+      correo_electronico: "",
+      telefono_contacto: "",
+      persona_contacto: "",
       ciudad: "",
-      contacto_nombre: "",
-      contacto_telefono: "",
-      direccion: "",
       tipo_cliente: "",
       observaciones: ""
     }
@@ -72,11 +80,13 @@ const ClientesPage: React.FC = () => {
   const handleAddCliente = (data: z.infer<typeof clienteSchema>) => {
     const nuevoCliente = createCliente(
       data.nombre_cliente,
+      data.tipo_persona,
+      data.nit_cedula,
+      data.telefono_contacto,
+      data.persona_contacto,
       data.ciudad,
-      data.contacto_nombre,
-      data.contacto_telefono,
-      data.direccion,
       data.tipo_cliente,
+      data.correo_electronico,
       data.observaciones
     );
     
@@ -95,10 +105,12 @@ const ClientesPage: React.FC = () => {
       cliente.id === editingCliente.id ? {
         ...cliente,
         nombre_cliente: data.nombre_cliente,
+        tipo_persona: data.tipo_persona,
+        nit_cedula: data.nit_cedula,
+        correo_electronico: data.correo_electronico,
+        telefono_contacto: data.telefono_contacto,
+        persona_contacto: data.persona_contacto,
         ciudad: data.ciudad,
-        contacto_nombre: data.contacto_nombre,
-        contacto_telefono: data.contacto_telefono,
-        direccion: data.direccion,
         tipo_cliente: data.tipo_cliente,
         observaciones: data.observaciones
       } : cliente
@@ -123,13 +135,21 @@ const ClientesPage: React.FC = () => {
     setEditingCliente(cliente);
     form.reset({
       nombre_cliente: cliente.nombre_cliente,
+      tipo_persona: cliente.tipo_persona,
+      nit_cedula: cliente.nit_cedula,
+      correo_electronico: cliente.correo_electronico || "",
+      telefono_contacto: cliente.telefono_contacto,
+      persona_contacto: cliente.persona_contacto,
       ciudad: cliente.ciudad,
-      contacto_nombre: cliente.contacto_nombre,
-      contacto_telefono: cliente.contacto_telefono,
-      direccion: cliente.direccion || "",
       tipo_cliente: cliente.tipo_cliente || "",
       observaciones: cliente.observaciones || ""
     });
+  };
+
+  // Function to open fincas management
+  const openFincasManagement = (cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setShowFincasDialog(true);
   };
   
   // Get badge color based on client type
@@ -137,19 +157,22 @@ const ClientesPage: React.FC = () => {
     if (!tipo) return "secondary";
     
     switch (tipo) {
-      case "Construcción":
+      case "Constructora":
         return "yellow";
-      case "Industrial":
-        return "blue";
-      case "Residencial":
+      case "Floristeria":
         return "green";
-      case "Gubernamental":
+      case "Particular":
+        return "blue";
+      case "Finca":
         return "purple";
-      case "Comercial":
-        return "orange";
       default:
         return "secondary";
     }
+  };
+
+  // Get count of fincas for each client
+  const getFincasCount = (clienteId: string): number => {
+    return getFincasByCliente(clienteId).length;
   };
   
   if (!user || user.role !== 'Administrador') return null;
@@ -160,7 +183,7 @@ const ClientesPage: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Gestión de Clientes</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/admin')}
             className="flex items-center gap-2"
           >
@@ -169,7 +192,7 @@ const ClientesPage: React.FC = () => {
           </Button>
         </div>
         <p className="text-muted-foreground mt-2">
-          Administra los clientes y sus datos de contacto
+          Administra los clientes y sus fincas o puntos de entrega
         </p>
       </div>
       
@@ -179,7 +202,7 @@ const ClientesPage: React.FC = () => {
             <div>
               <CardTitle>Clientes</CardTitle>
               <CardDescription>
-                Gestiona los clientes que reciben materiales
+                Gestiona los clientes y sus múltiples fincas o puntos de entrega
               </CardDescription>
             </div>
             <Dialog>
@@ -189,7 +212,7 @@ const ClientesPage: React.FC = () => {
                   Agregar nuevo cliente
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[700px]">
                 <DialogHeader>
                   <DialogTitle>Agregar Cliente</DialogTitle>
                   <DialogDescription>
@@ -204,7 +227,7 @@ const ClientesPage: React.FC = () => {
                         name="nombre_cliente"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormLabel>Nombre del Cliente *</FormLabel>
                             <FormControl>
                               <Input {...field} placeholder="Ej: Constructora XYZ" />
                             </FormControl>
@@ -215,12 +238,23 @@ const ClientesPage: React.FC = () => {
                       
                       <FormField
                         control={form.control}
-                        name="ciudad"
+                        name="tipo_persona"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ciudad</FormLabel>
+                            <FormLabel>Tipo de Persona *</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Ej: Medellín" />
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccionar tipo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {tiposPersona.map((tipo) => (
+                                    <SelectItem key={tipo} value={tipo}>
+                                      {tipo}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -231,10 +265,40 @@ const ClientesPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="contacto_nombre"
+                        name="nit_cedula"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombre del Contacto</FormLabel>
+                            <FormLabel>NIT o Cédula *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Ej: 900123456-1" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="correo_electronico"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Correo Electrónico</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="cliente@ejemplo.com" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="persona_contacto"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Persona de Contacto *</FormLabel>
                             <FormControl>
                               <Input {...field} placeholder="Ej: Juan Pérez" />
                             </FormControl>
@@ -245,10 +309,10 @@ const ClientesPage: React.FC = () => {
                       
                       <FormField
                         control={form.control}
-                        name="contacto_telefono"
+                        name="telefono_contacto"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Teléfono del Contacto</FormLabel>
+                            <FormLabel>Teléfono de Contacto *</FormLabel>
                             <FormControl>
                               <Input {...field} placeholder="Ej: 301 234 5678" />
                             </FormControl>
@@ -258,47 +322,49 @@ const ClientesPage: React.FC = () => {
                       />
                     </div>
                     
-                    <FormField
-                      control={form.control}
-                      name="direccion"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Dirección</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Dirección (opcional)" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="tipo_cliente"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de Cliente</FormLabel>
-                          <FormControl>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar tipo (opcional)" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tiposCliente.map((tipo) => (
-                                  <SelectItem key={tipo} value={tipo}>
-                                    {tipo}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="ciudad"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ciudad *</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Ej: Medellín" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="tipo_cliente"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de Cliente</FormLabel>
+                            <FormControl>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccionar tipo (opcional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {tiposCliente.map((tipo) => (
+                                    <SelectItem key={tipo} value={tipo}>
+                                      {tipo}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     
                     <FormField
                       control={form.control}
@@ -330,10 +396,12 @@ const ClientesPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Ciudad</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>NIT/Cédula</TableHead>
                     <TableHead>Contacto</TableHead>
                     <TableHead>Teléfono</TableHead>
-                    <TableHead>Tipo</TableHead>
+                    <TableHead>Fincas</TableHead>
+                    <TableHead>Categoría</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -341,9 +409,20 @@ const ClientesPage: React.FC = () => {
                   {clientes.map((cliente) => (
                     <TableRow key={cliente.id}>
                       <TableCell className="font-medium">{cliente.nombre_cliente}</TableCell>
-                      <TableCell>{cliente.ciudad}</TableCell>
-                      <TableCell>{cliente.contacto_nombre}</TableCell>
-                      <TableCell>{cliente.contacto_telefono}</TableCell>
+                      <TableCell>
+                        <Badge variant={cliente.tipo_persona === 'Empresa' ? 'default' : 'secondary'}>
+                          {cliente.tipo_persona}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{cliente.nit_cedula}</TableCell>
+                      <TableCell>{cliente.persona_contacto}</TableCell>
+                      <TableCell>{cliente.telefono_contacto}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          {getFincasCount(cliente.id)}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {cliente.tipo_cliente ? (
                           <Badge variant={getTipoClienteColor(cliente.tipo_cliente) as any}>
@@ -355,13 +434,22 @@ const ClientesPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openFincasManagement(cliente)}
+                            title="Gestionar fincas"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                          
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" onClick={() => openEditCliente(cliente)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px]">
+                            <DialogContent className="sm:max-w-[700px]">
                               <DialogHeader>
                                 <DialogTitle>Editar Cliente</DialogTitle>
                                 <DialogDescription>
@@ -376,7 +464,7 @@ const ClientesPage: React.FC = () => {
                                       name="nombre_cliente"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Nombre del Cliente</FormLabel>
+                                          <FormLabel>Nombre del Cliente *</FormLabel>
                                           <FormControl>
                                             <Input {...field} />
                                           </FormControl>
@@ -387,10 +475,81 @@ const ClientesPage: React.FC = () => {
                                     
                                     <FormField
                                       control={form.control}
-                                      name="ciudad"
+                                      name="tipo_persona"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Ciudad</FormLabel>
+                                          <FormLabel>Tipo de Persona *</FormLabel>
+                                          <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar tipo" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {tiposPersona.map((tipo) => (
+                                                  <SelectItem key={tipo} value={tipo}>
+                                                    {tipo}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                      control={form.control}
+                                      name="nit_cedula"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>NIT o Cédula *</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    
+                                    <FormField
+                                      control={form.control}
+                                      name="correo_electronico"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Correo Electrónico</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} type="email" />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                      control={form.control}
+                                      name="persona_contacto"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Persona de Contacto *</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    
+                                    <FormField
+                                      control={form.control}
+                                      name="telefono_contacto"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Teléfono de Contacto *</FormLabel>
                                           <FormControl>
                                             <Input {...field} />
                                           </FormControl>
@@ -403,10 +562,10 @@ const ClientesPage: React.FC = () => {
                                   <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                       control={form.control}
-                                      name="contacto_nombre"
+                                      name="ciudad"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Nombre del Contacto</FormLabel>
+                                          <FormLabel>Ciudad *</FormLabel>
                                           <FormControl>
                                             <Input {...field} />
                                           </FormControl>
@@ -417,60 +576,32 @@ const ClientesPage: React.FC = () => {
                                     
                                     <FormField
                                       control={form.control}
-                                      name="contacto_telefono"
+                                      name="tipo_cliente"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Teléfono del Contacto</FormLabel>
+                                          <FormLabel>Tipo de Cliente</FormLabel>
                                           <FormControl>
-                                            <Input {...field} />
+                                            <Select 
+                                              onValueChange={field.onChange} 
+                                              defaultValue={field.value}
+                                            >
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar tipo (opcional)" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {tiposCliente.map((tipo) => (
+                                                  <SelectItem key={tipo} value={tipo}>
+                                                    {tipo}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
                                           </FormControl>
                                           <FormMessage />
                                         </FormItem>
                                       )}
                                     />
                                   </div>
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="direccion"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Dirección</FormLabel>
-                                        <FormControl>
-                                          <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="tipo_cliente"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Tipo de Cliente</FormLabel>
-                                        <FormControl>
-                                          <Select 
-                                            onValueChange={field.onChange} 
-                                            defaultValue={field.value}
-                                          >
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Seleccionar tipo (opcional)" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {tiposCliente.map((tipo) => (
-                                                <SelectItem key={tipo} value={tipo}>
-                                                  {tipo}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
                                   
                                   <FormField
                                     control={form.control}
@@ -504,7 +635,7 @@ const ClientesPage: React.FC = () => {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta acción eliminará permanentemente el cliente "{cliente.nombre_cliente}".
+                                  Esta acción eliminará permanentemente el cliente "{cliente.nombre_cliente}" y todas sus fincas asociadas.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -536,6 +667,21 @@ const ClientesPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para gestión de fincas */}
+      <Dialog open={showFincasDialog} onOpenChange={setShowFincasDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestión de Fincas</DialogTitle>
+          </DialogHeader>
+          {selectedCliente && (
+            <FincasManagement 
+              clienteId={selectedCliente.id}
+              clienteNombre={selectedCliente.nombre_cliente}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
