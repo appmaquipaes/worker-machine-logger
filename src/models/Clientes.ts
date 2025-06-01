@@ -1,4 +1,5 @@
 
+
 // Model for clients
 
 export interface Cliente {
@@ -7,6 +8,9 @@ export interface Cliente {
   tipo_cliente: string;
   ciudad: string;
   fecha_registro: Date;
+  contacto_nombre: string;
+  contacto_telefono: string;
+  direccion?: string;
   observaciones?: string;
 }
 
@@ -43,17 +47,22 @@ export const saveClientes = (clientes: Cliente[]): void => {
 // Create a new client
 export const createCliente = (
   nombre_cliente: string,
-  tipo_cliente: string,
   ciudad: string,
-  fecha_registro: Date,
+  contacto_nombre: string,
+  contacto_telefono: string,
+  direccion?: string,
+  tipo_cliente?: string,
   observaciones?: string
 ): Cliente => {
   return {
     id: Date.now().toString(),
     nombre_cliente,
-    tipo_cliente,
+    tipo_cliente: tipo_cliente || '',
     ciudad,
-    fecha_registro,
+    fecha_registro: new Date(),
+    contacto_nombre,
+    contacto_telefono,
+    direccion,
     observaciones
   };
 };
@@ -62,3 +71,4 @@ export const createCliente = (
 export const getClientesNames = (): string[] => {
   return loadClientes().map(cliente => cliente.nombre_cliente);
 };
+
