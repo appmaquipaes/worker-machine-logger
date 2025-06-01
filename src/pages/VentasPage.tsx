@@ -36,8 +36,8 @@ const VentasPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Filtros
-  const [filtroCliente, setFiltroCliente] = useState('');
-  const [filtroTipoVenta, setFiltroTipoVenta] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('all');
+  const [filtroTipoVenta, setFiltroTipoVenta] = useState('all');
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   
@@ -71,11 +71,11 @@ const VentasPage = () => {
   useEffect(() => {
     let ventasFiltered = [...ventas];
 
-    if (filtroCliente) {
+    if (filtroCliente && filtroCliente !== 'all') {
       ventasFiltered = ventasFiltered.filter(v => v.cliente === filtroCliente);
     }
 
-    if (filtroTipoVenta) {
+    if (filtroTipoVenta && filtroTipoVenta !== 'all') {
       ventasFiltered = ventasFiltered.filter(v => v.tipo_venta === filtroTipoVenta);
     }
 
@@ -95,8 +95,8 @@ const VentasPage = () => {
   }, [ventas, filtroCliente, filtroTipoVenta, filtroFechaInicio, filtroFechaFin]);
 
   const limpiarFiltros = () => {
-    setFiltroCliente('');
-    setFiltroTipoVenta('');
+    setFiltroCliente('all');
+    setFiltroTipoVenta('all');
     setFiltroFechaInicio('');
     setFiltroFechaFin('');
   };
@@ -152,7 +152,7 @@ const VentasPage = () => {
                   <SelectValue placeholder="Todos los clientes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los clientes</SelectItem>
+                  <SelectItem value="all">Todos los clientes</SelectItem>
                   {clientes.map((cliente) => (
                     <SelectItem key={cliente} value={cliente}>
                       {cliente}
@@ -169,7 +169,7 @@ const VentasPage = () => {
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
                   {tiposVenta.map((tipo) => (
                     <SelectItem key={tipo} value={tipo}>
                       {tipo}
