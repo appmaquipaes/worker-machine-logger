@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -253,6 +254,8 @@ const ReportForm = () => {
   const shouldShowM3Input = reportType === 'Viajes' && (isTransportVehicle() || origin === 'Acopio Maquipaes');
   const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes';
   const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
+  const shouldShowKilometrajeInput = reportType === 'Combustible';
+  const shouldShowProveedorInput = reportType === 'Mantenimiento';
   
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
