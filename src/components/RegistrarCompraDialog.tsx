@@ -19,7 +19,7 @@ import {
   saveCompras, 
   updateCompraTotal 
 } from '@/models/Compras';
-import { loadProveedores, Proveedor } from '@/models/Proveedores';
+import { loadProveedores, Proveedor, ProductoProveedor, loadProductosProveedores } from '@/models/Proveedores';
 import { loadInventarioAcopio, updateInventarioAfterCompra, saveInventarioAcopio } from '@/models/InventarioAcopio';
 
 interface RegistrarCompraDialogProps {
@@ -45,6 +45,7 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
 
   // Estados para el detalle
   const [detalles, setDetalles] = useState<DetalleCompra[]>([]);
+  const [productoSeleccionado, setProductoSeleccionado] = useState('');
   const [nombreProducto, setNombreProducto] = useState('');
   const [unidad, setUnidad] = useState('');
   const [cantidad, setCantidad] = useState<number>(0);
@@ -53,10 +54,43 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
 
   // Datos auxiliares
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [productosProveedor, setProductosProveedor] = useState<ProductoProveedor[]>([]);
+  const [productosDisponibles, setProductosDisponibles] = useState<ProductoProveedor[]>([]);
 
   useEffect(() => {
     setProveedores(loadProveedores());
+    setProductosProveedor(loadProductosProveedores());
   }, []);
+
+  // Filtrar productos cuando cambie el proveedor
+  useEffect(() => {
+    if (proveedorId && productosProveedor.length > 0) {
+      const productos = productosProveedor.filter(producto => producto.proveedor_id === proveedorId);
+      setProductosDisponibles(productos);
+    } else {
+      setProductosDisponibles([]);
+    }
+    // Limpiar selección de producto cuando cambie el proveedor
+    setProductoSeleccionado('');
+    resetDetalleForm();
+  }, [proveedorId, productosProveedor]);
+
+  // Cargar datos del producto seleccionado
+  useEffect(() => {
+    if (productoSeleccionado) {
+      const producto = productosDisponibles.find(p => p.id === productoSeleccionado);
+      if (producto) {
+        setNombreProducto(producto.nombre_producto);
+        setUnidad(producto.unidad);
+        setPrecioUnitario(producto.precio_unitario);
+        setTipoInsumo(producto.tipo_insumo);
+      }
+    } else {
+      setNombreProducto('');
+      setUnidad('');
+      setPrecioUnitario(0);
+    }
+  }, [productoSeleccionado, productosDisponibles]);
 
   useEffect(() => {
     if (!open) {
@@ -74,10 +108,12 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
     setDestinoInsumo('Acopio Maquipaes');
     setObservaciones('');
     setDetalles([]);
+    setProductosDisponibles([]);
     resetDetalleForm();
   };
 
   const resetDetalleForm = () => {
+    setProductoSeleccionado('');
     setNombreProducto('');
     setUnidad('');
     setCantidad(0);
@@ -327,6 +363,37 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
               <CardTitle>Agregar Productos/Servicios</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {proveedorId && productosDisponibles.length > 0 ? (
+                <>
+                  <div>
+                    <Label htmlFor="producto-catalogo">Seleccionar del Catálogo</Label>
+                    <Select onValueChange={setProductoSeleccionado} value={productoSeleccionado}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar producto del proveedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productosDisponibles.map((producto) => (
+                          <SelectItem key={producto.id} value={producto.id}>
+                            {producto.nombre_producto} - {producto.unidad} - ${producto.precio_unitario.toLocaleString()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    O complete manualmente:
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded">
+                  {!proveedorId ? 
+                    'Seleccione un proveedor para ver productos disponibles' :
+                    'Este proveedor no tiene productos en catálogo. Complete manualmente:'
+                  }
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="nombre-producto">Nombre del Producto/Servicio *</Label>
                 <Input
