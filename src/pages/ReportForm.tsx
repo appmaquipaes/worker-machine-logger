@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -31,7 +30,8 @@ import {
   Send,
   Gauge
 } from 'lucide-react';
-import { loadProveedores } from '@/models/Proveedores';
+import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
+import { loadClientes } from '@/models/Clientes';
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -52,12 +52,17 @@ const ReportForm = () => {
   const [cantidadM3, setCantidadM3] = useState<number | undefined>(15);
   const [proveedor, setProveedor] = useState<string>('');
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
+  const [tipoMateria, setTipoMateria] = useState<string>('');
   
-  // Cargar proveedores
+  // Cargar proveedores, clientes y tipos de materia
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
   
   useEffect(() => {
     setProveedores(loadProveedores());
+    setClientes(loadClientes());
+    setTiposMaterial(getUniqueProviderMaterialTypes());
   }, []);
   
   // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
@@ -98,9 +103,21 @@ const ReportForm = () => {
         return;
       }
       
-      // Para vehículos de transporte, validar origen y destino
-      if (isTransportVehicle() && (!origin.trim() || !destination.trim())) {
-        toast.error('Debe ingresar el origen y destino del viaje');
+      // Validar origen desde proveedores
+      if (!origin.trim()) {
+        toast.error('Debe seleccionar el origen del viaje');
+        return;
+      }
+
+      // Validar destino desde clientes
+      if (!destination.trim()) {
+        toast.error('Debe seleccionar el destino del viaje');
+        return;
+      }
+
+      // Validar tipo de materia
+      if (!tipoMateria.trim()) {
+        toast.error('Debe seleccionar el tipo de materia');
         return;
       }
 
@@ -163,9 +180,9 @@ const ReportForm = () => {
       reportType === 'Combustible' ? value : 
       reportType === 'Mantenimiento' ? maintenanceValue : undefined,
       (reportType === 'Horas Trabajadas' && !isTransportVehicle()) ? workSite : undefined,
-      (reportType === 'Viajes' && isTransportVehicle()) ? origin : undefined,
-      (reportType === 'Viajes' && isTransportVehicle()) ? destination : undefined,
-      (reportType === 'Viajes' && isTransportVehicle()) ? cantidadM3 : undefined,
+      reportType === 'Viajes' ? origin : undefined,
+      reportType === 'Viajes' ? destination : undefined,
+      reportType === 'Viajes' ? cantidadM3 : undefined,
       (reportType === 'Mantenimiento' && isTransportVehicle()) ? proveedor : undefined,
       (reportType === 'Combustible' && isTransportVehicle()) ? kilometraje : undefined
     );
@@ -185,6 +202,7 @@ const ReportForm = () => {
     setCantidadM3(15);
     setProveedor('');
     setKilometraje(undefined);
+    setTipoMateria('');
     
     // Redirigir al dashboard
     navigate('/dashboard');
@@ -194,10 +212,11 @@ const ReportForm = () => {
   const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas' && !isTransportVehicle();
-  const shouldShowOriginDestination = reportType === 'Viajes' && isTransportVehicle();
+  const shouldShowOriginDestination = reportType === 'Viajes';
   const shouldShowM3Input = reportType === 'Viajes' && isTransportVehicle();
   const shouldShowProveedorInput = reportType === 'Mantenimiento' && isTransportVehicle();
   const shouldShowKilometrajeInput = reportType === 'Combustible' && isTransportVehicle();
+  const shouldShowTipoMateriaInput = reportType === 'Viajes';
   
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
@@ -370,35 +389,62 @@ const ReportForm = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin size={24} />
-                    <Label htmlFor="origin" className="text-lg">Origen</Label>
+                    <Label htmlFor="origin" className="text-lg">Origen (Proveedor)</Label>
                   </div>
-                  <Input 
-                    id="origin"
-                    type="text"
-                    placeholder="Punto de origen"
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
-                    className="text-lg p-6"
-                    required
-                  />
+                  <Select onValueChange={setOrigin} value={origin}>
+                    <SelectTrigger className="text-lg p-6">
+                      <SelectValue placeholder="Selecciona el origen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proveedores.map((prov) => (
+                        <SelectItem key={prov.id} value={prov.nombre}>
+                          {prov.nombre} - {prov.ciudad}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin size={24} />
-                    <Label htmlFor="destination" className="text-lg">Destino</Label>
+                    <Label htmlFor="destination" className="text-lg">Destino (Cliente)</Label>
                   </div>
-                  <Input 
-                    id="destination"
-                    type="text"
-                    placeholder="Punto de destino"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="text-lg p-6"
-                    required
-                  />
+                  <Select onValueChange={setDestination} value={destination}>
+                    <SelectTrigger className="text-lg p-6">
+                      <SelectValue placeholder="Selecciona el destino" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                          {cliente.nombre_cliente} - {cliente.ciudad}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
+            )}
+
+            {shouldShowTipoMateriaInput && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <ToolIcon size={24} />
+                  <Label htmlFor="tipo-materia" className="text-lg">Tipo de Materia</Label>
+                </div>
+                <Select onValueChange={setTipoMateria} value={tipoMateria}>
+                  <SelectTrigger className="text-lg p-6">
+                    <SelectValue placeholder="Selecciona el tipo de materia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposMaterial.map((tipo) => (
+                      <SelectItem key={tipo} value={tipo}>
+                        {tipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {shouldShowM3Input && (
