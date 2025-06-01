@@ -26,8 +26,8 @@ const ComprasPage: React.FC = () => {
   
   // Filtros
   const [filterProveedor, setFilterProveedor] = useState('');
-  const [filterTipoInsumo, setFilterTipoInsumo] = useState('');
-  const [filterFormaPago, setFilterFormaPago] = useState('');
+  const [filterTipoInsumo, setFilterTipoInsumo] = useState('all');
+  const [filterFormaPago, setFilterFormaPago] = useState('all');
   const [filterFechaDesde, setFilterFechaDesde] = useState('');
   const [filterFechaHasta, setFilterFechaHasta] = useState('');
   
@@ -61,11 +61,11 @@ const ComprasPage: React.FC = () => {
       );
     }
 
-    if (filterTipoInsumo) {
+    if (filterTipoInsumo && filterTipoInsumo !== 'all') {
       filtered = filtered.filter(compra => compra.tipo_insumo === filterTipoInsumo);
     }
 
-    if (filterFormaPago) {
+    if (filterFormaPago && filterFormaPago !== 'all') {
       filtered = filtered.filter(compra => compra.forma_pago === filterFormaPago);
     }
 
@@ -173,7 +173,7 @@ const ComprasPage: React.FC = () => {
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Material">Material</SelectItem>
                       <SelectItem value="Lubricante">Lubricante</SelectItem>
                       <SelectItem value="Repuesto">Repuesto</SelectItem>
@@ -190,7 +190,7 @@ const ComprasPage: React.FC = () => {
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="Contado">Contado</SelectItem>
                       <SelectItem value="Crédito">Crédito</SelectItem>
                       <SelectItem value="Otro">Otro</SelectItem>
