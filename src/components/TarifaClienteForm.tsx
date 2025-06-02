@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -16,6 +14,8 @@ import { getClienteByName } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
 import { useMachine } from '@/context/MachineContext';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
+import TarifaTransporteForm from '@/components/TarifaTransporteForm';
+import TarifaAlquilerForm from '@/components/TarifaAlquilerForm';
 
 interface TarifaClienteFormProps {
   initialData?: TarifaCliente | null;
@@ -58,7 +58,6 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     setMateriales(loadMateriales());
   }, []);
 
-  // Cargar datos iniciales si se está editando
   useEffect(() => {
     if (initialData) {
       setTipoServicio(initialData.tipo_servicio);
@@ -231,158 +230,36 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         onFincaChange={handleFincaChange}
       />
 
-      {tipoServicio === 'transporte' && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="origen">Origen *</Label>
-              <select
-                id="origen"
-                value={origen}
-                onChange={(e) => setOrigen(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">Seleccionar origen</option>
-                {proveedores.map((prov) => (
-                  <option key={prov.id} value={prov.nombre}>
-                    {prov.nombre} - {prov.ciudad}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <Label htmlFor="destino">Destino/Punto de Entrega *</Label>
-              <Input
-                id="destino"
-                value={destino}
-                onChange={(e) => setDestino(e.target.value)}
-                placeholder={
-                  !cliente 
-                    ? "Seleccione primero un cliente" 
-                    : clienteTieneFincas 
-                      ? "Se asigna automáticamente según la finca seleccionada"
-                      : "Se asigna automáticamente con el nombre del cliente"
-                }
-                disabled={clienteTieneFincas}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="valor-flete">Valor Flete por m³ *</Label>
-            <Input
-              id="valor-flete"
-              type="number"
-              value={valorFlete}
-              onChange={(e) => setValorFlete(parseFloat(e.target.value) || 0)}
-              placeholder="Valor del flete por metro cúbico"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="tipo-material">Tipo de Material</Label>
-            <select
-              id="tipo-material"
-              value={tipoMaterial}
-              onChange={(e) => handleMaterialChange(e.target.value)}
-              className="w-full p-2 border rounded-md"
-            >
-              <option value="">Seleccionar material</option>
-              {materiales.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.nombre_material}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {tipoMaterial && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="valor-material">Valor Material por m³ (Referencia)</Label>
-                <Input
-                  id="valor-material"
-                  type="number"
-                  value={valorMaterial}
-                  disabled
-                  className="bg-gray-50"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="valor-material-cliente">Valor Material Cliente por m³ *</Label>
-                <Input
-                  id="valor-material-cliente"
-                  type="number"
-                  value={valorMaterialCliente}
-                  onChange={(e) => setValorMaterialCliente(parseFloat(e.target.value) || 0)}
-                  placeholder="Valor que se le cobra al cliente"
-                />
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {tipoServicio === 'alquiler_maquina' && (
-        <>
-          <div>
-            <Label htmlFor="maquina">Máquina *</Label>
-            <select
-              id="maquina"
-              value={maquinaId}
-              onChange={(e) => setMaquinaId(e.target.value)}
-              className="w-full p-2 border rounded-md"
-            >
-              <option value="">Seleccionar máquina</option>
-              {machines.map((machine) => (
-                <option key={machine.id} value={machine.id}>
-                  {machine.name} ({machine.type}) - {machine.plate}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="valor-hora">Valor por Hora</Label>
-              <Input
-                id="valor-hora"
-                type="number"
-                value={valorPorHora}
-                onChange={(e) => setValorPorHora(parseFloat(e.target.value) || 0)}
-                placeholder="Valor por hora"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="valor-dia">Valor por Día</Label>
-              <Input
-                id="valor-dia"
-                type="number"
-                value={valorPorDia}
-                onChange={(e) => setValorPorDia(parseFloat(e.target.value) || 0)}
-                placeholder="Valor por día"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="valor-mes">Valor por Mes</Label>
-              <Input
-                id="valor-mes"
-                type="number"
-                value={valorPorMes}
-                onChange={(e) => setValorPorMes(parseFloat(e.target.value) || 0)}
-                placeholder="Valor por mes"
-              />
-            </div>
-          </div>
-          
-          <p className="text-xs text-muted-foreground">
-            * Defina al menos uno de los valores de alquiler (hora, día o mes)
-          </p>
-        </>
+      {tipoServicio === 'transporte' ? (
+        <TarifaTransporteForm
+          origen={origen}
+          destino={destino}
+          valorFlete={valorFlete}
+          tipoMaterial={tipoMaterial}
+          valorMaterial={valorMaterial}
+          valorMaterialCliente={valorMaterialCliente}
+          proveedores={proveedores}
+          materiales={materiales}
+          cliente={cliente}
+          clienteTieneFincas={clienteTieneFincas}
+          onOrigenChange={setOrigen}
+          onDestinoChange={setDestino}
+          onValorFleteChange={setValorFlete}
+          onMaterialChange={handleMaterialChange}
+          onValorMaterialClienteChange={setValorMaterialCliente}
+        />
+      ) : (
+        <TarifaAlquilerForm
+          maquinaId={maquinaId}
+          valorPorHora={valorPorHora}
+          valorPorDia={valorPorDia}
+          valorPorMes={valorPorMes}
+          machines={machines}
+          onMaquinaChange={setMaquinaId}
+          onValorPorHoraChange={setValorPorHora}
+          onValorPorDiaChange={setValorPorDia}
+          onValorPorMesChange={setValorPorMes}
+        />
       )}
       
       <div>
