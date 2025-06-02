@@ -11,6 +11,7 @@ interface ClienteFincaSelectorProps {
   onClienteChange: (cliente: string) => void;
   onFincaChange: (finca: string) => void;
   onCiudadChange?: (ciudad: string) => void;
+  autoSetDestination?: boolean; // Nueva prop para manejar el destino automático
 }
 
 const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
@@ -18,7 +19,8 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
   selectedFinca,
   onClienteChange,
   onFincaChange,
-  onCiudadChange
+  onCiudadChange,
+  autoSetDestination = false
 }) => {
   const [clientes, setClientes] = useState<string[]>([]);
   const [fincas, setFincas] = useState<Finca[]>([]);
@@ -47,6 +49,11 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
             onCiudadChange(fincasData[0].ciudad);
           }
         }
+
+        // Si autoSetDestination está activo y no hay fincas, llamar onFincaChange con el nombre del cliente
+        if (autoSetDestination && fincasData.length === 0) {
+          onFincaChange(selectedCliente);
+        }
       } else {
         setFincas([]);
         onFincaChange('');
@@ -55,7 +62,7 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
       setFincas([]);
       onFincaChange('');
     }
-  }, [selectedCliente, onFincaChange, onCiudadChange]);
+  }, [selectedCliente, onFincaChange, onCiudadChange, autoSetDestination]);
 
   const handleClienteChange = (clienteNombre: string) => {
     onClienteChange(clienteNombre);
@@ -97,7 +104,7 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
         <Select 
           onValueChange={handleFincaChange} 
           value={selectedFinca}
-          disabled={!selectedCliente || fincas.length === 0}
+          disabled={!selectedCliente || (fincas.length === 0 && !autoSetDestination)}
         >
           <SelectTrigger>
             <SelectValue 
@@ -105,7 +112,9 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
                 !selectedCliente 
                   ? "Primero seleccione un cliente" 
                   : fincas.length === 0 
-                    ? "El cliente no tiene fincas registradas"
+                    ? autoSetDestination 
+                      ? selectedCliente // Mostrar el nombre del cliente como destino automático
+                      : "El cliente no tiene fincas registradas"
                     : "Seleccionar finca"
               } 
             />
@@ -118,9 +127,14 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
             ))}
           </SelectContent>
         </Select>
-        {selectedCliente && fincas.length === 0 && (
+        {selectedCliente && fincas.length === 0 && !autoSetDestination && (
           <p className="text-sm text-muted-foreground mt-1">
             Este cliente no tiene fincas registradas. Agrégalas en la gestión de clientes.
+          </p>
+        )}
+        {selectedCliente && fincas.length === 0 && autoSetDestination && (
+          <p className="text-sm text-muted-foreground mt-1">
+            Este cliente no tiene fincas registradas, se usa el nombre del cliente como destino.
           </p>
         )}
       </div>

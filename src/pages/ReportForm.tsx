@@ -120,26 +120,10 @@ const ReportForm = () => {
     }
   };
 
-  // Manejar cambio de finca para viajes (destino)
+  // Manejar cambio de finca para viajes (destino) - ahora maneja tanto fincas como destino automático
   const handleFincaChangeForDestination = (finca: string) => {
     setSelectedFinca(finca);
-    // Si se selecciona una finca, usar su nombre como destino
-    if (finca) {
-      setDestination(finca);
-    } else if (selectedCliente) {
-      // Si se deselecciona la finca pero hay cliente, verificar si tiene fincas
-      const clienteData = getClienteByName(selectedCliente);
-      if (clienteData) {
-        const fincas = getFincasByCliente(clienteData.id);
-        if (fincas.length === 0) {
-          // Si no tiene fincas, usar el nombre del cliente
-          setDestination(selectedCliente);
-        } else {
-          // Si tiene fincas, limpiar el destino
-          setDestination('');
-        }
-      }
-    }
+    setDestination(finca); // El componente ya maneja si es finca real o nombre de cliente
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -518,17 +502,8 @@ const ReportForm = () => {
                     selectedFinca={selectedFinca}
                     onClienteChange={handleClienteChangeForDestination}
                     onFincaChange={handleFincaChangeForDestination}
+                    autoSetDestination={true}
                   />
-                  {selectedCliente && !clienteTieneFincas && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Este cliente no tiene fincas registradas, se usa el nombre del cliente como destino.
-                    </p>
-                  )}
-                  {selectedCliente && clienteTieneFincas && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      El destino se establece automáticamente según la finca seleccionada.
-                    </p>
-                  )}
                 </div>
               </>
             )}
