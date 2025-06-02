@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +15,13 @@ import { getFincasByCliente } from '@/models/Fincas';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 
 interface TarifaClienteFormProps {
+  initialData?: TarifaCliente | null;
   onTarifaCreated: (tarifa: TarifaCliente) => void;
   onCancel: () => void;
 }
 
 const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
+  initialData,
   onTarifaCreated,
   onCancel
 }) => {
@@ -42,6 +43,23 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     setProveedores(loadProveedores());
     setMateriales(loadMateriales());
   }, []);
+
+  // Cargar datos iniciales si se está editando
+  useEffect(() => {
+    if (initialData) {
+      setCliente(initialData.cliente);
+      setFinca(initialData.finca || '');
+      setOrigen(initialData.origen);
+      setDestino(initialData.destino);
+      setValorFlete(initialData.valor_flete_m3);
+      setTipoMaterial(initialData.tipo_material || '');
+      setValorMaterial(initialData.valor_material_m3 || 0);
+      setValorMaterialCliente(initialData.valor_material_cliente_m3 || 0);
+      setObservaciones(initialData.observaciones || '');
+    } else {
+      resetForm();
+    }
+  }, [initialData]);
 
   const resetForm = () => {
     setCliente('');
@@ -133,8 +151,9 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     );
 
     onTarifaCreated(nuevaTarifa);
-    resetForm();
-    toast.success('Tarifa creada exitosamente');
+    if (!initialData) {
+      resetForm();
+    }
   };
 
   // Determinar si el cliente tiene fincas
@@ -274,7 +293,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
           Cancelar
         </Button>
         <Button onClick={handleSubmit}>
-          Crear Tarifa
+          {initialData ? 'Actualizar Tarifa' : 'Crear Tarifa'}
         </Button>
       </div>
     </div>
