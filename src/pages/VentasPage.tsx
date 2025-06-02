@@ -21,11 +21,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { ArrowLeft, Plus, Eye, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Filter, Download, BarChart3, Users, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { Venta, loadVentas, tiposVenta } from '@/models/Ventas';
-import { loadClientes } from '@/models/Clientes';
+import { Venta, loadVentas, tiposVenta, formasPago } from '@/models/Ventas';
+import { loadClientes, getClienteByName } from '@/models/Clientes';
+import { getFincasByCliente } from '@/models/Fincas';
 import RegistrarVentaDialog from '@/components/RegistrarVentaDialog';
+import * as XLSX from 'xlsx';
 
 const VentasPage = () => {
   const { user } = useAuth();
@@ -37,11 +39,14 @@ const VentasPage = () => {
   
   // Filtros
   const [filtroCliente, setFiltroCliente] = useState('all');
+  const [filtroFinca, setFiltroFinca] = useState('all');
   const [filtroTipoVenta, setFiltroTipoVenta] = useState('all');
+  const [filtroFormaPago, setFiltroFormaPago] = useState('all');
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   
-  const [clientes, setClientes] = useState<string[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [fincas, setFincas] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -60,12 +65,29 @@ const VentasPage = () => {
 
   const loadData = () => {
     const ventasData = loadVentas();
-    const clientesData = loadClientes().map(c => c.nombre_cliente);
+    const clientesData = loadClientes();
     
     setVentas(ventasData);
     setVentasFiltradas(ventasData);
     setClientes(clientesData);
   };
+
+  // Cargar fincas cuando se selecciona un cliente
+  useEffect(() => {
+    if (filtroCliente && filtroCliente !== 'all') {
+      const cliente = getClienteByName(filtroCliente);
+      if (cliente) {
+        const fincasData = getFincasByCliente(cliente.id);
+        setFincas(fincasData);
+      } else {
+        setFincas([]);
+      }
+      setFiltroFinca('all'); // Reset finca selection
+    } else {
+      setFincas([]);
+      setFiltroFinca('all');
+    }
+  }, [filtroCliente]);
 
   // Aplicar filtros
   useEffect(() => {
@@ -75,8 +97,19 @@ const VentasPage = () => {
       ventasFiltered = ventasFiltered.filter(v => v.cliente === filtroCliente);
     }
 
+    if (filtroFinca && filtroFinca !== 'all') {
+      ventasFiltered = ventasFiltered.filter(v => {
+        const fincaFromDestino = v.destino_material ? v.destino_material.split(' - ')[1] : '';
+        return fincaFromDestino === filtroFinca;
+      });
+    }
+
     if (filtroTipoVenta && filtroTipoVenta !== 'all') {
       ventasFiltered = ventasFiltered.filter(v => v.tipo_venta === filtroTipoVenta);
+    }
+
+    if (filtroFormaPago && filtroFormaPago !== 'all') {
+      ventasFiltered = ventasFiltered.filter(v => v.forma_pago === filtroFormaPago);
     }
 
     if (filtroFechaInicio) {
@@ -92,17 +125,53 @@ const VentasPage = () => {
     }
 
     setVentasFiltradas(ventasFiltered);
-  }, [ventas, filtroCliente, filtroTipoVenta, filtroFechaInicio, filtroFechaFin]);
+  }, [ventas, filtroCliente, filtroFinca, filtroTipoVenta, filtroFormaPago, filtroFechaInicio, filtroFechaFin]);
 
   const limpiarFiltros = () => {
     setFiltroCliente('all');
+    setFiltroFinca('all');
     setFiltroTipoVenta('all');
+    setFiltroFormaPago('all');
     setFiltroFechaInicio('');
     setFiltroFechaFin('');
   };
 
   const calcularTotalVentas = () => {
     return ventasFiltradas.reduce((total, venta) => total + venta.total_venta, 0);
+  };
+
+  const exportToExcel = () => {
+    if (ventasFiltradas.length === 0) {
+      toast.error('No hay datos para exportar');
+      return;
+    }
+
+    const exportData = ventasFiltradas.map(venta => ({
+      'Fecha': new Date(venta.fecha).toLocaleDateString(),
+      'Cliente': venta.cliente,
+      'Finca': venta.destino_material ? venta.destino_material.split(' - ')[1] || '' : '',
+      'Tipo de Venta': venta.tipo_venta,
+      'Ciudad Entrega': venta.ciudad_entrega,
+      'Origen Material': venta.origen_material,
+      'Forma de Pago': venta.forma_pago,
+      'Total Venta': venta.total_venta,
+      'Observaciones': venta.observaciones || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+    
+    const fileName = `ventas_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    toast.success('Reporte exportado correctamente');
+  };
+
+  // Función para extraer finca del destino
+  const getFincaFromDestino = (destino: string): string => {
+    if (!destino) return '';
+    return destino.split(' - ')[1] || '';
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -144,9 +213,12 @@ const VentasPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
-              <Label htmlFor="filtro-cliente">Cliente</Label>
+              <Label htmlFor="filtro-cliente" className="flex items-center gap-1">
+                <Users size={16} />
+                Cliente
+              </Label>
               <Select onValueChange={setFiltroCliente} value={filtroCliente}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos los clientes" />
@@ -154,8 +226,38 @@ const VentasPage = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos los clientes</SelectItem>
                   {clientes.map((cliente) => (
-                    <SelectItem key={cliente} value={cliente}>
-                      {cliente}
+                    <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                      {cliente.nombre_cliente}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="filtro-finca" className="flex items-center gap-1">
+                <MapPin size={16} />
+                Finca
+              </Label>
+              <Select 
+                onValueChange={setFiltroFinca} 
+                value={filtroFinca}
+                disabled={filtroCliente === 'all' || fincas.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    filtroCliente === 'all' 
+                      ? "Primero seleccione un cliente" 
+                      : fincas.length === 0 
+                        ? "El cliente no tiene fincas"
+                        : "Todas las fincas"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las fincas</SelectItem>
+                  {fincas.map((finca) => (
+                    <SelectItem key={finca.id} value={finca.nombre_finca}>
+                      {finca.nombre_finca} - {finca.ciudad}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -173,6 +275,23 @@ const VentasPage = () => {
                   {tiposVenta.map((tipo) => (
                     <SelectItem key={tipo} value={tipo}>
                       {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="filtro-forma-pago">Forma de Pago</Label>
+              <Select onValueChange={setFiltroFormaPago} value={filtroFormaPago}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las formas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las formas</SelectItem>
+                  {formasPago.map((forma) => (
+                    <SelectItem key={forma} value={forma}>
+                      {forma}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -204,15 +323,21 @@ const VentasPage = () => {
             <Button variant="outline" onClick={limpiarFiltros}>
               Limpiar Filtros
             </Button>
-            <div className="text-lg font-semibold">
-              Total Filtrado: ${calcularTotalVentas().toLocaleString()}
+            <div className="flex gap-2 items-center">
+              <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Exportar Excel
+              </Button>
+              <div className="text-lg font-semibold">
+                Total Filtrado: ${calcularTotalVentas().toLocaleString()}
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Ventas</CardDescription>
@@ -235,6 +360,15 @@ const VentasPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Clientes Únicos</CardDescription>
+            <CardTitle className="text-2xl">
+              {new Set(ventasFiltradas.map(v => v.cliente)).size}
+            </CardTitle>
+          </CardHeader>
+        </Card>
       </div>
 
       {/* Tabla de Ventas */}
@@ -251,6 +385,7 @@ const VentasPage = () => {
               <TableRow>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Cliente</TableHead>
+                <TableHead>Finca/Destino</TableHead>
                 <TableHead>Tipo de Venta</TableHead>
                 <TableHead>Ciudad Entrega</TableHead>
                 <TableHead>Origen</TableHead>
@@ -265,8 +400,17 @@ const VentasPage = () => {
                   <TableCell>
                     {new Date(venta.fecha).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>{venta.cliente}</TableCell>
-                  <TableCell>{venta.tipo_venta}</TableCell>
+                  <TableCell className="font-medium">{venta.cliente}</TableCell>
+                  <TableCell>{getFincaFromDestino(venta.destino_material) || venta.destino_material}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      venta.tipo_venta === 'Material' ? 'bg-blue-100 text-blue-800' :
+                      venta.tipo_venta === 'Transporte' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {venta.tipo_venta}
+                    </span>
+                  </TableCell>
                   <TableCell>{venta.ciudad_entrega}</TableCell>
                   <TableCell>{venta.origen_material}</TableCell>
                   <TableCell>{venta.forma_pago}</TableCell>

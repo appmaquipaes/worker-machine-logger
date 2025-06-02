@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useMachine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Search, FileText, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Search, FileText, Calendar, DollarSign, Download, BarChart3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +15,12 @@ import { Compra, loadCompras } from '@/models/Compras';
 import { loadProveedores } from '@/models/Proveedores';
 import { toast } from 'sonner';
 import RegistrarCompraDialog from '@/components/RegistrarCompraDialog';
+import * as XLSX from 'xlsx';
 
 const ComprasPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { machines } = useMachine();
   
   // Estados
   const [compras, setCompras] = useState<Compra[]>([]);
@@ -30,6 +33,7 @@ const ComprasPage: React.FC = () => {
   const [filterFormaPago, setFilterFormaPago] = useState('all');
   const [filterFechaDesde, setFilterFechaDesde] = useState('');
   const [filterFechaHasta, setFilterFechaHasta] = useState('');
+  const [filterMaquina, setFilterMaquina] = useState('all');
   
   // Control de acceso
   useEffect(() => {
@@ -69,6 +73,10 @@ const ComprasPage: React.FC = () => {
       filtered = filtered.filter(compra => compra.forma_pago === filterFormaPago);
     }
 
+    if (filterMaquina && filterMaquina !== 'all') {
+      filtered = filtered.filter(compra => compra.destino_insumo === filterMaquina);
+    }
+
     if (filterFechaDesde) {
       filtered = filtered.filter(compra => 
         compra.fecha >= new Date(filterFechaDesde)
@@ -82,7 +90,7 @@ const ComprasPage: React.FC = () => {
     }
 
     setFilteredCompras(filtered);
-  }, [compras, filterProveedor, filterTipoInsumo, filterFormaPago, filterFechaDesde, filterFechaHasta]);
+  }, [compras, filterProveedor, filterTipoInsumo, filterFormaPago, filterFechaDesde, filterFechaHasta, filterMaquina]);
 
   const handleCompraRegistrada = () => {
     const comprasData = loadCompras();
@@ -100,6 +108,42 @@ const ComprasPage: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     });
+  };
+
+  const exportToExcel = () => {
+    if (filteredCompras.length === 0) {
+      toast.error('No hay datos para exportar');
+      return;
+    }
+
+    const exportData = filteredCompras.map(compra => ({
+      'Fecha': formatDate(compra.fecha),
+      'Documento': `${compra.tipo_documento} - ${compra.numero_documento}`,
+      'Proveedor': compra.proveedor_nombre,
+      'Tipo Insumo': compra.tipo_insumo,
+      'Destino': compra.destino_insumo,
+      'Forma Pago': compra.forma_pago,
+      'Total': compra.total,
+      'Items': compra.detalles.length
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Compras');
+    
+    const fileName = `compras_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    toast.success('Reporte exportado correctamente');
+  };
+
+  const limpiarFiltros = () => {
+    setFilterProveedor('');
+    setFilterTipoInsumo('all');
+    setFilterFormaPago('all');
+    setFilterFechaDesde('');
+    setFilterFechaHasta('');
+    setFilterMaquina('all');
   };
 
   // Calcular estadísticas
@@ -155,7 +199,7 @@ const ComprasPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <Label htmlFor="filter-proveedor">Proveedor</Label>
                   <Input
@@ -179,6 +223,23 @@ const ComprasPage: React.FC = () => {
                       <SelectItem value="Repuesto">Repuesto</SelectItem>
                       <SelectItem value="Servicio">Servicio</SelectItem>
                       <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="filter-maquina">Máquina/Destino</Label>
+                  <Select onValueChange={setFilterMaquina} value={filterMaquina}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las máquinas</SelectItem>
+                      {machines.map((machine) => (
+                        <SelectItem key={machine.id} value={machine.name}>
+                          {machine.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -216,6 +277,21 @@ const ComprasPage: React.FC = () => {
                     value={filterFechaHasta}
                     onChange={(e) => setFilterFechaHasta(e.target.value)}
                   />
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center mt-4">
+                <Button variant="outline" onClick={limpiarFiltros}>
+                  Limpiar Filtros
+                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Exportar Excel
+                  </Button>
+                  <div className="text-lg font-semibold">
+                    Total Filtrado: ${formatNumber(totalCompras)}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -319,14 +395,98 @@ const ComprasPage: React.FC = () => {
         <TabsContent value="reportes">
           <Card>
             <CardHeader>
-              <CardTitle>Reportes de Compras</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Reportes de Compras
+              </CardTitle>
               <CardDescription>
-                Análisis y estadísticas de compras
+                Análisis y estadísticas detalladas de compras
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">Funcionalidad de reportes en desarrollo</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Reporte por Tipo de Insumo */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Por Tipo de Insumo</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {['Material', 'Lubricante', 'Repuesto', 'Servicio', 'Otro'].map(tipo => {
+                      const comprasTipo = filteredCompras.filter(c => c.tipo_insumo === tipo);
+                      const totalTipo = comprasTipo.reduce((sum, c) => sum + c.total, 0);
+                      return (
+                        <div key={tipo} className="flex justify-between text-sm mb-1">
+                          <span>{tipo}:</span>
+                          <span className="font-medium">${formatNumber(totalTipo)}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+
+                {/* Reporte por Proveedor */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Top Proveedores</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {proveedores.slice(0, 5).map(proveedor => {
+                      const comprasProveedor = filteredCompras.filter(c => c.proveedor_nombre === proveedor.nombre_proveedor);
+                      const totalProveedor = comprasProveedor.reduce((sum, c) => sum + c.total, 0);
+                      return (
+                        <div key={proveedor.id} className="flex justify-between text-sm mb-1">
+                          <span className="truncate">{proveedor.nombre_proveedor}:</span>
+                          <span className="font-medium">${formatNumber(totalProveedor)}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+
+                {/* Reporte por Máquina */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Por Máquina/Destino</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {machines.slice(0, 5).map(machine => {
+                      const comprasMaquina = filteredCompras.filter(c => c.destino_insumo === machine.name);
+                      const totalMaquina = comprasMaquina.reduce((sum, c) => sum + c.total, 0);
+                      return (
+                        <div key={machine.id} className="flex justify-between text-sm mb-1">
+                          <span className="truncate">{machine.name}:</span>
+                          <span className="font-medium">${formatNumber(totalMaquina)}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+
+                {/* Reporte por Forma de Pago */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Por Forma de Pago</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {['Contado', 'Crédito', 'Otro'].map(forma => {
+                      const comprasForma = filteredCompras.filter(c => c.forma_pago === forma);
+                      const totalForma = comprasForma.reduce((sum, c) => sum + c.total, 0);
+                      return (
+                        <div key={forma} className="flex justify-between text-sm mb-1">
+                          <span>{forma}:</span>
+                          <span className="font-medium">${formatNumber(totalForma)}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="text-center">
+                <Button onClick={exportToExcel} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar Reporte Completo
+                </Button>
               </div>
             </CardContent>
           </Card>
