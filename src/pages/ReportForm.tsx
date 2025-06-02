@@ -163,16 +163,16 @@ const ReportForm = () => {
         return;
       }
 
+      // Validar cantidad de m3 para todos los viajes
+      if (cantidadM3 === undefined || cantidadM3 <= 0) {
+        toast.error('Debe ingresar una cantidad válida de m³ transportados');
+        return;
+      }
+
       // Para viajes desde Acopio Maquipaes, validar material del inventario
       if (origin === 'Acopio Maquipaes') {
         if (!tipoMateria.trim()) {
           toast.error('Debe seleccionar el tipo de material desde el inventario');
-          return;
-        }
-        
-        // Validar cantidad de m3 
-        if (cantidadM3 === undefined || cantidadM3 <= 0) {
-          toast.error('Debe ingresar una cantidad válida de m³ transportados');
           return;
         }
         
@@ -191,12 +191,6 @@ const ReportForm = () => {
         // Para otros orígenes, validar tipo de materia general
         if (!tipoMateria.trim()) {
           toast.error('Debe seleccionar el tipo de materia');
-          return;
-        }
-        
-        // Validar cantidad de m3 para vehículos de transporte
-        if (isTransportVehicle() && (cantidadM3 === undefined || cantidadM3 <= 0)) {
-          toast.error('Debe ingresar una cantidad válida de m³ transportados');
           return;
         }
       }
@@ -297,7 +291,7 @@ const ReportForm = () => {
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
   const shouldShowOriginDestination = reportType === 'Viajes';
-  const shouldShowM3Input = reportType === 'Viajes' && (isTransportVehicle() || origin === 'Acopio Maquipaes');
+  const shouldShowM3Input = reportType === 'Viajes'; // Mostrar para todos los viajes
   const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes';
   const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
   const shouldShowKilometrajeInput = reportType === 'Combustible';
