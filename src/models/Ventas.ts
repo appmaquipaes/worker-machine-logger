@@ -23,7 +23,7 @@ export type DetalleVenta = {
   subtotal: number;
 };
 
-// Tipos de venta disponibles
+// Tipos de venta disponibles - actualizado para incluir "Solo transporte"
 export const tiposVenta = [
   'Solo material',
   'Solo transporte', 
