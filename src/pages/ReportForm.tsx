@@ -450,6 +450,28 @@ const ReportForm = () => {
                 />
               </div>
             )}
+
+            {shouldShowHoursInput && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  {reportType === 'Horas Trabajadas' ? <Clock size={24} /> : <AlarmClock size={24} />}
+                  <Label htmlFor="hours" className="text-lg">
+                    {reportType === 'Horas Trabajadas' ? 'Horas Trabajadas' : 'Horas Extras'}
+                  </Label>
+                </div>
+                <Input 
+                  id="hours"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  placeholder="Ej: 8.5"
+                  value={hours === undefined ? '' : hours}
+                  onChange={(e) => setHours(parseFloat(e.target.value) || undefined)}
+                  className="text-lg p-6"
+                  required
+                />
+              </div>
+            )}
             
             {isShowingTripInput && (
               <div className="space-y-2">
@@ -590,6 +612,25 @@ const ReportForm = () => {
                   placeholder="Ej: 150000"
                   value={kilometraje === undefined ? '' : kilometraje}
                   onChange={(e) => setKilometraje(parseFloat(e.target.value) || undefined)}
+                  className="text-lg p-6"
+                  required
+                />
+              </div>
+            )}
+
+            {shouldShowValueInput && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Fuel size={24} />
+                  <Label htmlFor="value" className="text-lg">Valor del Combustible</Label>
+                </div>
+                <Input 
+                  id="value"
+                  type="number"
+                  min="1"
+                  placeholder="Ej: 50000"
+                  value={value === undefined ? '' : value}
+                  onChange={(e) => setValue(parseFloat(e.target.value) || undefined)}
                   className="text-lg p-6"
                   required
                 />
