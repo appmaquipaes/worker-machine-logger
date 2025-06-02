@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +32,8 @@ import {
   Gauge
 } from 'lucide-react';
 import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
+import { getClienteByName } from '@/models/Clientes';
+import { getFincasByCliente } from '@/models/Fincas';
 
 const ReportForm = () => {
   const { user } = useAuth();
@@ -99,13 +100,46 @@ const ReportForm = () => {
   // Manejar cambio de cliente para viajes (destino)
   const handleClienteChangeForDestination = (cliente: string) => {
     setSelectedCliente(cliente);
-    setDestination(''); // Reset destination when client changes
+    setSelectedFinca(''); // Reset finca selection
+    
+    // Verificar si el cliente tiene fincas
+    if (cliente) {
+      const clienteData = getClienteByName(cliente);
+      if (clienteData) {
+        const fincas = getFincasByCliente(clienteData.id);
+        if (fincas.length === 0) {
+          // Si no tiene fincas, usar el nombre del cliente como destino
+          setDestination(cliente);
+        } else {
+          // Si tiene fincas, limpiar el destino para que se seleccione una finca
+          setDestination('');
+        }
+      }
+    } else {
+      setDestination('');
+    }
   };
 
   // Manejar cambio de finca para viajes (destino)
   const handleFincaChangeForDestination = (finca: string) => {
     setSelectedFinca(finca);
-    setDestination(finca);
+    // Si se selecciona una finca, usar su nombre como destino
+    if (finca) {
+      setDestination(finca);
+    } else if (selectedCliente) {
+      // Si se deselecciona la finca pero hay cliente, verificar si tiene fincas
+      const clienteData = getClienteByName(selectedCliente);
+      if (clienteData) {
+        const fincas = getFincasByCliente(clienteData.id);
+        if (fincas.length === 0) {
+          // Si no tiene fincas, usar el nombre del cliente
+          setDestination(selectedCliente);
+        } else {
+          // Si tiene fincas, limpiar el destino
+          setDestination('');
+        }
+      }
+    }
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -284,6 +318,11 @@ const ReportForm = () => {
   const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
   const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowProveedorInput = reportType === 'Mantenimiento';
+  
+  // Determinar si el cliente tiene fincas
+  const clienteData = selectedCliente ? getClienteByName(selectedCliente) : null;
+  const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
+  const clienteTieneFincas = fincasDisponibles.length > 0;
   
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
@@ -480,6 +519,16 @@ const ReportForm = () => {
                     onClienteChange={handleClienteChangeForDestination}
                     onFincaChange={handleFincaChangeForDestination}
                   />
+                  {selectedCliente && !clienteTieneFincas && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Este cliente no tiene fincas registradas, se usa el nombre del cliente como destino.
+                    </p>
+                  )}
+                  {selectedCliente && clienteTieneFincas && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      El destino se establece automáticamente según la finca seleccionada.
+                    </p>
+                  )}
                 </div>
               </>
             )}
