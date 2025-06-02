@@ -32,6 +32,7 @@ import {
   saveTarifasCliente 
 } from '@/models/TarifasCliente';
 import { loadProveedores } from '@/models/Proveedores';
+import { loadMateriales } from '@/models/Materiales';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 
 const TarifasClientePage = () => {
@@ -40,6 +41,7 @@ const TarifasClientePage = () => {
   
   const [tarifas, setTarifas] = useState<TarifaCliente[]>([]);
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [materiales, setMateriales] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Estados del formulario
@@ -48,6 +50,7 @@ const TarifasClientePage = () => {
   const [origen, setOrigen] = useState('');
   const [destino, setDestino] = useState('');
   const [valorFlete, setValorFlete] = useState<number>(0);
+  const [tipoMaterial, setTipoMaterial] = useState('');
   const [valorMaterial, setValorMaterial] = useState<number>(0);
   const [observaciones, setObservaciones] = useState('');
 
@@ -69,6 +72,7 @@ const TarifasClientePage = () => {
   const loadData = () => {
     setTarifas(loadTarifasCliente());
     setProveedores(loadProveedores());
+    setMateriales(loadMateriales());
   };
 
   const resetForm = () => {
@@ -77,8 +81,22 @@ const TarifasClientePage = () => {
     setOrigen('');
     setDestino('');
     setValorFlete(0);
+    setTipoMaterial('');
     setValorMaterial(0);
     setObservaciones('');
+  };
+
+  const handleMaterialChange = (materialId: string) => {
+    setTipoMaterial(materialId);
+    
+    if (materialId) {
+      const material = materiales.find(m => m.id === materialId);
+      if (material) {
+        setValorMaterial(material.valor_por_m3);
+      }
+    } else {
+      setValorMaterial(0);
+    }
   };
 
   const handleSubmit = () => {
@@ -94,7 +112,8 @@ const TarifasClientePage = () => {
       destino,
       valorFlete,
       valorMaterial > 0 ? valorMaterial : undefined,
-      observaciones || undefined
+      observaciones || undefined,
+      tipoMaterial || undefined
     );
 
     const updatedTarifas = [...tarifas, nuevaTarifa];
@@ -119,6 +138,12 @@ const TarifasClientePage = () => {
   const handleFincaChange = (nuevaFinca: string) => {
     setFinca(nuevaFinca);
     setDestino(nuevaFinca); // Sync destino with finca
+  };
+
+  const getMaterialName = (materialId?: string) => {
+    if (!materialId) return '-';
+    const material = materiales.find(m => m.id === materialId);
+    return material ? material.nombre_material : materialId;
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -180,7 +205,7 @@ const TarifasClientePage = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="valor-flete">Valor Flete por m³ *</Label>
                       <Input
@@ -190,6 +215,25 @@ const TarifasClientePage = () => {
                         onChange={(e) => setValorFlete(parseFloat(e.target.value) || 0)}
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="tipo-material">Tipo de Material</Label>
+                      <select
+                        id="tipo-material"
+                        value={tipoMaterial}
+                        onChange={(e) => handleMaterialChange(e.target.value)}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="">Seleccionar material</option>
+                        {materiales.map((material) => (
+                          <option key={material.id} value={material.id}>
+                            {material.nombre_material}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     
                     <div>
                       <Label htmlFor="valor-material">Valor Material por m³ (Referencia)</Label>
@@ -198,6 +242,8 @@ const TarifasClientePage = () => {
                         type="number"
                         value={valorMaterial}
                         onChange={(e) => setValorMaterial(parseFloat(e.target.value) || 0)}
+                        placeholder="Se asigna automáticamente"
+                        disabled={!!tipoMaterial}
                       />
                     </div>
                   </div>
@@ -257,6 +303,7 @@ const TarifasClientePage = () => {
                 <TableHead>Destino/Punto de Entrega</TableHead>
                 <TableHead>Origen</TableHead>
                 <TableHead>Valor Flete/m³</TableHead>
+                <TableHead>Material</TableHead>
                 <TableHead>Valor Material/m³</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -269,6 +316,7 @@ const TarifasClientePage = () => {
                   <TableCell>{tarifa.destino}</TableCell>
                   <TableCell>{tarifa.origen}</TableCell>
                   <TableCell>${tarifa.valor_flete_m3.toLocaleString()}</TableCell>
+                  <TableCell>{getMaterialName(tarifa.tipo_material)}</TableCell>
                   <TableCell>
                     {tarifa.valor_material_m3 ? `$${tarifa.valor_material_m3.toLocaleString()}` : '-'}
                   </TableCell>

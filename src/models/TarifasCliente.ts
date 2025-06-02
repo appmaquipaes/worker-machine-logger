@@ -8,6 +8,7 @@ export type TarifaCliente = {
   destino: string;
   valor_flete_m3: number;
   valor_material_m3?: number; // Para controles cuando el cliente compra directo
+  tipo_material?: string; // ID del tipo de material
   activa: boolean;
   fecha_creacion: Date;
   observaciones?: string;
@@ -21,7 +22,8 @@ export const createTarifaCliente = (
   destino: string,
   valor_flete_m3: number,
   valor_material_m3?: number,
-  observaciones?: string
+  observaciones?: string,
+  tipo_material?: string
 ): TarifaCliente => {
   return {
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -31,6 +33,7 @@ export const createTarifaCliente = (
     destino,
     valor_flete_m3,
     valor_material_m3,
+    tipo_material,
     activa: true,
     fecha_creacion: new Date(),
     observaciones
