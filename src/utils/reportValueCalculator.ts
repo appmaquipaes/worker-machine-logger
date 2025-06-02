@@ -1,6 +1,5 @@
 
 import { findTarifaCliente, getTarifasByCliente, TarifaCliente } from '@/models/TarifasCliente';
-import { loadMachines } from '@/models/Machines';
 
 export interface ReportValueCalculation {
   valorCalculado: number;
@@ -103,10 +102,4 @@ export const calcularValorViajes = (
     detalleCalculo: detalleCalculo || `${cantidadM3} m³ sin valores de tarifa definidos`,
     tarifaEncontrada: valorTotal > 0
   };
-};
-
-// Obtener información de la máquina para búsqueda de tarifas
-export const getMachineInfo = (machineId: string) => {
-  const machines = loadMachines();
-  return machines.find(m => m.id === machineId);
 };
