@@ -58,23 +58,44 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   const handleClienteChange = (nuevoCliente: string) => {
     setCliente(nuevoCliente);
     setFinca('');
-    setDestino('');
     
-    // Si el cliente no tiene fincas, usar el nombre del cliente como destino
+    // Verificar si el cliente tiene fincas
     if (nuevoCliente) {
       const clienteData = getClienteByName(nuevoCliente);
       if (clienteData) {
         const fincas = getFincasByCliente(clienteData.id);
         if (fincas.length === 0) {
+          // Si no tiene fincas, usar el nombre del cliente como destino
           setDestino(nuevoCliente);
+        } else {
+          // Si tiene fincas, limpiar el destino para que se seleccione una finca
+          setDestino('');
         }
       }
+    } else {
+      setDestino('');
     }
   };
 
   const handleFincaChange = (nuevaFinca: string) => {
     setFinca(nuevaFinca);
-    setDestino(nuevaFinca || cliente);
+    // Si se selecciona una finca, usar su nombre como destino
+    if (nuevaFinca) {
+      setDestino(nuevaFinca);
+    } else if (cliente) {
+      // Si se deselecciona la finca pero hay cliente, verificar si tiene fincas
+      const clienteData = getClienteByName(cliente);
+      if (clienteData) {
+        const fincas = getFincasByCliente(clienteData.id);
+        if (fincas.length === 0) {
+          // Si no tiene fincas, usar el nombre del cliente
+          setDestino(cliente);
+        } else {
+          // Si tiene fincas, limpiar el destino
+          setDestino('');
+        }
+      }
+    }
   };
 
   const handleMaterialChange = (materialId: string) => {
@@ -116,6 +137,11 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     toast.success('Tarifa creada exitosamente');
   };
 
+  // Determinar si el cliente tiene fincas
+  const clienteData = cliente ? getClienteByName(cliente) : null;
+  const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
+  const clienteTieneFincas = fincasDisponibles.length > 0;
+
   return (
     <div className="space-y-4">
       <ClienteFincaSelector
@@ -148,12 +174,26 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
           <Input
             id="destino"
             value={destino}
-            onChange={(e) => {
-              setDestino(e.target.value);
-              if (!finca) setFinca(e.target.value);
-            }}
-            placeholder="Se asigna automáticamente según cliente/finca"
+            onChange={(e) => setDestino(e.target.value)}
+            placeholder={
+              !cliente 
+                ? "Seleccione primero un cliente" 
+                : clienteTieneFincas 
+                  ? "Se asigna automáticamente según la finca seleccionada"
+                  : "Se asigna automáticamente con el nombre del cliente"
+            }
+            disabled={clienteTieneFincas}
           />
+          {cliente && !clienteTieneFincas && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Este cliente no tiene fincas registradas, se usa el nombre del cliente como destino.
+            </p>
+          )}
+          {cliente && clienteTieneFincas && (
+            <p className="text-xs text-muted-foreground mt-1">
+              El destino se establece automáticamente según la finca seleccionada.
+            </p>
+          )}
         </div>
       </div>
       
