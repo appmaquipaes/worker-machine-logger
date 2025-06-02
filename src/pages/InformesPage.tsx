@@ -106,17 +106,17 @@ const InformesPage: React.FC = () => {
       'Usuario': report.userName,
       'Máquina': report.machineName,
       'Tipo de Reporte': report.reportType,
-      'Novedades': report.reportType === 'Novedades' ? report.description : '',
       'Cliente': report.workSite || extractClienteFromDestination(report.destination),
       'Finca': extractFincaFromDestination(report.destination),
       'Horas': report.hours || '',
       'Viajes': report.trips || '',
+      'M³': report.cantidadM3 || '',
       'Valor': report.value ? `$${report.value.toLocaleString()}` : '',
       'Origen': report.origin || '',
       'Destino': report.destination || '',
-      'M³': report.cantidadM3 || '',
       'Proveedor': report.proveedor || '',
       'Kilometraje': report.kilometraje || '',
+      'Novedades': report.reportType === 'Novedades' ? report.description : '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -372,11 +372,11 @@ const InformesPage: React.FC = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Finca</TableHead>
-                    <TableHead>Novedades</TableHead>
                     <TableHead>Horas</TableHead>
                     <TableHead>Viajes</TableHead>
                     <TableHead>M³</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead className="w-48">Novedades</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -388,13 +388,15 @@ const InformesPage: React.FC = () => {
                       <TableCell>{report.reportType}</TableCell>
                       <TableCell>{report.workSite || extractClienteFromDestination(report.destination) || '-'}</TableCell>
                       <TableCell>{extractFincaFromDestination(report.destination) || '-'}</TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {report.reportType === 'Novedades' ? report.description : '-'}
-                      </TableCell>
                       <TableCell>{report.hours || '-'}</TableCell>
                       <TableCell>{report.trips || '-'}</TableCell>
                       <TableCell>{report.cantidadM3 || '-'}</TableCell>
                       <TableCell>{report.value ? `$${report.value.toLocaleString()}` : '-'}</TableCell>
+                      <TableCell className="w-48 max-w-48">
+                        <div className="truncate" title={report.reportType === 'Novedades' ? report.description : ''}>
+                          {report.reportType === 'Novedades' ? report.description : '-'}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
