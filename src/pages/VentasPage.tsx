@@ -404,8 +404,8 @@ const VentasPage = () => {
                   <TableCell>{getFincaFromDestino(venta.destino_material) || venta.destino_material}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      venta.tipo_venta === 'Material' ? 'bg-blue-100 text-blue-800' :
-                      venta.tipo_venta === 'Transporte' ? 'bg-green-100 text-green-800' :
+                      venta.tipo_venta === 'Solo material' ? 'bg-blue-100 text-blue-800' :
+                      venta.tipo_venta === 'Solo transporte' ? 'bg-green-100 text-green-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {venta.tipo_venta}

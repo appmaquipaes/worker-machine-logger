@@ -431,11 +431,11 @@ const ComprasPage: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     {proveedores.slice(0, 5).map(proveedor => {
-                      const comprasProveedor = filteredCompras.filter(c => c.proveedor_nombre === proveedor.nombre_proveedor);
+                      const comprasProveedor = filteredCompras.filter(c => c.proveedor_nombre === proveedor.nombre);
                       const totalProveedor = comprasProveedor.reduce((sum, c) => sum + c.total, 0);
                       return (
                         <div key={proveedor.id} className="flex justify-between text-sm mb-1">
-                          <span className="truncate">{proveedor.nombre_proveedor}:</span>
+                          <span className="truncate">{proveedor.nombre}:</span>
                           <span className="font-medium">${formatNumber(totalProveedor)}</span>
                         </div>
                       );
