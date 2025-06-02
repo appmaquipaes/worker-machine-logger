@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 
@@ -7,18 +6,20 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Trabajador' | 'Administrador';
+  role: 'Trabajador' | 'Administrador' | 'Operador';
+  assignedMachines?: string[]; // IDs de las máquinas asignadas para operadores
 };
 
 // Definir el tipo de contexto
 type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador') => Promise<boolean>;
+  register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador', assignedMachines?: string[]) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (email: string, resetCode: string, newPassword: string) => Promise<boolean>;
+  updateUserMachines: (userId: string, machineIds: string[]) => Promise<boolean>;
 };
 
 // Crear el contexto
@@ -83,7 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string, 
     email: string, 
     password: string, 
-    role: 'Trabajador' | 'Administrador'
+    role: 'Trabajador' | 'Administrador' | 'Operador',
+    assignedMachines: string[] = []
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -103,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password, // En un entorno real, esto debería estar encriptado
         role,
+        ...(role === 'Operador' && { assignedMachines }),
       };
       
       // Guardar el usuario en la "base de datos" (localStorage)
@@ -122,6 +125,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Error al registrar:", error);
       toast.error("Error al registrar usuario");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para actualizar las máquinas asignadas a un usuario
+  const updateUserMachines = async (userId: string, machineIds: string[]): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.id === userId);
+      
+      if (userIndex === -1) {
+        toast.error("Usuario no encontrado");
+        return false;
+      }
+      
+      users[userIndex].assignedMachines = machineIds;
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Actualizar usuario actual si es el mismo
+      if (user && user.id === userId) {
+        const updatedUser = { ...user, assignedMachines: machineIds };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      toast.success("Máquinas asignadas actualizadas");
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar máquinas:", error);
+      toast.error("Error al actualizar las máquinas asignadas");
       return false;
     } finally {
       setIsLoading(false);
@@ -225,7 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     isLoading,
     resetPassword,
-    updatePassword
+    updatePassword,
+    updateUserMachines
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
