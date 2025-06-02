@@ -21,17 +21,17 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
   });
 
   const machineTypes: Machine['type'][] = [
-    'Excavadora',
-    'Bulldozer',
-    'Compactador',
-    'Cargador',
-    'Motoniveladora',
-    'Paladraga',
-    'Camión',
     'Volqueta',
+    'Camión', 
     'Camabaja',
     'Semirremolque',
     'Tractomula',
+    'Excavadora',
+    'Bulldozer',
+    'Cargador',
+    'Motoniveladora',
+    'Compactador',
+    'Paladraga',
   ];
 
   const handleAddMachine = () => {
@@ -41,6 +41,8 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
     }
 
     onAddMachine(newMachine);
+    toast.success(`${newMachine.type} ${newMachine.name} agregada exitosamente`);
+    
     // Limpiar el formulario
     setNewMachine({
       name: '',
@@ -54,22 +56,22 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
       <CardHeader>
         <CardTitle>Añadir Nueva Máquina</CardTitle>
         <CardDescription>
-          Completa el formulario para registrar una nueva máquina
+          Completa el formulario para registrar una nueva máquina o vehículo
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
+            <Label htmlFor="name">Nombre *</Label>
             <Input
               id="name"
-              placeholder="Nombre de la máquina"
+              placeholder="Ej: Volqueta Kenworth T880"
               value={newMachine.name}
               onChange={(e) => setNewMachine({...newMachine, name: e.target.value})}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="type">Tipo</Label>
+            <Label htmlFor="type">Tipo *</Label>
             <Select 
               value={newMachine.type} 
               onValueChange={(value: Machine['type']) => setNewMachine({...newMachine, type: value})}
@@ -78,11 +80,21 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
                 <SelectValue placeholder="Selecciona un tipo" />
               </SelectTrigger>
               <SelectContent>
-                {machineTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
+                <optgroup label="Vehículos de Transporte">
+                  <SelectItem value="Volqueta">Volqueta</SelectItem>
+                  <SelectItem value="Camión">Camión</SelectItem>
+                  <SelectItem value="Camabaja">Camabaja</SelectItem>
+                  <SelectItem value="Semirremolque">Semirremolque</SelectItem>
+                  <SelectItem value="Tractomula">Tractomula</SelectItem>
+                </optgroup>
+                <optgroup label="Maquinaria Pesada">
+                  <SelectItem value="Excavadora">Excavadora</SelectItem>
+                  <SelectItem value="Bulldozer">Bulldozer</SelectItem>
+                  <SelectItem value="Cargador">Cargador</SelectItem>
+                  <SelectItem value="Motoniveladora">Motoniveladora</SelectItem>
+                  <SelectItem value="Compactador">Compactador</SelectItem>
+                  <SelectItem value="Paladraga">Paladraga</SelectItem>
+                </optgroup>
               </SelectContent>
             </Select>
           </div>
@@ -90,7 +102,7 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
             <Label htmlFor="plate">Placa (opcional)</Label>
             <Input
               id="plate"
-              placeholder="Placa del vehículo"
+              placeholder="Ej: ABC-123"
               value={newMachine.plate || ''}
               onChange={(e) => setNewMachine({...newMachine, plate: e.target.value})}
             />

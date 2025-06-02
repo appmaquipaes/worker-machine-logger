@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Machine = {
@@ -39,14 +40,18 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (storedMachines) {
       setMachines(JSON.parse(storedMachines));
     } else {
-      // Datos iniciales si no hay máquinas guardadas
+      // Datos iniciales mejorados con más variedad de máquinas
       const initialMachines: Machine[] = [
         { id: '1', name: 'Excavadora CAT 320', type: 'Excavadora', plate: 'ABC-123', status: 'available' },
         { id: '2', name: 'Bulldozer D6K', type: 'Bulldozer', plate: 'DEF-456', status: 'available' },
-        { id: '3', name: 'Volqueta Kenworth', type: 'Volqueta', plate: 'GHI-789', status: 'available' },
-        { id: '4', name: 'Camabaja Freightliner', type: 'Camabaja', plate: 'JKL-012', status: 'available' },
-        { id: '5', name: 'Semirremolque Volvo', type: 'Semirremolque', plate: 'MNO-345', status: 'available' },
-        { id: '6', name: 'Tractomula Scania', type: 'Tractomula', plate: 'PQR-678', status: 'available' },
+        { id: '3', name: 'Volqueta Kenworth T880', type: 'Volqueta', plate: 'GHI-789', status: 'available' },
+        { id: '4', name: 'Camabaja Freightliner M2', type: 'Camabaja', plate: 'JKL-012', status: 'available' },
+        { id: '5', name: 'Semirremolque Volvo VNL', type: 'Semirremolque', plate: 'MNO-345', status: 'available' },
+        { id: '6', name: 'Tractomula Scania R500', type: 'Tractomula', plate: 'PQR-678', status: 'available' },
+        { id: '7', name: 'Cargador Frontal CAT 950M', type: 'Cargador', plate: 'STU-901', status: 'available' },
+        { id: '8', name: 'Motoniveladora CAT 140M', type: 'Motoniveladora', plate: 'VWX-234', status: 'available' },
+        { id: '9', name: 'Compactador Vibratorio Dynapac', type: 'Compactador', plate: 'YZA-567', status: 'available' },
+        { id: '10', name: 'Paladraga Liebherr R944C', type: 'Paladraga', plate: 'BCD-890', status: 'available' },
       ];
       setMachines(initialMachines);
       localStorage.setItem('machines', JSON.stringify(initialMachines));
@@ -55,11 +60,22 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const selectMachine = (machine: Machine) => {
     setSelectedMachine(machine);
+    // Guardar la máquina seleccionada en localStorage para persistencia
+    localStorage.setItem('selectedMachine', JSON.stringify(machine));
   };
 
   const clearSelectedMachine = () => {
     setSelectedMachine(null);
+    localStorage.removeItem('selectedMachine');
   };
+
+  // Recuperar máquina seleccionada del localStorage al iniciar
+  useEffect(() => {
+    const storedSelectedMachine = localStorage.getItem('selectedMachine');
+    if (storedSelectedMachine) {
+      setSelectedMachine(JSON.parse(storedSelectedMachine));
+    }
+  }, []);
 
   const addMachine = (machine: Omit<Machine, 'id'>) => {
     const newMachine: Machine = {
@@ -77,12 +93,24 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
     setMachines(updatedMachines);
     localStorage.setItem('machines', JSON.stringify(updatedMachines));
+    
+    // Actualizar máquina seleccionada si es la misma
+    if (selectedMachine && selectedMachine.id === id) {
+      const updated = { ...selectedMachine, ...updatedMachine };
+      setSelectedMachine(updated);
+      localStorage.setItem('selectedMachine', JSON.stringify(updated));
+    }
   };
 
   const deleteMachine = (id: string) => {
     const updatedMachines = machines.filter(machine => machine.id !== id);
     setMachines(updatedMachines);
     localStorage.setItem('machines', JSON.stringify(updatedMachines));
+    
+    // Limpiar máquina seleccionada si es la que se eliminó
+    if (selectedMachine && selectedMachine.id === id) {
+      clearSelectedMachine();
+    }
   };
 
   const value = {

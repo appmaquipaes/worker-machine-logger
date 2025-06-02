@@ -5,7 +5,7 @@ import { useMachine } from '@/context/MachineContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Truck, Wrench } from 'lucide-react';
+import { ArrowLeft, Truck, Wrench, Building, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -26,13 +26,14 @@ const MachineSelection: React.FC = () => {
     selectMachine(machine);
     
     // Mensaje personalizado según el tipo de máquina
-    if (machine.type === 'Camión') {
-      toast.success(`Volqueta ${machine.name} seleccionada`);
+    if (machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula') {
+      toast.success(`Vehículo ${machine.name} seleccionado`);
     } else {
       toast.success(`Máquina ${machine.name} seleccionada`);
     }
     
-    navigate('/report'); // Redirect to the report form
+    // Navegar al formulario de reporte con el ID de la máquina
+    navigate(`/machines/${machine.id}/report`);
   };
 
   if (!user) return null;
@@ -41,7 +42,19 @@ const MachineSelection: React.FC = () => {
   const getMachineIcon = (type: string) => {
     switch (type) {
       case 'Camión':
+      case 'Volqueta':
+      case 'Camabaja':
+      case 'Semirremolque':
+      case 'Tractomula':
         return <Truck size={36} />;
+      case 'Excavadora':
+      case 'Bulldozer':
+      case 'Motoniveladora':
+      case 'Paladraga':
+        return <Building size={36} />;
+      case 'Cargador':
+      case 'Compactador':
+        return <Loader2 size={36} />;
       default:
         return <Wrench size={36} />;
     }
@@ -51,6 +64,7 @@ const MachineSelection: React.FC = () => {
   const getMachineImage = (type: string) => {
     switch (type.toLowerCase()) {
       case 'camión':
+      case 'volqueta':
         return "/truck.png";
       case 'excavadora':
         return "/excavator.png";
@@ -64,10 +78,29 @@ const MachineSelection: React.FC = () => {
         return "/grader.png";
       case 'paladraga':
         return "/dragline.png";
+      case 'camabaja':
+      case 'semirremolque':
+      case 'tractomula':
+        return "/truck.png";
       default:
         return "/machine.png";
     }
   };
+
+  // Agrupar máquinas por tipo para mejor organización
+  const groupedMachines = machines.reduce((groups, machine) => {
+    const key = machine.type;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(machine);
+    return groups;
+  }, {} as Record<string, typeof machines>);
+
+  const machineOrder = [
+    'Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula',
+    'Excavadora', 'Bulldozer', 'Cargador', 'Motoniveladora', 'Compactador', 'Paladraga'
+  ];
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -87,52 +120,97 @@ const MachineSelection: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {machines.map((machine) => (
-          <Card key={machine.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <Button
-              onClick={() => handleSelectMachine(machine)}
-              className="w-full h-auto p-6 flex flex-col items-center gap-4 text-lg font-medium"
-              variant="ghost"
-            >
-              <div className="mb-3 w-32 h-32 flex items-center justify-center">
-                {machine.imageUrl ? (
-                  <Avatar className="w-full h-full rounded-md">
-                    <AvatarImage src={machine.imageUrl} alt={machine.name} className="object-cover" />
-                    <AvatarFallback className="bg-primary/20 w-full h-full flex items-center justify-center rounded-md">
-                      {getMachineIcon(machine.type)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <AspectRatio ratio={1 / 1} className="bg-primary/20 w-full rounded-md flex items-center justify-center">
-                    <img 
-                      src={getMachineImage(machine.type)} 
-                      alt={machine.type}
-                      onError={(e) => {
-                        // Si la imagen falla, mostrar el icono
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.appendChild(
-                          document.createElement('div')
-                        ).appendChild(
-                          document.createTextNode(machine.type[0])
-                        );
-                      }}
-                      className="object-contain p-2 max-h-28"
-                    />
-                  </AspectRatio>
-                )}
+      {machines.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-xl text-muted-foreground mb-4">
+            No hay máquinas disponibles
+          </p>
+          <p className="text-muted-foreground">
+            Contacta al administrador para agregar máquinas al sistema
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {machineOrder.map((type) => {
+            const machinesOfType = groupedMachines[type];
+            if (!machinesOfType || machinesOfType.length === 0) return null;
+
+            return (
+              <div key={type}>
+                <h2 className="text-2xl font-semibold mb-4 text-center">
+                  {type}s
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {machinesOfType.map((machine) => (
+                    <Card key={machine.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <Button
+                        onClick={() => handleSelectMachine(machine)}
+                        className="w-full h-auto p-6 flex flex-col items-center gap-4 text-lg font-medium"
+                        variant="ghost"
+                      >
+                        <div className="mb-3 w-32 h-32 flex items-center justify-center">
+                          {machine.imageUrl ? (
+                            <Avatar className="w-full h-full rounded-md">
+                              <AvatarImage src={machine.imageUrl} alt={machine.name} className="object-cover" />
+                              <AvatarFallback className="bg-primary/20 w-full h-full flex items-center justify-center rounded-md">
+                                {getMachineIcon(machine.type)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <AspectRatio ratio={1 / 1} className="bg-primary/20 w-full rounded-md flex items-center justify-center">
+                              <img 
+                                src={getMachineImage(machine.type)} 
+                                alt={machine.type}
+                                onError={(e) => {
+                                  // Si la imagen falla, ocultar y mostrar icono
+                                  e.currentTarget.style.display = 'none';
+                                  const iconContainer = e.currentTarget.parentElement;
+                                  if (iconContainer && !iconContainer.querySelector('.fallback-icon')) {
+                                    const iconDiv = document.createElement('div');
+                                    iconDiv.className = 'fallback-icon flex items-center justify-center w-full h-full';
+                                    iconDiv.appendChild(
+                                      (() => {
+                                        const span = document.createElement('span');
+                                        span.innerHTML = getMachineIcon(machine.type).props.children || machine.type[0];
+                                        return span;
+                                      })()
+                                    );
+                                    iconContainer.appendChild(iconDiv);
+                                  }
+                                }}
+                                className="object-contain p-2 max-h-28"
+                              />
+                            </AspectRatio>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <h3 className="text-2xl font-bold">{machine.name}</h3>
+                          <p className="text-muted-foreground">{machine.type}</p>
+                          {machine.plate && (
+                            <p className="text-sm mt-1 font-medium">Placa: {machine.plate}</p>
+                          )}
+                          <div className="mt-2">
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs ${
+                              machine.status === 'available' 
+                                ? 'bg-green-100 text-green-800' 
+                                : machine.status === 'in-use'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {machine.status === 'available' ? 'Disponible' : 
+                               machine.status === 'in-use' ? 'En uso' : 'Mantenimiento'}
+                            </span>
+                          </div>
+                        </div>
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
               </div>
-              <div className="text-center">
-                <h3 className="text-2xl font-bold">{machine.name}</h3>
-                <p className="text-muted-foreground">{machine.type}</p>
-                {machine.plate && (
-                  <p className="text-sm mt-1">Placa: {machine.plate}</p>
-                )}
-              </div>
-            </Button>
-          </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
