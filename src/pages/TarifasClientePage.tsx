@@ -31,18 +31,20 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, DollarSign, Pencil, Trash } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, Pencil, Trash, Truck, Settings } from 'lucide-react';
 import { 
   TarifaCliente, 
   loadTarifasCliente, 
   saveTarifasCliente 
 } from '@/models/TarifasCliente';
 import { loadMateriales } from '@/models/Materiales';
+import { useMachine } from '@/context/MachineContext';
 import TarifaClienteForm from '@/components/TarifaClienteForm';
 
 const TarifasClientePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { machines } = useMachine();
   
   const [tarifas, setTarifas] = useState<TarifaCliente[]>([]);
   const [materiales, setMateriales] = useState<any[]>([]);
@@ -50,6 +52,7 @@ const TarifasClientePage = () => {
   const [editingTarifa, setEditingTarifa] = useState<TarifaCliente | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tarifaToDelete, setTarifaToDelete] = useState<TarifaCliente | null>(null);
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'transporte' | 'alquiler_maquina'>('todos');
 
   useEffect(() => {
     if (!user) {
@@ -75,13 +78,11 @@ const TarifasClientePage = () => {
     let updatedTarifas;
     
     if (editingTarifa) {
-      // Actualizar tarifa existente
       updatedTarifas = tarifas.map(tarifa =>
         tarifa.id === editingTarifa.id ? { ...nuevaTarifa, id: editingTarifa.id } : tarifa
       );
       toast.success('Tarifa actualizada exitosamente');
     } else {
-      // Crear nueva tarifa
       updatedTarifas = [...tarifas, nuevaTarifa];
       toast.success('Tarifa creada exitosamente');
     }
@@ -128,11 +129,25 @@ const TarifasClientePage = () => {
     return material ? material.nombre_material : materialId;
   };
 
+  const getMachineName = (machineId?: string) => {
+    if (!machineId) return '-';
+    const machine = machines.find(m => m.id === machineId);
+    return machine ? `${machine.name} (${machine.plate})` : machineId;
+  };
+
   const calcularMargenGanancia = (tarifa: TarifaCliente) => {
     if (!tarifa.valor_material_m3 || !tarifa.valor_material_cliente_m3) return null;
     const margen = tarifa.valor_material_cliente_m3 - tarifa.valor_material_m3;
     const porcentaje = ((margen / tarifa.valor_material_m3) * 100).toFixed(1);
     return { margen, porcentaje };
+  };
+
+  const formatearValoresAlquiler = (tarifa: TarifaCliente) => {
+    const valores = [];
+    if (tarifa.valor_por_hora) valores.push(`$${tarifa.valor_por_hora.toLocaleString()}/h`);
+    if (tarifa.valor_por_dia) valores.push(`$${tarifa.valor_por_dia.toLocaleString()}/d`);
+    if (tarifa.valor_por_mes) valores.push(`$${tarifa.valor_por_mes.toLocaleString()}/m`);
+    return valores.join(' | ');
   };
 
   const handleDialogClose = (open: boolean) => {
@@ -141,6 +156,11 @@ const TarifasClientePage = () => {
     }
     setDialogOpen(open);
   };
+
+  const tarifasFiltradas = tarifas.filter(tarifa => {
+    if (filtroTipo === 'todos') return true;
+    return tarifa.tipo_servicio === filtroTipo;
+  });
 
   if (!user || user.role !== 'Administrador') return null;
 
@@ -182,51 +202,119 @@ const TarifasClientePage = () => {
           </div>
         </div>
         <p className="text-muted-foreground">
-          Gestiona las tarifas de flete personalizadas por cliente y destino con márgenes de ganancia.
+          Gestiona las tarifas de transporte y alquiler de maquinaria personalizadas por cliente.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Tarifas Configuradas
-          </CardTitle>
-          <CardDescription>
-            {tarifas.length} tarifa(s) registrada(s)
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Tarifas Configuradas
+              </CardTitle>
+              <CardDescription>
+                {tarifasFiltradas.length} tarifa(s) {filtroTipo !== 'todos' ? `de ${filtroTipo}` : ''} registrada(s)
+              </CardDescription>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Label htmlFor="filtro-tipo">Filtrar por tipo:</Label>
+              <select
+                id="filtro-tipo"
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value as any)}
+                className="p-2 border rounded-md text-sm"
+              >
+                <option value="todos">Todos</option>
+                <option value="transporte">Transporte</option>
+                <option value="alquiler_maquina">Alquiler Maquinaria</option>
+              </select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Destino/Punto de Entrega</TableHead>
-                <TableHead>Origen</TableHead>
-                <TableHead>Valor Flete/m³</TableHead>
+                <TableHead>Servicio/Máquina</TableHead>
+                <TableHead>Origen/Destino</TableHead>
+                <TableHead>Tarifas</TableHead>
                 <TableHead>Material</TableHead>
-                <TableHead>Valor Material/m³</TableHead>
-                <TableHead>Valor Cliente/m³</TableHead>
                 <TableHead>Margen</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tarifas.map((tarifa) => {
+              {tarifasFiltradas.map((tarifa) => {
                 const margen = calcularMargenGanancia(tarifa);
                 return (
                   <TableRow key={tarifa.id}>
-                    <TableCell className="font-medium">{tarifa.cliente}</TableCell>
-                    <TableCell>{tarifa.destino}</TableCell>
-                    <TableCell>{tarifa.origen}</TableCell>
-                    <TableCell>${tarifa.valor_flete_m3.toLocaleString()}</TableCell>
-                    <TableCell>{getMaterialName(tarifa.tipo_material)}</TableCell>
                     <TableCell>
-                      {tarifa.valor_material_m3 ? `$${tarifa.valor_material_m3.toLocaleString()}` : '-'}
+                      <div className="flex items-center gap-2">
+                        {tarifa.tipo_servicio === 'transporte' ? (
+                          <Truck className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <Settings className="h-4 w-4 text-orange-600" />
+                        )}
+                        <span className="text-xs">
+                          {tarifa.tipo_servicio === 'transporte' ? 'Transporte' : 'Alquiler'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{tarifa.cliente}</TableCell>
+                    <TableCell>
+                      {tarifa.tipo_servicio === 'transporte' ? (
+                        <div className="text-sm">
+                          <div>Servicio de transporte</div>
+                          {tarifa.finca && <div className="text-muted-foreground">Finca: {tarifa.finca}</div>}
+                        </div>
+                      ) : (
+                        <div className="text-sm">
+                          <div>{tarifa.tipo_maquina}</div>
+                          <div className="text-muted-foreground">{getMachineName(tarifa.maquina_id)}</div>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {tarifa.valor_material_cliente_m3 ? `$${tarifa.valor_material_cliente_m3.toLocaleString()}` : '-'}
+                      {tarifa.tipo_servicio === 'transporte' ? (
+                        <div className="text-sm">
+                          <div>De: {tarifa.origen}</div>
+                          <div>A: {tarifa.destino}</div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {tarifa.tipo_servicio === 'transporte' ? (
+                        <div className="text-sm">
+                          <div>${tarifa.valor_flete_m3?.toLocaleString()}/m³</div>
+                          <div className="text-muted-foreground">Flete</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm">
+                          {formatearValoresAlquiler(tarifa)}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {tarifa.tipo_servicio === 'transporte' ? (
+                        <div className="text-sm">
+                          <div>{getMaterialName(tarifa.tipo_material)}</div>
+                          {tarifa.valor_material_cliente_m3 && (
+                            <div className="text-muted-foreground">
+                              ${tarifa.valor_material_cliente_m3.toLocaleString()}/m³
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {margen ? (
@@ -273,7 +361,7 @@ const TarifasClientePage = () => {
             </TableBody>
           </Table>
 
-          {tarifas.length === 0 && (
+          {tarifasFiltradas.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No hay tarifas configuradas. Crea la primera tarifa usando el botón "Nueva Tarifa".
             </div>
@@ -287,8 +375,8 @@ const TarifasClientePage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente la tarifa para el cliente "{tarifaToDelete?.cliente}" 
-              con destino "{tarifaToDelete?.destino}". Esta acción no se puede deshacer.
+              Esta acción eliminará permanentemente la tarifa para el cliente "{tarifaToDelete?.cliente}". 
+              Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

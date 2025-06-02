@@ -1,22 +1,33 @@
-
 // Define el tipo para tarifas de flete por cliente
 export type TarifaCliente = {
   id: string;
   cliente: string;
   finca?: string;
-  origen: string;
-  destino: string;
-  valor_flete_m3: number;
+  
+  // Campos para servicios de transporte
+  origen?: string;
+  destino?: string;
+  valor_flete_m3?: number;
   valor_material_m3?: number; // Valor de referencia del material
   valor_material_cliente_m3?: number; // Valor que se le cobra al cliente (para márgenes)
   tipo_material?: string; // ID del tipo de material
+  
+  // Campos para alquiler de maquinaria
+  tipo_servicio: 'transporte' | 'alquiler_maquina';
+  maquina_id?: string; // ID de la máquina cuando es alquiler
+  tipo_maquina?: string; // Tipo de máquina para mostrar en la tabla
+  modalidad_cobro?: 'por_hora' | 'por_dia' | 'por_mes';
+  valor_por_hora?: number;
+  valor_por_dia?: number;
+  valor_por_mes?: number;
+  
   activa: boolean;
   fecha_creacion: Date;
   observaciones?: string;
 };
 
-// Función para crear una nueva tarifa de cliente
-export const createTarifaCliente = (
+// Función para crear una nueva tarifa de transporte
+export const createTarifaTransporte = (
   cliente: string,
   finca: string | undefined,
   origen: string,
@@ -37,11 +48,42 @@ export const createTarifaCliente = (
     valor_material_m3,
     valor_material_cliente_m3,
     tipo_material,
+    tipo_servicio: 'transporte',
     activa: true,
     fecha_creacion: new Date(),
     observaciones
   };
 };
+
+// Función para crear una nueva tarifa de alquiler de maquinaria
+export const createTarifaAlquiler = (
+  cliente: string,
+  finca: string | undefined,
+  maquina_id: string,
+  tipo_maquina: string,
+  valor_por_hora?: number,
+  valor_por_dia?: number,
+  valor_por_mes?: number,
+  observaciones?: string
+): TarifaCliente => {
+  return {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    cliente,
+    finca,
+    maquina_id,
+    tipo_maquina,
+    tipo_servicio: 'alquiler_maquina',
+    valor_por_hora,
+    valor_por_dia,
+    valor_por_mes,
+    activa: true,
+    fecha_creacion: new Date(),
+    observaciones
+  };
+};
+
+// Función legacy para mantener compatibilidad
+export const createTarifaCliente = createTarifaTransporte;
 
 // Función para guardar tarifas de clientes en localStorage
 export const saveTarifasCliente = (tarifas: TarifaCliente[]): void => {
