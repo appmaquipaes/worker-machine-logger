@@ -42,6 +42,7 @@ import {
 import { loadInventarioAcopio, updateInventarioAfterVenta, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { loadTarifas } from '@/models/Tarifas';
 import { loadMateriales } from '@/models/Materiales';
+import { findTarifaCliente } from '@/models/TarifasCliente';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 
 interface RegistrarVentaDialogProps {
@@ -76,23 +77,33 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
   // Datos auxiliares
   const [materiales, setMateriales] = useState<any[]>([]);
   const [tarifas, setTarifas] = useState<any[]>([]);
+  const [tarifaClienteEncontrada, setTarifaClienteEncontrada] = useState(false);
 
   useEffect(() => {
     setMateriales(loadMateriales());
     setTarifas(loadTarifas());
   }, []);
 
-  // Calcular valor unitario automático para fletes
+  // Buscar tarifa de cliente automáticamente para fletes
   useEffect(() => {
-    if (tipoDetalle === 'Flete' && origenMaterial && destinoMaterial) {
-      const tarifa = tarifas.find(t => 
-        t.origen === origenMaterial && t.destino === destinoMaterial
-      );
+    if (tipoDetalle === 'Flete' && cliente && origenMaterial && ciudadEntrega) {
+      const tarifa = findTarifaCliente(cliente, finca, origenMaterial, ciudadEntrega);
       if (tarifa) {
-        setValorUnitario(tarifa.valor_por_m3);
+        setValorUnitario(tarifa.valor_flete_m3);
+        setTarifaClienteEncontrada(true);
+        toast.success('Tarifa de cliente aplicada automáticamente');
+      } else {
+        setTarifaClienteEncontrada(false);
+        // Fallback a tarifa general si existe
+        const tarifaGeneral = tarifas.find(t => 
+          t.origen === origenMaterial && t.destino === ciudadEntrega
+        );
+        if (tarifaGeneral) {
+          setValorUnitario(tarifaGeneral.valor_por_m3);
+        }
       }
     }
-  }, [tipoDetalle, origenMaterial, destinoMaterial, tarifas]);
+  }, [tipoDetalle, cliente, finca, origenMaterial, ciudadEntrega, tarifas]);
 
   useEffect(() => {
     if (!open) {
@@ -111,6 +122,7 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
     setFormaPago('');
     setObservaciones('');
     setDetalles([]);
+    setTarifaClienteEncontrada(false);
     resetDetalleForm();
   };
 
@@ -119,6 +131,7 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
     setProductoServicio('');
     setCantidad(0);
     setValorUnitario(0);
+    setTarifaClienteEncontrada(false);
   };
 
   const agregarDetalle = () => {
@@ -354,7 +367,13 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                     step="0.01"
                     value={valorUnitario}
                     onChange={(e) => setValorUnitario(parseFloat(e.target.value) || 0)}
+                    className={tarifaClienteEncontrada ? 'bg-green-50 border-green-300' : ''}
                   />
+                  {tarifaClienteEncontrada && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Tarifa personalizada aplicada
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-end">
