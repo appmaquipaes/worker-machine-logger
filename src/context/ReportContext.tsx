@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
+import { findTarifaCliente } from '@/models/TarifasCliente';
 
 export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes';
 
@@ -103,6 +103,21 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     proveedor?: string,
     kilometraje?: number
   ) => {
+    // Calcular valor automáticamente para viajes usando tarifas de cliente
+    let calculatedValue = value || 0;
+    
+    if (reportType === 'Viajes' && workSite && origin && destination && cantidadM3) {
+      const tarifa = findTarifaCliente(workSite, destination, origin, destination);
+      if (tarifa) {
+        // Calcular valor total: flete + material (si aplica)
+        let valorTotal = tarifa.valor_flete_m3 * cantidadM3;
+        if (tarifa.valor_material_cliente_m3) {
+          valorTotal += tarifa.valor_material_cliente_m3 * cantidadM3;
+        }
+        calculatedValue = valorTotal;
+      }
+    }
+
     const newReport: Report = {
       id: Date.now().toString(),
       machineId,
@@ -112,7 +127,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       description,
       reportDate,
       createdAt: new Date(),
-      value: value || 0,
+      value: calculatedValue,
       trips,
       hours,
       workSite,

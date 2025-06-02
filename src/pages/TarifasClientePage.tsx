@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
   Table, 
   TableBody, 
@@ -21,38 +19,24 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Edit, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign } from 'lucide-react';
 import { 
   TarifaCliente, 
-  createTarifaCliente, 
   loadTarifasCliente, 
   saveTarifasCliente 
 } from '@/models/TarifasCliente';
-import { loadProveedores } from '@/models/Proveedores';
 import { loadMateriales } from '@/models/Materiales';
-import ClienteFincaSelector from '@/components/ClienteFincaSelector';
+import TarifaClienteForm from '@/components/TarifaClienteForm';
 
 const TarifasClientePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   const [tarifas, setTarifas] = useState<TarifaCliente[]>([]);
-  const [proveedores, setProveedores] = useState<any[]>([]);
   const [materiales, setMateriales] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  
-  // Estados del formulario
-  const [cliente, setCliente] = useState('');
-  const [finca, setFinca] = useState('');
-  const [origen, setOrigen] = useState('');
-  const [destino, setDestino] = useState('');
-  const [valorFlete, setValorFlete] = useState<number>(0);
-  const [tipoMaterial, setTipoMaterial] = useState('');
-  const [valorMaterial, setValorMaterial] = useState<number>(0);
-  const [observaciones, setObservaciones] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -71,58 +55,14 @@ const TarifasClientePage = () => {
 
   const loadData = () => {
     setTarifas(loadTarifasCliente());
-    setProveedores(loadProveedores());
     setMateriales(loadMateriales());
   };
 
-  const resetForm = () => {
-    setCliente('');
-    setFinca('');
-    setOrigen('');
-    setDestino('');
-    setValorFlete(0);
-    setTipoMaterial('');
-    setValorMaterial(0);
-    setObservaciones('');
-  };
-
-  const handleMaterialChange = (materialId: string) => {
-    setTipoMaterial(materialId);
-    
-    if (materialId) {
-      const material = materiales.find(m => m.id === materialId);
-      if (material) {
-        setValorMaterial(material.valor_por_m3);
-      }
-    } else {
-      setValorMaterial(0);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!cliente || !origen || !destino || valorFlete <= 0) {
-      toast.error('Complete todos los campos obligatorios');
-      return;
-    }
-
-    const nuevaTarifa = createTarifaCliente(
-      cliente,
-      finca || undefined,
-      origen,
-      destino,
-      valorFlete,
-      valorMaterial > 0 ? valorMaterial : undefined,
-      observaciones || undefined,
-      tipoMaterial || undefined
-    );
-
+  const handleTarifaCreated = (nuevaTarifa: TarifaCliente) => {
     const updatedTarifas = [...tarifas, nuevaTarifa];
     saveTarifasCliente(updatedTarifas);
     setTarifas(updatedTarifas);
-    
-    resetForm();
     setDialogOpen(false);
-    toast.success('Tarifa creada exitosamente');
   };
 
   const toggleTarifaStatus = (id: string) => {
@@ -134,16 +74,17 @@ const TarifasClientePage = () => {
     toast.success('Estado de tarifa actualizado');
   };
 
-  // Handle finca change to also update destino
-  const handleFincaChange = (nuevaFinca: string) => {
-    setFinca(nuevaFinca);
-    setDestino(nuevaFinca); // Sync destino with finca
-  };
-
   const getMaterialName = (materialId?: string) => {
     if (!materialId) return '-';
     const material = materiales.find(m => m.id === materialId);
     return material ? material.nombre_material : materialId;
+  };
+
+  const calcularMargenGanancia = (tarifa: TarifaCliente) => {
+    if (!tarifa.valor_material_m3 || !tarifa.valor_material_cliente_m3) return null;
+    const margen = tarifa.valor_material_cliente_m3 - tarifa.valor_material_m3;
+    const porcentaje = ((margen / tarifa.valor_material_m3) * 100).toFixed(1);
+    return { margen, porcentaje };
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -161,112 +102,14 @@ const TarifasClientePage = () => {
                   Nueva Tarifa
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Crear Nueva Tarifa</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <ClienteFincaSelector
-                    selectedCliente={cliente}
-                    selectedFinca={finca}
-                    onClienteChange={setCliente}
-                    onFincaChange={handleFincaChange}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="origen">Origen *</Label>
-                      <select
-                        id="origen"
-                        value={origen}
-                        onChange={(e) => setOrigen(e.target.value)}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="">Seleccionar origen</option>
-                        {proveedores.map((prov) => (
-                          <option key={prov.id} value={prov.nombre}>
-                            {prov.nombre} - {prov.ciudad}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="destino">Destino/Punto de Entrega *</Label>
-                      <Input
-                        id="destino"
-                        value={destino}
-                        onChange={(e) => {
-                          setDestino(e.target.value);
-                          setFinca(e.target.value); // Keep finca in sync
-                        }}
-                        placeholder="Ciudad destino o punto de entrega"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <Label htmlFor="valor-flete">Valor Flete por m³ *</Label>
-                      <Input
-                        id="valor-flete"
-                        type="number"
-                        value={valorFlete}
-                        onChange={(e) => setValorFlete(parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="tipo-material">Tipo de Material</Label>
-                      <select
-                        id="tipo-material"
-                        value={tipoMaterial}
-                        onChange={(e) => handleMaterialChange(e.target.value)}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="">Seleccionar material</option>
-                        {materiales.map((material) => (
-                          <option key={material.id} value={material.id}>
-                            {material.nombre_material}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="valor-material">Valor Material por m³ (Referencia)</Label>
-                      <Input
-                        id="valor-material"
-                        type="number"
-                        value={valorMaterial}
-                        onChange={(e) => setValorMaterial(parseFloat(e.target.value) || 0)}
-                        placeholder="Se asigna automáticamente"
-                        disabled={!!tipoMaterial}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="observaciones">Observaciones</Label>
-                    <Textarea
-                      id="observaciones"
-                      value={observaciones}
-                      onChange={(e) => setObservaciones(e.target.value)}
-                      placeholder="Observaciones adicionales..."
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit}>
-                      Crear Tarifa
-                    </Button>
-                  </div>
-                </div>
+                <TarifaClienteForm
+                  onTarifaCreated={handleTarifaCreated}
+                  onCancel={() => setDialogOpen(false)}
+                />
               </DialogContent>
             </Dialog>
             
@@ -281,7 +124,7 @@ const TarifasClientePage = () => {
           </div>
         </div>
         <p className="text-muted-foreground">
-          Gestiona las tarifas de flete personalizadas por cliente y destino.
+          Gestiona las tarifas de flete personalizadas por cliente y destino con márgenes de ganancia.
         </p>
       </div>
 
@@ -305,38 +148,54 @@ const TarifasClientePage = () => {
                 <TableHead>Valor Flete/m³</TableHead>
                 <TableHead>Material</TableHead>
                 <TableHead>Valor Material/m³</TableHead>
+                <TableHead>Valor Cliente/m³</TableHead>
+                <TableHead>Margen</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tarifas.map((tarifa) => (
-                <TableRow key={tarifa.id}>
-                  <TableCell className="font-medium">{tarifa.cliente}</TableCell>
-                  <TableCell>{tarifa.destino}</TableCell>
-                  <TableCell>{tarifa.origen}</TableCell>
-                  <TableCell>${tarifa.valor_flete_m3.toLocaleString()}</TableCell>
-                  <TableCell>{getMaterialName(tarifa.tipo_material)}</TableCell>
-                  <TableCell>
-                    {tarifa.valor_material_m3 ? `$${tarifa.valor_material_m3.toLocaleString()}` : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      tarifa.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {tarifa.activa ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={tarifa.activa}
-                        onCheckedChange={() => toggleTarifaStatus(tarifa.id)}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {tarifas.map((tarifa) => {
+                const margen = calcularMargenGanancia(tarifa);
+                return (
+                  <TableRow key={tarifa.id}>
+                    <TableCell className="font-medium">{tarifa.cliente}</TableCell>
+                    <TableCell>{tarifa.destino}</TableCell>
+                    <TableCell>{tarifa.origen}</TableCell>
+                    <TableCell>${tarifa.valor_flete_m3.toLocaleString()}</TableCell>
+                    <TableCell>{getMaterialName(tarifa.tipo_material)}</TableCell>
+                    <TableCell>
+                      {tarifa.valor_material_m3 ? `$${tarifa.valor_material_m3.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {tarifa.valor_material_cliente_m3 ? `$${tarifa.valor_material_cliente_m3.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {margen ? (
+                        <div className="text-sm">
+                          <div className="font-medium text-green-600">${margen.margen.toLocaleString()}</div>
+                          <div className="text-muted-foreground">({margen.porcentaje}%)</div>
+                        </div>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        tarifa.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {tarifa.activa ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={tarifa.activa}
+                          onCheckedChange={() => toggleTarifaStatus(tarifa.id)}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 

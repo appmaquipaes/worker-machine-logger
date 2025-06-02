@@ -7,7 +7,8 @@ export type TarifaCliente = {
   origen: string;
   destino: string;
   valor_flete_m3: number;
-  valor_material_m3?: number; // Para controles cuando el cliente compra directo
+  valor_material_m3?: number; // Valor de referencia del material
+  valor_material_cliente_m3?: number; // Valor que se le cobra al cliente (para márgenes)
   tipo_material?: string; // ID del tipo de material
   activa: boolean;
   fecha_creacion: Date;
@@ -22,6 +23,7 @@ export const createTarifaCliente = (
   destino: string,
   valor_flete_m3: number,
   valor_material_m3?: number,
+  valor_material_cliente_m3?: number,
   observaciones?: string,
   tipo_material?: string
 ): TarifaCliente => {
@@ -33,6 +35,7 @@ export const createTarifaCliente = (
     destino,
     valor_flete_m3,
     valor_material_m3,
+    valor_material_cliente_m3,
     tipo_material,
     activa: true,
     fecha_creacion: new Date(),
