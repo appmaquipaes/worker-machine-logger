@@ -115,6 +115,12 @@ const TarifasClientePage = () => {
     toast.success('Estado de tarifa actualizado');
   };
 
+  // Handle finca change to also update destino
+  const handleFincaChange = (nuevaFinca: string) => {
+    setFinca(nuevaFinca);
+    setDestino(nuevaFinca); // Sync destino with finca
+  };
+
   if (!user || user.role !== 'Administrador') return null;
 
   return (
@@ -139,7 +145,7 @@ const TarifasClientePage = () => {
                     selectedCliente={cliente}
                     selectedFinca={finca}
                     onClienteChange={setCliente}
-                    onFincaChange={setFinca}
+                    onFincaChange={handleFincaChange}
                   />
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -161,12 +167,15 @@ const TarifasClientePage = () => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="destino">Destino *</Label>
+                      <Label htmlFor="destino">Destino/Punto de Entrega *</Label>
                       <Input
                         id="destino"
                         value={destino}
-                        onChange={(e) => setDestino(e.target.value)}
-                        placeholder="Ciudad destino"
+                        onChange={(e) => {
+                          setDestino(e.target.value);
+                          setFinca(e.target.value); // Keep finca in sync
+                        }}
+                        placeholder="Ciudad destino o punto de entrega"
                       />
                     </div>
                   </div>
@@ -245,9 +254,8 @@ const TarifasClientePage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Finca</TableHead>
+                <TableHead>Destino/Punto de Entrega</TableHead>
                 <TableHead>Origen</TableHead>
-                <TableHead>Destino</TableHead>
                 <TableHead>Valor Flete/m³</TableHead>
                 <TableHead>Valor Material/m³</TableHead>
                 <TableHead>Estado</TableHead>
@@ -258,9 +266,8 @@ const TarifasClientePage = () => {
               {tarifas.map((tarifa) => (
                 <TableRow key={tarifa.id}>
                   <TableCell className="font-medium">{tarifa.cliente}</TableCell>
-                  <TableCell>{tarifa.finca || 'Todas'}</TableCell>
-                  <TableCell>{tarifa.origen}</TableCell>
                   <TableCell>{tarifa.destino}</TableCell>
+                  <TableCell>{tarifa.origen}</TableCell>
                   <TableCell>${tarifa.valor_flete_m3.toLocaleString()}</TableCell>
                   <TableCell>
                     {tarifa.valor_material_m3 ? `$${tarifa.valor_material_m3.toLocaleString()}` : '-'}
