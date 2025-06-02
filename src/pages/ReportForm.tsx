@@ -158,7 +158,11 @@ const ReportForm = () => {
         return;
       }
 
-      if (!selectedFinca.trim()) {
+      // Validar finca solo si el cliente tiene fincas registradas
+      const clienteData = getClienteByName(selectedCliente);
+      const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
+      
+      if (fincasDisponibles.length > 0 && !selectedFinca.trim()) {
         toast.error('Debe seleccionar la finca destino');
         return;
       }
