@@ -112,6 +112,8 @@ const InformesPage: React.FC = () => {
       'Viajes': report.trips || '',
       'M³': report.cantidadM3 || '',
       'Valor': report.value ? `$${report.value.toLocaleString()}` : '',
+      'Detalle Cálculo': report.detalleCalculo || '',
+      'Tarifa Encontrada': report.tarifaEncontrada ? 'Sí' : 'No',
       'Origen': report.origin || '',
       'Destino': report.destination || '',
       'Proveedor': report.proveedor || '',
@@ -376,6 +378,7 @@ const InformesPage: React.FC = () => {
                     <TableHead>Viajes</TableHead>
                     <TableHead>M³</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Cálculo</TableHead>
                     <TableHead className="w-48">Novedades</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -391,7 +394,23 @@ const InformesPage: React.FC = () => {
                       <TableCell>{report.hours || '-'}</TableCell>
                       <TableCell>{report.trips || '-'}</TableCell>
                       <TableCell>{report.cantidadM3 || '-'}</TableCell>
-                      <TableCell>{report.value ? `$${report.value.toLocaleString()}` : '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className={report.value ? 'font-medium' : 'text-muted-foreground'}>
+                            {report.value ? `$${report.value.toLocaleString()}` : '-'}
+                          </span>
+                          {report.tarifaEncontrada !== undefined && (
+                            <span className={`text-xs ${report.tarifaEncontrada ? 'text-green-600' : 'text-orange-600'}`}>
+                              {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-48 max-w-48">
+                        <div className="truncate" title={report.detalleCalculo || ''}>
+                          {report.detalleCalculo || '-'}
+                        </div>
+                      </TableCell>
                       <TableCell className="w-48 max-w-48">
                         <div className="truncate" title={report.reportType === 'Novedades' ? report.description : ''}>
                           {report.reportType === 'Novedades' ? report.description : '-'}

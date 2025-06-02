@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { findTarifaCliente } from '@/models/TarifasCliente';
+import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
 
 export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes';
 
@@ -23,6 +24,8 @@ export interface Report {
   workSite?: string;
   proveedor?: string;
   kilometraje?: number;
+  detalleCalculo?: string; // Nuevo campo para mostrar cómo se calculó el valor
+  tarifaEncontrada?: boolean; // Indica si se encontró tarifa para el cálculo
 }
 
 interface ReportContextType {
@@ -103,19 +106,40 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     proveedor?: string,
     kilometraje?: number
   ) => {
-    // Calcular valor automáticamente para viajes usando tarifas de cliente
     let calculatedValue = value || 0;
+    let detalleCalculo = '';
+    let tarifaEncontrada = false;
+
+    // Calcular valor automáticamente basado en tarifas
+    if (reportType === 'Horas Trabajadas' && workSite && hours) {
+      const calculo = calcularValorHorasTrabajadas(
+        workSite,
+        undefined, // Por ahora no manejamos finca específica en horas trabajadas
+        machineId,
+        hours
+      );
+      calculatedValue = calculo.valorCalculado;
+      detalleCalculo = calculo.detalleCalculo;
+      tarifaEncontrada = calculo.tarifaEncontrada;
+    }
     
-    if (reportType === 'Viajes' && workSite && origin && destination && cantidadM3) {
-      const tarifa = findTarifaCliente(workSite, destination, origin, destination);
-      if (tarifa) {
-        // Calcular valor total: flete + material (si aplica)
-        let valorTotal = tarifa.valor_flete_m3 * cantidadM3;
-        if (tarifa.valor_material_cliente_m3) {
-          valorTotal += tarifa.valor_material_cliente_m3 * cantidadM3;
-        }
-        calculatedValue = valorTotal;
-      }
+    if (reportType === 'Viajes' && destination && origin && cantidadM3) {
+      const calculo = calcularValorViajes(
+        destination.split(' - ')[0] || '', // Cliente del destino
+        destination.split(' - ')[1], // Finca del destino
+        origin,
+        destination,
+        cantidadM3
+      );
+      calculatedValue = calculo.valorCalculado;
+      detalleCalculo = calculo.detalleCalculo;
+      tarifaEncontrada = calculo.tarifaEncontrada;
+    }
+
+    // Si no se pudo calcular automáticamente, usar valor manual si se proporcionó
+    if (!tarifaEncontrada && value !== undefined) {
+      calculatedValue = value;
+      detalleCalculo = 'Valor ingresado manualmente';
     }
 
     const newReport: Report = {
@@ -136,6 +160,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       cantidadM3,
       proveedor,
       kilometraje,
+      detalleCalculo,
+      tarifaEncontrada,
     };
     
     const updatedReports = [...reports, newReport];
@@ -148,6 +174,14 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         console.log('Inventario de acopio actualizado por nuevo viaje');
       }
     }
+
+    // Log para debugging
+    console.log('Nuevo reporte creado:', {
+      tipo: reportType,
+      valor: calculatedValue,
+      detalleCalculo,
+      tarifaEncontrada
+    });
   };
 
   const updateReport = (id: string, updatedReport: Partial<Report>) => {

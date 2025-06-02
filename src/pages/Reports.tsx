@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -164,6 +163,8 @@ const Reports = () => {
         "Viajes": report.trips || "",
         "Horas": report.hours || "",
         "Valor": report.value ? `$${report.value.toLocaleString()}` : "",
+        "Detalle Cálculo": report.detalleCalculo || "",
+        "Tarifa Encontrada": report.tarifaEncontrada ? "Sí" : "No",
         "Origen": report.origin || "",
         "Destino": report.destination || "",
         "Cantidad (m³)": report.cantidadM3 || "",
@@ -422,9 +423,25 @@ const Reports = () => {
                       </p>
                     )}
                     {report.value && (
-                      <p>
-                        <span className="font-semibold">Valor:</span> ${report.value.toLocaleString()}
-                      </p>
+                      <div className="space-y-1">
+                        <p>
+                          <span className="font-semibold">Valor:</span> ${report.value.toLocaleString()}
+                          {report.tarifaEncontrada !== undefined && (
+                            <span className={`ml-2 text-xs px-2 py-1 rounded ${
+                              report.tarifaEncontrada 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-orange-100 text-orange-800'
+                            }`}>
+                              {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
+                            </span>
+                          )}
+                        </p>
+                        {report.detalleCalculo && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-semibold">Cálculo:</span> {report.detalleCalculo}
+                          </p>
+                        )}
+                      </div>
                     )}
                     {report.origin && (
                       <p>
