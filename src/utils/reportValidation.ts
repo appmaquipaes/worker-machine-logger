@@ -40,8 +40,9 @@ export const validateReportForm = (params: ValidationParams): string | null => {
     inventarioAcopio
   } = params;
 
-  if (!description.trim() && !(reportType === 'Viajes' && origin === 'Acopio Maquipaes')) {
-    return 'La descripción no puede estar vacía';
+  // Solo validar descripción para Novedades
+  if (reportType === 'Novedades' && !description.trim()) {
+    return 'Las novedades no pueden estar vacías';
   }
 
   // Validaciones específicas para cada tipo de reporte

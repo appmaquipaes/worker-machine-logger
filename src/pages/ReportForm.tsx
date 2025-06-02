@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -133,10 +132,8 @@ const ReportForm = () => {
       return;
     }
     
-    // Preparar descripción y destino final
-    const reportDescription = (reportType === 'Viajes' && origin === 'Acopio Maquipaes') 
-      ? tipoMateria 
-      : description;
+    // Preparar descripción final solo para Novedades
+    const reportDescription = reportType === 'Novedades' ? description : '';
     
     const finalDestination = reportType === 'Viajes' 
       ? `${selectedCliente} - ${selectedFinca}`
@@ -212,6 +209,7 @@ const ReportForm = () => {
             <ReportTypeSelector 
               reportType={reportType}
               onReportTypeChange={setReportType}
+              selectedMachine={selectedMachine}
             />
             
             <ReportInputFields

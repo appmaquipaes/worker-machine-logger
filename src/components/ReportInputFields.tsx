@@ -126,6 +126,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
   const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowProveedorInput = reportType === 'Mantenimiento';
+  const shouldShowDescriptionInput = reportType === 'Novedades';
 
   return (
     <>
@@ -380,26 +381,24 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         </>
       )}
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 mb-2">
-          {getReportTypeIcon(reportType)}
-          <Label htmlFor="description" className="text-lg">
-            {shouldShowInventoryMaterialSelect ? 'Observaciones adicionales' : 'Descripción'}
-          </Label>
+      {shouldShowDescriptionInput && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            {getReportTypeIcon(reportType)}
+            <Label htmlFor="description" className="text-lg">Novedades</Label>
+          </div>
+          
+          <Textarea
+            id="description"
+            placeholder="Describe las novedades encontradas"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="text-lg p-4"
+            required
+          />
         </div>
-        
-        <Textarea
-          id="description"
-          placeholder={shouldShowInventoryMaterialSelect ? 
-            'Observaciones adicionales del viaje (opcional)' : 
-            'Ingrese los detalles del reporte'}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-          className="text-lg p-4"
-          required={!shouldShowInventoryMaterialSelect}
-        />
-      </div>
+      )}
     </>
   );
 };
