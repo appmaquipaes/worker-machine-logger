@@ -38,6 +38,18 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
   onMaterialChange,
   onValorMaterialClienteChange
 }) => {
+  const getDestinoPlaceholder = () => {
+    if (!cliente) {
+      return "Seleccione primero un cliente";
+    }
+    if (clienteTieneFincas) {
+      return "Se asigna automáticamente según la finca seleccionada";
+    }
+    return "Se asigna automáticamente con el nombre del cliente";
+  };
+
+  const isDestinoDisabled = !cliente || clienteTieneFincas;
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -64,14 +76,9 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
             id="destino"
             value={destino}
             onChange={(e) => onDestinoChange(e.target.value)}
-            placeholder={
-              !cliente 
-                ? "Seleccione primero un cliente" 
-                : clienteTieneFincas 
-                  ? "Se asigna automáticamente según la finca seleccionada"
-                  : "Se asigna automáticamente con el nombre del cliente"
-            }
-            disabled={clienteTieneFincas}
+            placeholder={getDestinoPlaceholder()}
+            disabled={isDestinoDisabled}
+            className={isDestinoDisabled ? "bg-gray-50" : ""}
           />
         </div>
       </div>
