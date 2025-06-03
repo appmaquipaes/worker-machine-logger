@@ -105,8 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password, // En un entorno real, esto debería estar encriptado
         role,
-        // Solo agregar assignedMachines si es operador y hay máquinas seleccionadas
-        ...(role === 'Operador' && assignedMachines.length > 0 && { assignedMachines }),
+        // Solo agregar assignedMachines para operadores, incluso si está vacío
+        ...(role === 'Operador' && { assignedMachines: assignedMachines || [] }),
       };
       
       // Guardar el usuario en la "base de datos" (localStorage)

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMachine } from '@/context/MachineContext';
@@ -37,6 +36,21 @@ const MachineSelection: React.FC = () => {
   };
 
   if (!user) return null;
+
+  // Filtrar máquinas según el rol del usuario
+  const getFilteredMachines = () => {
+    if (user.role === 'Operador') {
+      // Para operadores, solo mostrar máquinas asignadas
+      if (!user.assignedMachines || user.assignedMachines.length === 0) {
+        return [];
+      }
+      return machines.filter(machine => user.assignedMachines!.includes(machine.id));
+    }
+    // Para administradores y trabajadores, mostrar todas las máquinas
+    return machines;
+  };
+
+  const filteredMachines = getFilteredMachines();
 
   // Función para determinar el icono según el tipo de máquina
   const getMachineIcon = (type: string) => {
@@ -88,7 +102,7 @@ const MachineSelection: React.FC = () => {
   };
 
   // Agrupar máquinas por tipo para mejor organización
-  const groupedMachines = machines.reduce((groups, machine) => {
+  const groupedMachines = filteredMachines.reduce((groups, machine) => {
     const key = machine.type;
     if (!groups[key]) {
       groups[key] = [];
@@ -120,13 +134,19 @@ const MachineSelection: React.FC = () => {
         </Button>
       </div>
 
-      {machines.length === 0 ? (
+      {filteredMachines.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-xl text-muted-foreground mb-4">
-            No hay máquinas disponibles
+            {user.role === 'Operador' 
+              ? "No tienes máquinas asignadas" 
+              : "No hay máquinas disponibles"
+            }
           </p>
           <p className="text-muted-foreground">
-            Contacta al administrador para agregar máquinas al sistema
+            {user.role === 'Operador' 
+              ? "Contacta al administrador para que te asigne máquinas"
+              : "Contacta al administrador para agregar máquinas al sistema"
+            }
           </p>
         </div>
       ) : (
