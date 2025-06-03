@@ -38,14 +38,8 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
                   const iconContainer = e.currentTarget.parentElement;
                   if (iconContainer && !iconContainer.querySelector('.fallback-icon')) {
                     const iconDiv = document.createElement('div');
-                    iconDiv.className = 'fallback-icon flex items-center justify-center w-full h-full';
-                    iconDiv.appendChild(
-                      (() => {
-                        const span = document.createElement('span');
-                        span.innerHTML = getMachineIcon(machine.type).props.children || machine.type[0];
-                        return span;
-                      })()
-                    );
+                    iconDiv.className = 'fallback-icon flex items-center justify-center w-full h-full text-2xl';
+                    iconDiv.textContent = machine.type[0];
                     iconContainer.appendChild(iconDiv);
                   }
                 }}
