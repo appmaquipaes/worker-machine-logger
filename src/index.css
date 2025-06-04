@@ -5,66 +5,65 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 0 0% 14%; /* Dark black from Caterpillar Black */
+    --background: 248 250 252; /* Slate-50 más claro */
+    --foreground: 15 23 42; /* Slate-900 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 14%;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 14%;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
 
-    --primary: 45 100% 50%; /* Caterpillar Yellow */
-    --primary-foreground: 0 0% 0%; /* Black */
+    --primary: 245 158 11; /* Amber-500 más elegante */
+    --primary-foreground: 15 23 42; /* Slate-900 */
 
-    --secondary: 0 0% 14%; /* Caterpillar Black */
-    --secondary-foreground: 0 0% 100%; /* White */
+    --secondary: 15 23 42; /* Slate-900 */
+    --secondary-foreground: 248 250 252; /* Slate-50 */
 
-    --muted: 215 16.3% 46.9%;
-    --muted-foreground: 215 16.3% 46.9%;
+    --muted: 100 116 139; /* Slate-500 */
+    --muted-foreground: 100 116 139;
 
-    --accent: 45 100% 60%; /* Slightly brighter yellow */
-    --accent-foreground: 0 0% 0%;
+    --accent: 251 191 36; /* Amber-400 */
+    --accent-foreground: 15 23 42;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 239 68 68; /* Red-500 */
+    --destructive-foreground: 248 250 252;
 
-    --border: 0 0% 14%; /* Black border */
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 226 232 240; /* Slate-200 */
+    --input: 241 245 249; /* Slate-100 */
+    --ring: 245 158 11; /* Amber-500 */
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    /* Dark mode can use similar colors with slight variations */
-    --background: 0 0% 14%;
-    --foreground: 0 0% 98%;
+    --background: 2 6 23; /* Slate-950 */
+    --foreground: 248 250 252; /* Slate-50 */
 
-    --primary: 45 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 245 158 11; /* Amber-500 */
+    --primary-foreground: 15 23 42;
 
-    --secondary: 0 0% 98%;
-    --secondary-foreground: 0 0% 14%;
+    --secondary: 30 41 59; /* Slate-800 */
+    --secondary-foreground: 248 250 252;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 15 23 42; /* Slate-900 */
+    --card-foreground: 248 250 252;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 15 23 42;
+    --popover-foreground: 248 250 252;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 51 65 85; /* Slate-700 */
+    --muted-foreground: 148 163 184; /* Slate-400 */
 
-    --accent: 142 71% 45%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 251 191 36; /* Amber-400 */
+    --accent-foreground: 15 23 42;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 220 38 38; /* Red-700 */
+    --destructive-foreground: 248 250 252;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 51 65 85; /* Slate-700 */
+    --input: 51 65 85;
+    --ring: 245 158 11;
   }
 }
 
@@ -74,15 +73,39 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 text-foreground min-h-screen;
   }
 }
 
 /* Custom Styles */
 .machine-card {
-  @apply transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer;
+  @apply transition-all duration-300 hover:shadow-2xl hover:scale-105 cursor-pointer;
 }
 
 .machine-card.selected {
-  @apply ring-2 ring-accent ring-offset-2;
+  @apply ring-2 ring-amber-400 ring-offset-2 shadow-2xl scale-105;
+}
+
+/* Gradientes personalizados para elementos de Caterpillar */
+.caterpillar-gradient {
+  background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #D97706 100%);
+}
+
+.dark-elegant-card {
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  border: 1px solid #334155;
+}
+
+/* Animaciones mejoradas */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
