@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useReport, Report, ReportType } from "@/context/ReportContext";
+import { useReport } from "@/context/ReportContext";
+import { Report, ReportType } from "@/types/report";
 import { useMachine } from "@/context/MachineContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

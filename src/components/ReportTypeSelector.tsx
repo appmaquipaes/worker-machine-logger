@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ReportType } from '@/context/ReportContext';
+import { ReportType } from '@/types/report';
 import { Machine } from '@/context/MachineContext';
 import { 
   Clock, 

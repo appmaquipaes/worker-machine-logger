@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { ReportType } from '@/context/ReportContext';
+import { ReportType } from '@/types/report';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -79,7 +78,9 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   origin,
   setOrigin,
   selectedCliente,
+  setSelectedCliente,
   selectedFinca,
+  setSelectedFinca,
   maintenanceValue,
   setMaintenanceValue,
   cantidadM3,

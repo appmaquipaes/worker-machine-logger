@@ -1,5 +1,4 @@
-
-import { ReportType } from '@/context/ReportContext';
+import { ReportType } from '@/types/report';
 import { getClienteByName } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
 
