@@ -30,9 +30,9 @@ export const getMachineImage = (type: string) => {
     case 'bulldozer':
       return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
     case 'volqueta':
-      return "/lovable-uploads/6c36b12f-a686-42d4-9655-0d90ec7a95fc.png"; // Tu nueva imagen personalizada de Volqueta
+      return "/lovable-uploads/8771b38d-fcbf-4660-abdd-40e931db19c6.png"; // Tu nueva imagen personalizada de Volqueta
     case 'camión':
-      return "https://images.unsplash.com/photo-1566024287286-457247b70310?w=400&h=400&fit=crop&crop=center"; // Camión de carga
+      return "/lovable-uploads/8771b38d-fcbf-4660-abdd-40e931db19c6.png"; // Tu nueva imagen personalizada de Camión (mismo estilo que volqueta)
     case 'camabaja':
       return "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=400&h=400&fit=crop&crop=center"; // Camabaja/Lowboy trailer
     case 'semirremolque':
