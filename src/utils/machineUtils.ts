@@ -28,7 +28,7 @@ export const getMachineImage = (type: string) => {
     case 'excavadora':
       return "/lovable-uploads/d8ff481c-bcff-4c36-8c82-691a61ebbb16.png"; // Tu imagen personalizada de la Caterpillar 315
     case 'bulldozer':
-      return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
+      return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Tu nueva imagen personalizada del bulldozer
     case 'volqueta':
       return "/lovable-uploads/8771b38d-fcbf-4660-abdd-40e931db19c6.png"; // Tu nueva imagen personalizada de Volqueta
     case 'camión':
