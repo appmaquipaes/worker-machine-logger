@@ -40,7 +40,7 @@ export const getMachineImage = (type: string) => {
     case 'tractomula':
       return "https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=400&h=400&fit=crop&crop=center"; // Tractomula
     case 'cargador':
-      return "/lovable-uploads/8ba0b0b5-25dc-4c05-8f66-3cf62768eeea.png"; // Tu nueva imagen personalizada del cargador
+      return "/lovable-uploads/feb9fb2f-a667-4886-8f8a-e6cfb6d49d41.png"; // Tu nueva imagen personalizada del cargador
     case 'motoniveladora':
       return "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center"; // Motoniveladora
     case 'compactador':
