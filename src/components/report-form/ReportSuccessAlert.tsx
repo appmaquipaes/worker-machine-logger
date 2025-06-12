@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle } from 'lucide-react';
-import { ReportType } from '@/context/ReportContext';
+import { ReportType } from '@/types/report';
 
 interface ReportSuccessAlertProps {
   isVisible: boolean;

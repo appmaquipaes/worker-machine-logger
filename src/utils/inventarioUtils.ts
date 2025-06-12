@@ -1,6 +1,5 @@
-
 import { loadInventarioAcopio, updateInventarioAfterViaje, saveInventarioAcopio } from '@/models/InventarioAcopio';
-import { Report } from '@/context/ReportContext';
+import { Report } from '@/types/report';
 
 // Función para actualizar inventario cuando se registra un viaje desde acopio
 export const actualizarInventarioPorViaje = (report: Report): boolean => {

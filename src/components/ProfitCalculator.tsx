@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Report } from '@/context/ReportContext';
+import { Report } from '@/types/report';
 import { loadMateriales } from '@/models/Materiales';
 import { loadTarifas } from '@/models/Tarifas';
 
