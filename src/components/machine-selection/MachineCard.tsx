@@ -19,6 +19,7 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
         onClick={() => onSelect(machine)}
         className="w-full h-full p-0 bg-transparent hover:bg-transparent text-slate-800 flex flex-col relative"
         variant="ghost"
+        disabled={machine.status !== 'available'}
       >
         {/* Imagen principal con efecto de zoom */}
         <div className="relative w-full h-48 sm:h-56 overflow-hidden rounded-t-lg">
@@ -42,18 +43,6 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
               </div>
             </div>
           )}
-          
-          {/* Badge de estado flotante */}
-          <div className="absolute top-3 right-3">
-            <div className={`
-              px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md border
-              ${machine.status === 'available' ? 'bg-green-500/90 text-white border-green-400' : 
-                machine.status === 'in-use' ? 'bg-orange-500/90 text-white border-orange-400' : 'bg-red-500/90 text-white border-red-400'}
-            `}>
-              {machine.status === 'available' ? '✓ Disponible' : 
-               machine.status === 'in-use' ? '⚡ En Uso' : '⚠ Mantenimiento'}
-            </div>
-          </div>
         </div>
 
         {/* Información de la máquina con mejor espaciado */}
@@ -75,23 +64,15 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
             </div>
           )}
           
-          {/* Botón de acción */}
-          <div className="pt-2">
-            <div className={`
-              inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 group-hover:scale-105
-              ${machine.status === 'available' ? 'bg-blue-600 text-white group-hover:bg-blue-700 shadow-lg' : 
-                'bg-slate-300 text-slate-600 cursor-not-allowed'}
-            `}>
-              {machine.status === 'available' ? (
-                <>
-                  <span>Seleccionar</span>
-                  <span className="text-lg">→</span>
-                </>
-              ) : (
-                <span>No Disponible</span>
-              )}
+          {/* Botón de acción solo para máquinas disponibles */}
+          {machine.status === 'available' && (
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 group-hover:scale-105 bg-blue-600 text-white group-hover:bg-blue-700 shadow-lg">
+                <span>Seleccionar</span>
+                <span className="text-lg">→</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </Button>
     </Card>
