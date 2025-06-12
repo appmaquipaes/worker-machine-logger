@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,24 +24,29 @@ const InformesPage: React.FC = () => {
   const [selectedReportType, setSelectedReportType] = useState<string>('all');
   const [selectedCliente, setSelectedCliente] = useState<string>('all');
   const [selectedFinca, setSelectedFinca] = useState<string>('all');
+  const [selectedOperator, setSelectedOperator] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [reportData, setReportData] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [fincas, setFincas] = useState<any[]>([]);
+  const [operators, setOperators] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
     }
     
-    // Cargar clientes
     const clientesData = loadClientes();
     setClientes(clientesData);
+    
+    // Cargar operadores para el filtro
+    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const operatorUsers = storedUsers.filter((u: any) => u.role === 'Operador');
+    setOperators(operatorUsers);
   }, [user, navigate]);
 
   useEffect(() => {
-    // Cargar fincas cuando se selecciona un cliente
     if (selectedCliente && selectedCliente !== 'all') {
       const cliente = getClienteByName(selectedCliente);
       if (cliente) {
@@ -51,7 +55,7 @@ const InformesPage: React.FC = () => {
       } else {
         setFincas([]);
       }
-      setSelectedFinca('all'); // Reset finca selection
+      setSelectedFinca('all');
     } else {
       setFincas([]);
       setSelectedFinca('all');
@@ -76,6 +80,10 @@ const InformesPage: React.FC = () => {
     if (selectedFinca !== 'all') {
       filters.finca = selectedFinca;
     }
+
+    if (selectedOperator !== 'all') {
+      filters.userId = selectedOperator;
+    }
     
     if (startDate) {
       filters.startDate = startDate;
@@ -86,7 +94,23 @@ const InformesPage: React.FC = () => {
     }
 
     const reports = getFilteredReports(filters);
-    setReportData(reports);
+    
+    // Enriquecer reportes con información de comisión
+    const reportsWithCommission = reports.map(report => {
+      const operator = operators.find(op => op.id === report.userId);
+      const comisionPorHora = operator?.comisionPorHora || 0;
+      const comisionTotal = (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') && report.hours
+        ? report.hours * comisionPorHora
+        : 0;
+      
+      return {
+        ...report,
+        comisionPorHora,
+        comisionTotal
+      };
+    });
+    
+    setReportData(reportsWithCommission);
     
     if (reports.length === 0) {
       toast.info('No se encontraron reportes con los filtros seleccionados');
@@ -112,6 +136,8 @@ const InformesPage: React.FC = () => {
       'Viajes': report.trips || '',
       'M³': report.cantidadM3 || '',
       'Valor': report.value ? `$${report.value.toLocaleString()}` : '',
+      'Comisión por Hora': report.comisionPorHora ? `$${report.comisionPorHora.toLocaleString()}` : '',
+      'Comisión Total': report.comisionTotal ? `$${report.comisionTotal.toLocaleString()}` : '',
       'Detalle Cálculo': report.detalleCalculo || '',
       'Tarifa Encontrada': report.tarifaEncontrada ? 'Sí' : 'No',
       'Origen': report.origin || '',
@@ -147,6 +173,7 @@ const InformesPage: React.FC = () => {
     const totalHours = reportData.reduce((sum, report) => sum + (report.hours || 0), 0);
     const totalTrips = reportData.reduce((sum, report) => sum + (report.trips || 0), 0);
     const totalValue = reportData.reduce((sum, report) => sum + (report.value || 0), 0);
+    const totalCommission = reportData.reduce((sum, report) => sum + (report.comisionTotal || 0), 0);
     const uniqueMachines = new Set(reportData.map(report => report.machineName)).size;
     const uniqueClientes = new Set(reportData.map(report => 
       report.workSite || extractClienteFromDestination(report.destination)
@@ -157,6 +184,7 @@ const InformesPage: React.FC = () => {
       totalHours,
       totalTrips,
       totalValue,
+      totalCommission,
       uniqueMachines,
       uniqueClientes
     };
@@ -197,7 +225,24 @@ const InformesPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Operador</label>
+              <Select value={selectedOperator} onValueChange={setSelectedOperator}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los operadores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los operadores</SelectItem>
+                  {operators.map((operator) => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      {operator.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Máquina</label>
               <Select value={selectedMachine} onValueChange={setSelectedMachine}>
@@ -311,7 +356,7 @@ const InformesPage: React.FC = () => {
 
       {/* Estadísticas */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">{stats.totalReports}</div>
@@ -334,6 +379,12 @@ const InformesPage: React.FC = () => {
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-amber-600">${stats.totalValue.toLocaleString()}</div>
               <div className="text-sm text-muted-foreground">Valor Total</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600">${stats.totalCommission.toLocaleString()}</div>
+              <div className="text-sm text-muted-foreground">Comisiones</div>
             </CardContent>
           </Card>
           <Card>
@@ -378,6 +429,7 @@ const InformesPage: React.FC = () => {
                     <TableHead>Viajes</TableHead>
                     <TableHead>M³</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Comisión</TableHead>
                     <TableHead>Cálculo</TableHead>
                     <TableHead className="w-48">Novedades</TableHead>
                   </TableRow>
@@ -402,6 +454,18 @@ const InformesPage: React.FC = () => {
                           {report.tarifaEncontrada !== undefined && (
                             <span className={`text-xs ${report.tarifaEncontrada ? 'text-green-600' : 'text-orange-600'}`}>
                               {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-orange-600">
+                            {report.comisionTotal ? `$${report.comisionTotal.toLocaleString()}` : '-'}
+                          </span>
+                          {report.comisionPorHora > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              ${report.comisionPorHora.toLocaleString()}/h
                             </span>
                           )}
                         </div>

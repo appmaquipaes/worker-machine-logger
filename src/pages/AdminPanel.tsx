@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Truck, User, Building, Database, MapPin, Users, ShoppingCart, DollarSign } from 'lucide-react';
+import { ArrowLeft, User, Building, Database, MapPin, Users, ShoppingCart, DollarSign } from 'lucide-react';
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -35,12 +35,6 @@ const AdminPanel = () => {
       path: '/admin/machines'
     },
     {
-      title: 'Administrar Volquetas',
-      description: 'Configurar materiales y tarifas para volquetas',
-      icon: <Truck className="h-8 w-8" />,
-      path: '/admin/volquetas'
-    },
-    {
       title: 'Proveedores',
       description: 'Administrar proveedores de material',
       icon: <MapPin className="h-8 w-8" />,
@@ -57,12 +51,6 @@ const AdminPanel = () => {
       description: 'Configurar tarifas de flete personalizadas por cliente y destino',
       icon: <DollarSign className="h-8 w-8" />,
       path: '/admin/tarifas-cliente'
-    },
-    {
-      title: 'Servicios de Transporte',
-      description: 'Registrar servicios de flete cuando el cliente compra directo',
-      icon: <Truck className="h-8 w-8" />,
-      path: '/admin/servicios-transporte'
     },
     {
       title: 'Compras',

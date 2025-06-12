@@ -10,7 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, UserPlus, ArrowLeft, Settings } from 'lucide-react';
+import { Trash2, UserPlus, ArrowLeft, Settings, DollarSign } from 'lucide-react';
+import UserCommissionDialog from '@/components/UserCommissionDialog';
 
 type User = {
   id: string;
@@ -18,6 +19,7 @@ type User = {
   email: string;
   role: 'Trabajador' | 'Administrador' | 'Operador';
   assignedMachines?: string[];
+  comisionPorHora?: number;
 };
 
 const UserManagement: React.FC = () => {
@@ -28,6 +30,8 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedMachines, setSelectedMachines] = useState<string[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [commissionUser, setCommissionUser] = useState<User | null>(null);
+  const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
   
   // Redirigir si no hay un usuario o no es administrador
   React.useEffect(() => {
@@ -42,11 +46,9 @@ const UserManagement: React.FC = () => {
     }
   }, [user, navigate]);
 
-  // Cargar usuarios del localStorage
   useEffect(() => {
     const loadUsers = () => {
       const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      // Eliminar la contraseña antes de guardar en el estado
       const usersWithoutPassword = storedUsers.map(
         ({ password, ...userWithoutPassword }: any) => userWithoutPassword
       );
@@ -57,20 +59,16 @@ const UserManagement: React.FC = () => {
   }, []);
 
   const handleRemoveUser = (id: string) => {
-    // No permitir eliminar al usuario actual
     if (id === user?.id) {
       toast.error('No puedes eliminar tu propia cuenta');
       return;
     }
     
-    // Obtener usuarios actuales
     const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
     const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
     
-    // Actualizar localStorage
     localStorage.setItem('users', JSON.stringify(updatedUsers));
     
-    // Actualizar estado
     const usersWithoutPassword = updatedUsers.map(
       ({ password, ...userWithoutPassword }: any) => userWithoutPassword
     );
@@ -98,7 +96,6 @@ const UserManagement: React.FC = () => {
     
     const success = await updateUserMachines(editingUser.id, selectedMachines);
     if (success) {
-      // Actualizar el estado local
       setUsers(prev => prev.map(u => 
         u.id === editingUser.id 
           ? { ...u, assignedMachines: selectedMachines }
@@ -107,6 +104,30 @@ const UserManagement: React.FC = () => {
       setIsEditDialogOpen(false);
       setEditingUser(null);
     }
+  };
+
+  const handleEditCommission = (userToEdit: User) => {
+    setCommissionUser(userToEdit);
+    setIsCommissionDialogOpen(true);
+  };
+
+  const handleSaveCommission = (userId: string, commission: number) => {
+    // Actualizar en localStorage
+    const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const updatedUsers = currentUsers.map((u: any) => 
+      u.id === userId 
+        ? { ...u, comisionPorHora: commission }
+        : u
+    );
+    
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    // Actualizar estado local
+    setUsers(prev => prev.map(u => 
+      u.id === userId 
+        ? { ...u, comisionPorHora: commission }
+        : u
+    ));
   };
 
   const getMachineNames = (machineIds: string[] = []) => {
@@ -124,7 +145,7 @@ const UserManagement: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/admin')}
             className="flex items-center gap-2"
           >
@@ -133,7 +154,7 @@ const UserManagement: React.FC = () => {
           </Button>
         </div>
         <p className="text-muted-foreground mt-2">
-          Administra los usuarios del sistema y sus máquinas asignadas
+          Administra los usuarios del sistema, sus máquinas asignadas y comisiones
         </p>
       </div>
 
@@ -148,7 +169,7 @@ const UserManagement: React.FC = () => {
         <CardHeader>
           <CardTitle>Listado de Usuarios</CardTitle>
           <CardDescription>
-            Usuarios registrados en el sistema con sus máquinas asignadas
+            Usuarios registrados en el sistema con sus configuraciones
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,7 +182,8 @@ const UserManagement: React.FC = () => {
                     <TableHead>Correo</TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Máquinas Asignadas</TableHead>
-                    <TableHead className="w-32">Acciones</TableHead>
+                    <TableHead>Comisión/Hora</TableHead>
+                    <TableHead className="w-40">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -186,15 +208,33 @@ const UserManagement: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        {u.role === 'Operador' ? (
+                          <span className="font-medium">
+                            ${(u.comisionPorHora || 0).toLocaleString()}
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex gap-2">
                           {u.role === 'Operador' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditMachines(u)}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditMachines(u)}
+                                title="Configurar máquinas"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditCommission(u)}
+                                title="Configurar comisión"
+                              >
+                                <DollarSign className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -284,6 +324,19 @@ const UserManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para configurar comisión */}
+      {commissionUser && (
+        <UserCommissionDialog
+          isOpen={isCommissionDialogOpen}
+          onClose={() => {
+            setIsCommissionDialogOpen(false);
+            setCommissionUser(null);
+          }}
+          user={commissionUser}
+          onSave={handleSaveCommission}
+        />
+      )}
     </div>
   );
 };

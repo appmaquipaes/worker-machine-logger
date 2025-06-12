@@ -5,8 +5,9 @@ import { useMachine } from '@/context/MachineContext';
 import { useReport, ReportType } from '@/context/ReportContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from "sonner";
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
 import { getClienteByName } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
@@ -36,6 +37,8 @@ const ReportForm = () => {
   const [proveedor, setProveedor] = useState<string>('');
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
   const [tipoMateria, setTipoMateria] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSubmitSuccess, setLastSubmitSuccess] = useState(false);
   
   // Cargar proveedores, tipos de materia e inventario
   const [proveedores, setProveedores] = useState<any[]>([]);
@@ -46,14 +49,12 @@ const ReportForm = () => {
     setProveedores(loadProveedores());
     setTiposMaterial(getUniqueProviderMaterialTypes());
     
-    // Cargar inventario de acopio para mostrar materiales disponibles
     const inventario = localStorage.getItem('inventario_acopio');
     if (inventario) {
       setInventarioAcopio(JSON.parse(inventario));
     }
   }, []);
   
-  // Redirigir si no hay un usuario autenticado o no se ha seleccionado una máquina
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -71,21 +72,17 @@ const ReportForm = () => {
     setWorkSite(cliente);
   };
 
-  // Manejar cambio de cliente para viajes (destino)
   const handleClienteChangeForDestination = (cliente: string) => {
     setSelectedCliente(cliente);
-    setSelectedFinca(''); // Reset finca selection
+    setSelectedFinca('');
     
-    // Verificar si el cliente tiene fincas
     if (cliente) {
       const clienteData = getClienteByName(cliente);
       if (clienteData) {
         const fincas = getFincasByCliente(clienteData.id);
         if (fincas.length === 0) {
-          // Si no tiene fincas, usar el nombre del cliente como destino
           setDestination(cliente);
         } else {
-          // Si tiene fincas, limpiar el destino para que se seleccione una finca
           setDestination('');
         }
       }
@@ -94,19 +91,20 @@ const ReportForm = () => {
     }
   };
 
-  // Manejar cambio de finca para viajes (destino)
   const handleFincaChangeForDestination = (finca: string) => {
     setSelectedFinca(finca);
     setDestination(finca);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedMachine) {
       toast.error('Debe seleccionar una máquina');
       return;
     }
+    
+    setIsSubmitting(true);
     
     // Validar formulario usando la utilidad
     const validationError = validateReportForm({
@@ -129,55 +127,75 @@ const ReportForm = () => {
     
     if (validationError) {
       toast.error(validationError);
+      setIsSubmitting(false);
       return;
     }
     
-    // Preparar descripción final solo para Novedades
-    const reportDescription = reportType === 'Novedades' ? description : '';
-    
-    const finalDestination = reportType === 'Viajes' 
-      ? `${selectedCliente} - ${selectedFinca}`
-      : destination;
-    
-    addReport(
-      selectedMachine.id,
-      selectedMachine.name,
-      reportType,
-      reportDescription,
-      reportDate,
-      reportType === 'Viajes' ? trips : undefined,
-      (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
-      reportType === 'Combustible' ? value : 
-      reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-      reportType === 'Horas Trabajadas' ? workSite : undefined,
-      reportType === 'Viajes' ? origin : undefined,
-      reportType === 'Viajes' ? finalDestination : undefined,
-      reportType === 'Viajes' ? cantidadM3 : undefined,
-      reportType === 'Mantenimiento' ? proveedor : undefined,
-      reportType === 'Combustible' ? kilometraje : undefined
-    );
-    
-    // Mostrar confirmación
-    toast.success('¡Reporte enviado con éxito!');
-    
-    // Limpiar el formulario
-    setDescription('');
-    setTrips(undefined);
-    setHours(undefined);
-    setValue(undefined);
-    setWorkSite('');
-    setOrigin('');
-    setSelectedCliente('');
-    setSelectedFinca('');
-    setDestination('');
-    setMaintenanceValue(undefined);
-    setCantidadM3(15);
-    setProveedor('');
-    setKilometraje(undefined);
-    setTipoMateria('');
-    
-    // Redirigir al dashboard
-    navigate('/dashboard');
+    try {
+      // Preparar descripción final solo para Novedades
+      const reportDescription = reportType === 'Novedades' ? description : '';
+      
+      const finalDestination = reportType === 'Viajes' 
+        ? `${selectedCliente} - ${selectedFinca}`
+        : destination;
+      
+      addReport(
+        selectedMachine.id,
+        selectedMachine.name,
+        reportType,
+        reportDescription,
+        reportDate,
+        reportType === 'Viajes' ? trips : undefined,
+        (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
+        reportType === 'Combustible' ? value : 
+        reportType === 'Mantenimiento' ? maintenanceValue : undefined,
+        reportType === 'Horas Trabajadas' ? workSite : undefined,
+        reportType === 'Viajes' ? origin : undefined,
+        reportType === 'Viajes' ? finalDestination : undefined,
+        reportType === 'Viajes' ? cantidadM3 : undefined,
+        reportType === 'Mantenimiento' ? proveedor : undefined,
+        reportType === 'Combustible' ? kilometraje : undefined
+      );
+      
+      // Mostrar confirmación prominente
+      setLastSubmitSuccess(true);
+      toast.success('¡REPORTE REGISTRADO CON ÉXITO!', {
+        duration: 5000,
+        style: {
+          fontSize: '18px',
+          fontWeight: 'bold',
+          backgroundColor: '#22c55e',
+          color: 'white'
+        }
+      });
+      
+      // Limpiar el formulario PERO mantener al usuario en la pantalla
+      setDescription('');
+      setTrips(undefined);
+      setHours(undefined);
+      setValue(undefined);
+      setWorkSite('');
+      setOrigin('');
+      setSelectedCliente('');
+      setSelectedFinca('');
+      setDestination('');
+      setMaintenanceValue(undefined);
+      setCantidadM3(15);
+      setProveedor('');
+      setKilometraje(undefined);
+      setTipoMateria('');
+      
+      // Ocultar la alerta de éxito después de 8 segundos
+      setTimeout(() => {
+        setLastSubmitSuccess(false);
+      }, 8000);
+      
+    } catch (error) {
+      console.error('Error al enviar reporte:', error);
+      toast.error('Error al enviar el reporte. Intente nuevamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   if (!user || !selectedMachine) return null;
@@ -202,6 +220,18 @@ const ReportForm = () => {
           Volver al inicio
         </Button>
       </div>
+
+      {/* Alerta de éxito prominente */}
+      {lastSubmitSuccess && (
+        <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
+          <CheckCircle className="h-6 w-6 text-green-600" />
+          <AlertTitle className="text-xl font-bold">¡REGISTRO EXITOSO!</AlertTitle>
+          <AlertDescription className="text-lg">
+            Su reporte de <strong>{reportType}</strong> ha sido registrado correctamente en el sistema.
+            Puede continuar registrando más reportes o volver al menú principal.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card>
         <CardContent className="pt-6">
@@ -256,17 +286,28 @@ const ReportForm = () => {
                 variant="outline" 
                 onClick={() => navigate('/dashboard')}
                 className="flex items-center gap-2 text-lg py-6 px-6"
+                disabled={isSubmitting}
               >
                 <ArrowLeft size={24} />
-                Cancelar
+                Volver al Menú
               </Button>
               
               <Button 
                 type="submit"
-                className="flex items-center gap-2 text-lg py-6 px-8"
+                className="flex items-center gap-2 text-lg py-6 px-8 bg-green-600 hover:bg-green-700"
+                disabled={isSubmitting}
               >
-                <Send size={24} />
-                Enviar Reporte
+                {isSubmitting ? (
+                  <>
+                    <AlertCircle size={24} className="animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    <Send size={24} />
+                    Registrar Reporte
+                  </>
+                )}
               </Button>
             </div>
           </form>
