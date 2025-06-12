@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Truck, Wrench, Building, Loader2 } from 'lucide-react';
 
@@ -30,23 +28,26 @@ export const getMachineImage = (type: string) => {
       return "/cat315-excavator.jpg"; // Imagen optimizada de la retroexcavadora CAT
     case 'bulldozer':
       return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
-    case 'camión':
     case 'volqueta':
-      return "/cat315-excavator.jpg"; // Usando como placeholder hasta tener imágenes específicas
-    case 'compactador':
-      return "/cat315-excavator.jpg";
-    case 'cargador':
-      return "/cat315-excavator.jpg";
-    case 'motoniveladora':
-      return "/cat315-excavator.jpg";
-    case 'paladraga':
-      return "/cat315-excavator.jpg";
+      return "https://images.unsplash.com/photo-1590735213920-68192a487bc3?w=400&h=400&fit=crop&crop=center"; // Volqueta/Dump truck
+    case 'camión':
+      return "https://images.unsplash.com/photo-1566024287286-457247b70310?w=400&h=400&fit=crop&crop=center"; // Camión de carga
     case 'camabaja':
+      return "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=400&h=400&fit=crop&crop=center"; // Camabaja/Lowboy trailer
     case 'semirremolque':
+      return "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=400&fit=crop&crop=center"; // Semirremolque
     case 'tractomula':
-      return "/cat315-excavator.jpg";
+      return "https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=400&h=400&fit=crop&crop=center"; // Tractomula
+    case 'cargador':
+      return "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400&h=400&fit=crop&crop=center"; // Cargador frontal
+    case 'motoniveladora':
+      return "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center"; // Motoniveladora
+    case 'compactador':
+      return "https://images.unsplash.com/photo-1572177812156-58036aae439c?w=400&h=400&fit=crop&crop=center"; // Compactador/Road roller
+    case 'paladraga':
+      return "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop&crop=center"; // Paladraga/Material handler
     default:
-      return "/cat315-excavator.jpg";
+      return "/cat315-excavator.jpg"; // Imagen por defecto
   }
 };
 
