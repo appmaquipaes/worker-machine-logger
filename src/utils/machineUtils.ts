@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Truck, Wrench, Building, Loader2 } from 'lucide-react';
 
@@ -29,7 +30,7 @@ export const getMachineImage = (type: string) => {
     case 'bulldozer':
       return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
     case 'volqueta':
-      return "https://images.unsplash.com/photo-1590735213920-68192a487bc3?w=400&h=400&fit=crop&crop=center"; // Volqueta/Dump truck
+      return "/lovable-uploads/6c36b12f-a686-42d4-9655-0d90ec7a95fc.png"; // Tu nueva imagen personalizada de Volqueta
     case 'camión':
       return "https://images.unsplash.com/photo-1566024287286-457247b70310?w=400&h=400&fit=crop&crop=center"; // Camión de carga
     case 'camabaja':
