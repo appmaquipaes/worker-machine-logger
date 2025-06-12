@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Truck, Wrench, Building, Loader2 } from 'lucide-react';
 
@@ -27,11 +28,11 @@ export const getMachineImage = (type: string) => {
   switch (type.toLowerCase()) {
     case 'excavadora':
       return "/cat315-excavator.jpg"; // Imagen optimizada de la retroexcavadora CAT
+    case 'bulldozer':
+      return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
     case 'camión':
     case 'volqueta':
       return "/cat315-excavator.jpg"; // Usando como placeholder hasta tener imágenes específicas
-    case 'bulldozer':
-      return "/cat315-excavator.jpg";
     case 'compactador':
       return "/cat315-excavator.jpg";
     case 'cargador':
