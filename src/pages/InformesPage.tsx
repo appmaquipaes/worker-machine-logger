@@ -195,299 +195,320 @@ const InformesPage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Informes de Máquinas</h1>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={18} />
-            Volver al dashboard
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* Header Corporativo */}
+      <div className="page-header">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-responsive-xl font-bold text-white mb-2">
+                Informes de Máquinas
+              </h1>
+              <p className="text-blue-100 text-responsive-base">
+                Genera reportes detallados basados en los datos registrados
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard')}
+              className="btn-outline-large bg-white/10 border-white/30 text-white hover:bg-white hover:text-blue-600"
+            >
+              <ArrowLeft className="mobile-icon" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Genera reportes detallados basados en los datos registrados
-        </p>
       </div>
 
-      {/* Filtros */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Filtros de Reporte
-          </CardTitle>
-          <CardDescription>
-            Selecciona los criterios para generar tu reporte
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Operador</label>
-              <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los operadores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los operadores</SelectItem>
-                  {operators.map((operator) => (
-                    <SelectItem key={operator.id} value={operator.id}>
-                      {operator.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Máquina</label>
-              <Select value={selectedMachine} onValueChange={setSelectedMachine}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las máquinas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las máquinas</SelectItem>
-                  {machines.map((machine) => (
-                    <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name} ({machine.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de Reporte</label>
-              <Select value={selectedReportType} onValueChange={setSelectedReportType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
-                  <SelectItem value="Horas Trabajadas">Horas Trabajadas</SelectItem>
-                  <SelectItem value="Horas Extras">Horas Extras</SelectItem>
-                  <SelectItem value="Viajes">Viajes</SelectItem>
-                  <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                  <SelectItem value="Combustible">Combustible</SelectItem>
-                  <SelectItem value="Novedades">Novedades</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1">
-                <Users size={16} />
-                Cliente
-              </label>
-              <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los clientes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los clientes</SelectItem>
-                  {clientes.map((cliente) => (
-                    <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
-                      {cliente.nombre_cliente}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1">
-                <MapPin size={16} />
-                Finca
-              </label>
-              <Select 
-                value={selectedFinca} 
-                onValueChange={setSelectedFinca}
-                disabled={selectedCliente === 'all' || fincas.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    selectedCliente === 'all' 
-                      ? "Primero seleccione un cliente" 
-                      : fincas.length === 0 
-                        ? "El cliente no tiene fincas"
-                        : "Todas las fincas"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las fincas</SelectItem>
-                  {fincas.map((finca) => (
-                    <SelectItem key={finca.id} value={finca.nombre_finca}>
-                      {finca.nombre_finca} - {finca.ciudad}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha Inicio</label>
-              <DatePicker date={startDate} setDate={setStartDate} />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha Fin</label>
-              <DatePicker date={endDate} setDate={setEndDate} />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={generateReport} className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Generar Reporte
-            </Button>
-            {reportData.length > 0 && (
-              <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Exportar a Excel
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Estadísticas */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.totalReports}</div>
-              <div className="text-sm text-muted-foreground">Total Reportes</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.totalHours}</div>
-              <div className="text-sm text-muted-foreground">Total Horas</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.totalTrips}</div>
-              <div className="text-sm text-muted-foreground">Total Viajes</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-amber-600">${stats.totalValue.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Valor Total</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">${stats.totalCommission.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Comisiones</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.uniqueMachines}</div>
-              <div className="text-sm text-muted-foreground">Máquinas</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-indigo-600">{stats.uniqueClientes}</div>
-              <div className="text-sm text-muted-foreground">Clientes</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Tabla de datos */}
-      {reportData.length > 0 && (
-        <Card>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Filtros */}
+        <Card className="corporate-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Datos del Reporte
+            <CardTitle className="flex items-center gap-3 text-responsive-lg">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600">
+                <BarChart3 className="mobile-icon text-white" />
+              </div>
+              Filtros de Reporte
             </CardTitle>
-            <CardDescription>
-              Detalle de los reportes generados ({reportData.length} registros)
+            <CardDescription className="text-responsive-base">
+              Selecciona los criterios para generar tu reporte
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-hidden overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Máquina</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Finca</TableHead>
-                    <TableHead>Horas</TableHead>
-                    <TableHead>Viajes</TableHead>
-                    <TableHead>M³</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Comisión</TableHead>
-                    <TableHead>Cálculo</TableHead>
-                    <TableHead className="w-48">Novedades</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reportData.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell>{report.reportDate.toLocaleDateString()}</TableCell>
-                      <TableCell>{report.userName}</TableCell>
-                      <TableCell>{report.machineName}</TableCell>
-                      <TableCell>{report.reportType}</TableCell>
-                      <TableCell>{report.workSite || extractClienteFromDestination(report.destination) || '-'}</TableCell>
-                      <TableCell>{extractFincaFromDestination(report.destination) || '-'}</TableCell>
-                      <TableCell>{report.hours || '-'}</TableCell>
-                      <TableCell>{report.trips || '-'}</TableCell>
-                      <TableCell>{report.cantidadM3 || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className={report.value ? 'font-medium' : 'text-muted-foreground'}>
-                            {report.value ? `$${report.value.toLocaleString()}` : '-'}
-                          </span>
-                          {report.tarifaEncontrada !== undefined && (
-                            <span className={`text-xs ${report.tarifaEncontrada ? 'text-green-600' : 'text-orange-600'}`}>
-                              {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-orange-600">
-                            {report.comisionTotal ? `$${report.comisionTotal.toLocaleString()}` : '-'}
-                          </span>
-                          {report.comisionPorHora > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              ${report.comisionPorHora.toLocaleString()}/h
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="w-48 max-w-48">
-                        <div className="truncate" title={report.detalleCalculo || ''}>
-                          {report.detalleCalculo || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="w-48 max-w-48">
-                        <div className="truncate" title={report.reportType === 'Novedades' ? report.description : ''}>
-                          {report.reportType === 'Novedades' ? report.description : '-'}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Operador</label>
+                <Select value={selectedOperator} onValueChange={setSelectedOperator}>
+                  <SelectTrigger className="h-12 rounded-xl border-2">
+                    <SelectValue placeholder="Todos los operadores" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los operadores</SelectItem>
+                    {operators.map((operator) => (
+                      <SelectItem key={operator.id} value={operator.id}>
+                        {operator.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Máquina</label>
+                <Select value={selectedMachine} onValueChange={setSelectedMachine}>
+                  <SelectTrigger className="h-12 rounded-xl border-2">
+                    <SelectValue placeholder="Todas las máquinas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las máquinas</SelectItem>
+                    {machines.map((machine) => (
+                      <SelectItem key={machine.id} value={machine.id}>
+                        {machine.name} ({machine.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Tipo de Reporte</label>
+                <Select value={selectedReportType} onValueChange={setSelectedReportType}>
+                  <SelectTrigger className="h-12 rounded-xl border-2">
+                    <SelectValue placeholder="Todos los tipos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
+                    <SelectItem value="Horas Trabajadas">Horas Trabajadas</SelectItem>
+                    <SelectItem value="Horas Extras">Horas Extras</SelectItem>
+                    <SelectItem value="Viajes">Viajes</SelectItem>
+                    <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
+                    <SelectItem value="Combustible">Combustible</SelectItem>
+                    <SelectItem value="Novedades">Novedades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                  <Users size={16} />
+                  Cliente
+                </label>
+                <Select value={selectedCliente} onValueChange={setSelectedCliente}>
+                  <SelectTrigger className="h-12 rounded-xl border-2">
+                    <SelectValue placeholder="Todos los clientes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los clientes</SelectItem>
+                    {clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
+                        {cliente.nombre_cliente}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                  <MapPin size={16} />
+                  Finca
+                </label>
+                <Select 
+                  value={selectedFinca} 
+                  onValueChange={setSelectedFinca}
+                  disabled={selectedCliente === 'all' || fincas.length === 0}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-2">
+                    <SelectValue placeholder={
+                      selectedCliente === 'all' 
+                        ? "Primero seleccione un cliente" 
+                        : fincas.length === 0 
+                          ? "El cliente no tiene fincas"
+                          : "Todas las fincas"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las fincas</SelectItem>
+                    {fincas.map((finca) => (
+                      <SelectItem key={finca.id} value={finca.nombre_finca}>
+                        {finca.nombre_finca} - {finca.ciudad}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Fecha Inicio</label>
+                <div className="h-12">
+                  <DatePicker date={startDate} setDate={setStartDate} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Fecha Fin</label>
+                <div className="h-12">
+                  <DatePicker date={endDate} setDate={setEndDate} />
+                </div>
+              </div>
+            </div>
+
+            <div className="action-grid-2 gap-4">
+              <Button onClick={generateReport} className="btn-primary-large">
+                <BarChart3 className="mobile-icon" />
+                Generar Reporte
+              </Button>
+              {reportData.length > 0 && (
+                <Button onClick={exportToExcel} className="btn-secondary-large">
+                  <Download className="mobile-icon" />
+                  Exportar Excel
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* Estadísticas */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600 mb-1">{stats.totalReports}</div>
+                <div className="text-sm text-slate-600 font-medium">Total Reportes</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600 mb-1">{stats.totalHours}</div>
+                <div className="text-sm text-slate-600 font-medium">Total Horas</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600 mb-1">{stats.totalTrips}</div>
+                <div className="text-sm text-slate-600 font-medium">Total Viajes</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-amber-600 mb-1">${stats.totalValue.toLocaleString()}</div>
+                <div className="text-sm text-slate-600 font-medium">Valor Total</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-orange-600 mb-1">${stats.totalCommission.toLocaleString()}</div>
+                <div className="text-sm text-slate-600 font-medium">Comisiones</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-indigo-600 mb-1">{stats.uniqueMachines}</div>
+                <div className="text-sm text-slate-600 font-medium">Máquinas</div>
+              </CardContent>
+            </Card>
+            <Card className="corporate-card">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-teal-600 mb-1">{stats.uniqueClientes}</div>
+                <div className="text-sm text-slate-600 font-medium">Clientes</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Tabla de datos */}
+        {reportData.length > 0 && (
+          <Card className="corporate-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-responsive-lg">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-green-600">
+                  <TrendingUp className="mobile-icon text-white" />
+                </div>
+                Datos del Reporte
+              </CardTitle>
+              <CardDescription className="text-responsive-base">
+                Detalle de los reportes generados ({reportData.length} registros)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-xl border-2 overflow-hidden overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead className="font-semibold">Fecha</TableHead>
+                      <TableHead className="font-semibold">Usuario</TableHead>
+                      <TableHead className="font-semibold">Máquina</TableHead>
+                      <TableHead className="font-semibold">Tipo</TableHead>
+                      <TableHead className="font-semibold">Cliente</TableHead>
+                      <TableHead className="font-semibold">Finca</TableHead>
+                      <TableHead className="font-semibold">Horas</TableHead>
+                      <TableHead className="font-semibold">Viajes</TableHead>
+                      <TableHead className="font-semibold">M³</TableHead>
+                      <TableHead className="font-semibold">Valor</TableHead>
+                      <TableHead className="font-semibold">Comisión</TableHead>
+                      <TableHead className="font-semibold">Cálculo</TableHead>
+                      <TableHead className="font-semibold w-48">Novedades</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.map((report) => (
+                      <TableRow key={report.id} className="hover:bg-slate-50">
+                        <TableCell className="font-medium">{report.reportDate.toLocaleDateString()}</TableCell>
+                        <TableCell>{report.userName}</TableCell>
+                        <TableCell>{report.machineName}</TableCell>
+                        <TableCell>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {report.reportType}
+                          </span>
+                        </TableCell>
+                        <TableCell>{report.workSite || extractClienteFromDestination(report.destination) || '-'}</TableCell>
+                        <TableCell>{extractFincaFromDestination(report.destination) || '-'}</TableCell>
+                        <TableCell>{report.hours || '-'}</TableCell>
+                        <TableCell>{report.trips || '-'}</TableCell>
+                        <TableCell>{report.cantidadM3 || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className={report.value ? 'font-semibold text-green-600' : 'text-slate-400'}>
+                              {report.value ? `$${report.value.toLocaleString()}` : '-'}
+                            </span>
+                            {report.tarifaEncontrada !== undefined && (
+                              <span className={`text-xs ${report.tarifaEncontrada ? 'text-green-600' : 'text-orange-600'}`}>
+                                {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-orange-600">
+                              {report.comisionTotal ? `$${report.comisionTotal.toLocaleString()}` : '-'}
+                            </span>
+                            {report.comisionPorHora > 0 && (
+                              <span className="text-xs text-slate-500">
+                                ${report.comisionPorHora.toLocaleString()}/h
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-48 max-w-48">
+                          <div className="truncate text-sm" title={report.detalleCalculo || ''}>
+                            {report.detalleCalculo || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-48 max-w-48">
+                          <div className="truncate text-sm" title={report.reportType === 'Novedades' ? report.description : ''}>
+                            {report.reportType === 'Novedades' ? report.description : '-'}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
