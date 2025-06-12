@@ -22,20 +22,19 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
       >
         {/* Imagen/Icono de la máquina optimizada */}
         <div className="relative">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center shadow-lg overflow-hidden">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center overflow-hidden">
             {machine.imageUrl || machineImage ? (
               <img 
                 src={machine.imageUrl || machineImage} 
                 alt={machine.name}
-                className="w-full h-full object-cover rounded-2xl filter brightness-110 contrast-110"
+                className="w-full h-full object-contain filter drop-shadow-2xl hover:scale-110 transition-transform duration-300 ease-in-out"
                 style={{
                   imageRendering: 'crisp-edges',
-                  objectFit: 'cover',
-                  objectPosition: 'center'
+                  filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3)) brightness(1.1) contrast(1.1)',
                 }}
               />
             ) : (
-              <div className="text-white mobile-icon-large">
+              <div className="text-slate-600 mobile-icon-large p-4 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl">
                 {getMachineIcon(machine.type)}
               </div>
             )}
