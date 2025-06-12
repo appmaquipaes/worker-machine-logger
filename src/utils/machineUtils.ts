@@ -25,7 +25,7 @@ export const getMachineIcon = (type: string) => {
 export const getMachineImage = (type: string) => {
   switch (type.toLowerCase()) {
     case 'excavadora':
-      return "/cat315-excavator.jpg"; // Imagen optimizada de la retroexcavadora CAT
+      return "/lovable-uploads/d8ff481c-bcff-4c36-8c82-691a61ebbb16.png"; // Tu imagen personalizada de la Caterpillar 315
     case 'bulldozer':
       return "/lovable-uploads/abfbce19-1bae-4eaa-b0fe-5bbef7443b48.png"; // Nueva imagen vectorial del bulldozer
     case 'volqueta':
@@ -47,7 +47,7 @@ export const getMachineImage = (type: string) => {
     case 'paladraga':
       return "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop&crop=center"; // Paladraga/Material handler
     default:
-      return "/cat315-excavator.jpg"; // Imagen por defecto
+      return "/lovable-uploads/d8ff481c-bcff-4c36-8c82-691a61ebbb16.png"; // Tu imagen personalizada como imagen por defecto
   }
 };
 
