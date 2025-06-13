@@ -44,7 +44,7 @@ export const getMachineImage = (type: string) => {
     case 'motoniveladora':
       return "/lovable-uploads/86567b1a-b958-45c8-84eb-f834a625b9bc.png"; // Tu nueva imagen personalizada de la motoniveladora
     case 'compactador':
-      return "/lovable-uploads/db5fe554-e43e-4bce-adfa-34d2bb6c9649.png"; // Tu nueva imagen personalizada del vibrocompactador
+      return "/lovable-uploads/bcacdd1b-4526-421b-b378-add2698c3d6b.png"; // Tu nueva imagen personalizada del vibrocompactador CC248 CAT
     case 'paladraga':
       return "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop&crop=center"; // Paladraga/Material handler
     default:
