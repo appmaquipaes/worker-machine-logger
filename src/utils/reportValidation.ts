@@ -1,8 +1,7 @@
-import { ReportType } from '@/types/report';
-import { getClienteByName } from '@/models/Clientes';
-import { getFincasByCliente } from '@/models/Fincas';
 
-interface ValidationParams {
+import { ReportType } from '@/types/report';
+
+interface ReportFormData {
   reportType: ReportType;
   description: string;
   trips?: number;
@@ -20,7 +19,7 @@ interface ValidationParams {
   inventarioAcopio: any[];
 }
 
-export const validateReportForm = (params: ValidationParams): string | null => {
+export const validateReportForm = (data: ReportFormData): string | null => {
   const {
     reportType,
     description,
@@ -37,92 +36,84 @@ export const validateReportForm = (params: ValidationParams): string | null => {
     kilometraje,
     tipoMateria,
     inventarioAcopio
-  } = params;
+  } = data;
 
-  // Solo validar descripción para Novedades
-  if (reportType === 'Novedades' && !description.trim()) {
-    return 'Las novedades no pueden estar vacías';
-  }
+  // Validaciones específicas por tipo de reporte
+  switch (reportType) {
+    case 'Horas Trabajadas':
+      if (!hours || hours <= 0) {
+        return 'Las horas trabajadas son obligatorias y deben ser mayor a 0';
+      }
+      if (!workSite || workSite.trim() === '') {
+        return 'El sitio de trabajo (cliente) es obligatorio';
+      }
+      break;
 
-  // Validaciones específicas para cada tipo de reporte
-  if (reportType === 'Viajes') {
-    if (trips === undefined || trips <= 0) {
-      return 'Debe ingresar un número válido de viajes';
-    }
-    
-    if (!origin.trim()) {
-      return 'Debe seleccionar el origen del viaje';
-    }
+    case 'Horas Extras':
+      if (!hours || hours <= 0) {
+        return 'Las horas extras son obligatorias y deben ser mayor a 0';
+      }
+      break;
 
-    if (!selectedCliente.trim()) {
-      return 'Debe seleccionar el cliente destino';
-    }
-
-    // Validar finca solo si el cliente tiene fincas registradas
-    const clienteData = getClienteByName(selectedCliente);
-    const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
-    
-    if (fincasDisponibles.length > 0 && !selectedFinca.trim()) {
-      return 'Debe seleccionar la finca destino';
-    }
-
-    if (cantidadM3 === undefined || cantidadM3 <= 0) {
-      return 'Debe ingresar una cantidad válida de m³ transportados';
-    }
-
-    // Para viajes desde Acopio Maquipaes, validar material del inventario
-    if (origin === 'Acopio Maquipaes') {
-      if (!tipoMateria.trim()) {
-        return 'Debe seleccionar el tipo de material desde el inventario';
+    case 'Viajes':
+      if (!origin || origin.trim() === '') {
+        return 'El origen es obligatorio para los viajes';
+      }
+      if (!selectedCliente || selectedCliente.trim() === '') {
+        return 'El cliente de destino es obligatorio para los viajes';
+      }
+      if (!selectedFinca || selectedFinca.trim() === '') {
+        return 'La finca de destino es obligatoria para los viajes';
+      }
+      if (!cantidadM3 || cantidadM3 <= 0) {
+        return 'La cantidad de m³ transportados es obligatoria y debe ser mayor a 0';
+      }
+      if (!tipoMateria || tipoMateria.trim() === '') {
+        return 'El tipo de material es obligatorio para los viajes';
       }
       
-      const materialEnInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
-      if (!materialEnInventario) {
-        return 'El material seleccionado no está disponible en el inventario';
+      // Validación especial para viajes desde acopio
+      if (origin === 'Acopio Maquipaes') {
+        const itemInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+        if (!itemInventario) {
+          return 'El material seleccionado no está disponible en el inventario de acopio';
+        }
+        if (cantidadM3 > itemInventario.cantidad_disponible) {
+          return `La cantidad solicitada (${cantidadM3} m³) excede la cantidad disponible en acopio (${itemInventario.cantidad_disponible} m³)`;
+        }
       }
-      
-      if (materialEnInventario.cantidad_disponible < cantidadM3) {
-        return `Solo hay ${materialEnInventario.cantidad_disponible} m³ disponibles de ${tipoMateria}`;
+      break;
+
+    case 'Combustible':
+      if (!value || value <= 0) {
+        return 'El valor del combustible es obligatorio y debe ser mayor a 0';
       }
-    } else {
-      if (!tipoMateria.trim()) {
-        return 'Debe seleccionar el tipo de materia';
+      if (!kilometraje || kilometraje < 0) {
+        return 'El kilometraje actual es obligatorio y debe ser mayor o igual a 0';
       }
-    }
-  }
-  
-  // Validar horas para tipos de reporte relevantes
-  const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
-  if (shouldShowHoursInput && (hours === undefined || hours <= 0)) {
-    return 'Debe ingresar un número válido de horas';
-  }
-  
-  // Validar sitio de trabajo para horas trabajadas
-  if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
-    return 'Debe seleccionar el cliente para el sitio de trabajo';
-  }
-  
-  // Validar combustible
-  if (reportType === 'Combustible') {
-    if (value === undefined || value <= 0) {
-      return 'Debe ingresar un valor válido para el combustible';
-    }
-    
-    if (kilometraje === undefined || kilometraje <= 0) {
-      return 'Debe ingresar el kilometraje actual del vehículo';
-    }
+      break;
+
+    case 'Mantenimiento':
+      if (!maintenanceValue || maintenanceValue <= 0) {
+        return 'El valor del mantenimiento es obligatorio y debe ser mayor a 0';
+      }
+      if (!proveedor || proveedor.trim() === '') {
+        return 'El proveedor es obligatorio para el mantenimiento';
+      }
+      break;
+
+    case 'Novedades':
+      if (!description || description.trim() === '') {
+        return 'La descripción de las novedades es obligatoria';
+      }
+      if (description.trim().length < 10) {
+        return 'La descripción de las novedades debe tener al menos 10 caracteres';
+      }
+      break;
+
+    default:
+      return 'Tipo de reporte no válido';
   }
 
-  // Validar mantenimiento
-  if (reportType === 'Mantenimiento') {
-    if (maintenanceValue === undefined || maintenanceValue <= 0) {
-      return 'Debe ingresar un valor válido para el mantenimiento';
-    }
-    
-    if (!proveedor.trim()) {
-      return 'Debe seleccionar un proveedor para el mantenimiento';
-    }
-  }
-
-  return null; // No hay errores
+  return null; // No hay errores de validación
 };

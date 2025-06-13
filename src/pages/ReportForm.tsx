@@ -6,6 +6,7 @@ import ReportInputFields from '@/components/ReportInputFields';
 import ReportFormHeader from '@/components/report-form/ReportFormHeader';
 import ReportSuccessAlert from '@/components/report-form/ReportSuccessAlert';
 import ReportFormActions from '@/components/report-form/ReportFormActions';
+import OperatorInstructions from '@/components/machine-specific/OperatorInstructions';
 import { useReportForm } from '@/hooks/useReportForm';
 
 const ReportForm = () => {
@@ -64,6 +65,14 @@ const ReportForm = () => {
               onReportTypeChange={setReportType}
               selectedMachine={selectedMachine}
             />
+            
+            {/* Mostrar instrucciones específicas para el operador */}
+            {reportType && (
+              <OperatorInstructions 
+                machine={selectedMachine}
+                reportType={reportType}
+              />
+            )}
             
             <ReportInputFields
               reportType={reportType}

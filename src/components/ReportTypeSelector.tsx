@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ReportType } from '@/types/report';
@@ -31,22 +32,29 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
     { type: 'Viajes' as ReportType, icon: Truck, label: 'Viajes', color: 'from-amber-500 to-yellow-500' }
   ];
 
-  // Filtrar tipos de reporte según el tipo de máquina
+  // Obtener tipos de reporte disponibles según el tipo de máquina
   const getAvailableReportTypes = () => {
     if (!selectedMachine) return allReportTypes;
 
-    // Tipos de máquina que pueden hacer viajes
+    // Máquinas de transporte: pueden hacer viajes y todos los otros tipos
     const transportMachines = ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'];
     
+    // Maquinaria pesada: pueden hacer horas trabajadas, extras, mantenimiento, combustible y novedades
+    const heavyMachinery = ['Excavadora', 'Bulldozer', 'Cargador', 'Motoniveladora', 'Compactador', 'Paladraga'];
+    
     if (transportMachines.includes(selectedMachine.type)) {
-      return allReportTypes; // Todas las opciones disponibles
-    } else {
-      // Para otras máquinas, excluir "Viajes"
+      // Vehículos de transporte: todas las opciones disponibles
+      return allReportTypes;
+    } else if (heavyMachinery.includes(selectedMachine.type)) {
+      // Maquinaria pesada: excluir "Viajes" ya que no transportan materiales
       return allReportTypes.filter(type => type.type !== 'Viajes');
+    } else {
+      // Para cualquier otro tipo, mostrar todas las opciones
+      return allReportTypes;
     }
   };
 
-  const reportTypes = getAvailableReportTypes();
+  const availableReportTypes = getAvailableReportTypes();
 
   return (
     <div className="space-y-6">
@@ -55,12 +63,15 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
           Selecciona el tipo de reporte
         </h3>
         <p className="text-slate-600 text-responsive-base">
-          Elige la opción que corresponde a la actividad realizada
+          {selectedMachine && ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'].includes(selectedMachine.type) 
+            ? 'Registra la actividad realizada con este vehículo de transporte'
+            : 'Registra la actividad realizada con esta máquina'
+          }
         </p>
       </div>
       
       <div className="action-grid gap-4">
-        {reportTypes.map(({ type, icon: Icon, label, color }) => (
+        {availableReportTypes.map(({ type, icon: Icon, label, color }) => (
           <Button
             key={type}
             type="button"
@@ -103,6 +114,18 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
           </Button>
         ))}
       </div>
+
+      {/* Información contextual según el tipo de máquina */}
+      {selectedMachine && (
+        <div className="text-center mt-4 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-700">
+            {['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'].includes(selectedMachine.type) 
+              ? `Registrando datos para: ${selectedMachine.type} ${selectedMachine.name}`
+              : `Registrando datos para: ${selectedMachine.type} ${selectedMachine.name}`
+            }
+          </p>
+        </div>
+      )}
     </div>
   );
 };
