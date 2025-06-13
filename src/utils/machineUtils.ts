@@ -37,7 +37,7 @@ export const getMachineImage = (type: string) => {
     case 'Camión':
       return "/lovable-uploads/8771b38d-fcbf-4660-abdd-40e931db19c6.png";
     case 'Camabaja':
-      return "/lovable-uploads/fa6fb96d-5d56-4d4a-a304-b5e314646fb2.png"; // Nueva imagen actualizada de Camabaja
+      return "/lovable-uploads/08e82f36-fb1e-4635-8884-739a2ec01874.png"; // Nueva imagen actualizada de Camabaja (2)
     case 'Semirremolque':
       return "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=400&fit=crop&crop=center";
     case 'Tractomula':
