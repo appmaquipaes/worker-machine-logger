@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Machine = {
   id: string;
   name: string;
-  type: 'Excavadora' | 'Bulldozer' | 'Cargador' | 'Motoniveladora' | 'Compactador' | 'Paladraga' | 'Camión' | 'Volqueta' | 'Camabaja' | 'Semirremolque' | 'Tractomula';
+  type: 'Retroexcavadora de Oruga' | 'Retroexcavadora de Llanta' | 'Cargador' | 'Vibrocompactador' | 'Paladraga' | 'Bulldozer' | 'Camabaja' | 'Volqueta' | 'Motoniveladora' | 'Otro';
   plate?: string;
   imageUrl?: string;
   status: 'available' | 'in-use' | 'maintenance';
@@ -47,18 +46,20 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setMachines(machinesWithStatus);
       console.log('Loaded machines from localStorage:', machinesWithStatus);
     } else {
-      // Datos iniciales mejorados con más variedad de máquinas
+      // Datos iniciales actualizados con los nuevos tipos
       const initialMachines: Machine[] = [
-        { id: '1', name: 'Excavadora CAT 320', type: 'Excavadora', plate: 'ABC-123', status: 'available' },
-        { id: '2', name: 'Bulldozer D6K', type: 'Bulldozer', plate: 'DEF-456', status: 'available' },
-        { id: '3', name: 'Volqueta Kenworth T880', type: 'Volqueta', plate: 'GHI-789', status: 'available' },
-        { id: '4', name: 'Camabaja Freightliner M2', type: 'Camabaja', plate: 'JKL-012', status: 'available' },
-        { id: '5', name: 'Semirremolque Volvo VNL', type: 'Semirremolque', plate: 'MNO-345', status: 'available' },
-        { id: '6', name: 'Tractomula Scania R500', type: 'Tractomula', plate: 'PQR-678', status: 'available' },
-        { id: '7', name: 'Cargador Frontal CAT 950M', type: 'Cargador', plate: 'STU-901', status: 'available' },
-        { id: '8', name: 'Motoniveladora CAT 140M', type: 'Motoniveladora', plate: 'VWX-234', status: 'available' },
-        { id: '9', name: 'Compactador Vibratorio Dynapac', type: 'Compactador', plate: 'YZA-567', status: 'available' },
-        { id: '10', name: 'Paladraga Liebherr R944C', type: 'Paladraga', plate: 'BCD-890', status: 'available' },
+        { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'available' },
+        { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'available' },
+        { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'available' },
+        { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'available' },
+        { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'available' },
+        { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'available' },
+        { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'available' },
+        { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'available' },
+        { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'available' },
+        { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'available' },
+        { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'available' },
+        { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'available' },
       ];
       setMachines(initialMachines);
       localStorage.setItem('machines', JSON.stringify(initialMachines));

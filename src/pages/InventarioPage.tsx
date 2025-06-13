@@ -1,16 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Report } from '@/types/report';
 import { loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { toast } from "sonner";
+import { ArrowLeft, Download, FileText } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const InventarioPage: React.FC = () => {
+  const navigate = useNavigate();
   const [inventario, setInventario] = useState<any[]>([]);
   const [nuevoMaterial, setNuevoMaterial] = useState({
     tipo_material: '',
@@ -54,6 +57,7 @@ const InventarioPage: React.FC = () => {
       id: Date.now().toString(),
       tipo_material: nuevoMaterial.tipo_material,
       cantidad_disponible: parseFloat(nuevoMaterial.cantidad_disponible.toString()),
+      costo_promedio_m3: 0,
     };
 
     const inventarioActualizado = [...inventario, nuevoItem];
@@ -124,11 +128,104 @@ const InventarioPage: React.FC = () => {
     setInventario(inventarioOrdenado);
   };
 
+  const exportarReporteStock = () => {
+    if (inventario.length === 0) {
+      toast.error('No hay datos para exportar');
+      return;
+    }
+
+    const exportData = inventario.map(item => ({
+      'Tipo de Material': item.tipo_material,
+      'Cantidad Disponible (m³)': item.cantidad_disponible,
+      'Costo Promedio por m³': item.costo_promedio_m3 ? `$${item.costo_promedio_m3.toLocaleString()}` : '$0',
+      'Valor Total Inventario': item.costo_promedio_m3 ? `$${(item.cantidad_disponible * item.costo_promedio_m3).toLocaleString()}` : '$0',
+      'Estado': item.cantidad_disponible > 0 ? 'Disponible' : 'Sin Stock',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Reporte Stock');
+    
+    const fileName = `reporte_stock_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    toast.success('Reporte de stock exportado correctamente');
+  };
+
+  const generarReporteStock = () => {
+    const totalMateriales = inventario.length;
+    const materialesConStock = inventario.filter(item => item.cantidad_disponible > 0).length;
+    const materialesSinStock = totalMateriales - materialesConStock;
+    const valorTotalInventario = inventario.reduce((total, item) => 
+      total + (item.cantidad_disponible * (item.costo_promedio_m3 || 0)), 0
+    );
+
+    return {
+      totalMateriales,
+      materialesConStock,
+      materialesSinStock,
+      valorTotalInventario
+    };
+  };
+
+  const stats = generarReporteStock();
+
   return (
     <div className="container mx-auto py-8">
-      <Card>
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Inventario de Acopio</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            Volver al panel admin
+          </Button>
+        </div>
+        <p className="text-muted-foreground mt-2">
+          Gestiona el inventario de materiales en acopio
+        </p>
+      </div>
+
+      {/* Estadísticas del inventario */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">{stats.totalMateriales}</div>
+            <div className="text-sm text-muted-foreground">Total Materiales</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">{stats.materialesConStock}</div>
+            <div className="text-sm text-muted-foreground">Con Stock</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-red-600">{stats.materialesSinStock}</div>
+            <div className="text-sm text-muted-foreground">Sin Stock</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-purple-600">${stats.valorTotalInventario.toLocaleString()}</div>
+            <div className="text-sm text-muted-foreground">Valor Total</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Inventario de Acopio</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Agregar Material</CardTitle>
+            <Button onClick={exportarReporteStock} variant="outline" className="flex items-center gap-2">
+              <Download size={16} />
+              Exportar Reporte
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -154,7 +251,14 @@ const InventarioPage: React.FC = () => {
             </div>
           </div>
           <Button onClick={agregarMaterial}>Agregar Material</Button>
+        </CardContent>
+      </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventario Actual</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="mt-8">
             <Table>
               <TableHeader>
@@ -167,6 +271,8 @@ const InventarioPage: React.FC = () => {
                     Cantidad Disponible (m³)
                     {columnaOrdenada === 'cantidad_disponible' && (orden === 'asc' ? ' ▲' : ' ▼')}
                   </TableHead>
+                  <TableHead>Costo Promedio</TableHead>
+                  <TableHead>Valor Total</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -174,7 +280,13 @@ const InventarioPage: React.FC = () => {
                 {inventario.map(item => (
                   <TableRow key={item.id}>
                     <TableCell>{item.tipo_material}</TableCell>
-                    <TableCell>{item.cantidad_disponible}</TableCell>
+                    <TableCell>
+                      <span className={item.cantidad_disponible <= 0 ? 'text-red-600 font-bold' : ''}>
+                        {item.cantidad_disponible.toLocaleString()}
+                      </span>
+                    </TableCell>
+                    <TableCell>${(item.costo_promedio_m3 || 0).toLocaleString()}</TableCell>
+                    <TableCell>${((item.cantidad_disponible * (item.costo_promedio_m3 || 0))).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       {editandoId === item.id ? (
                         <div className="flex justify-end gap-2">

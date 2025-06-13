@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { DatePicker } from '@/components/DatePicker';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio, updateInventarioAfterVenta } from '@/models/InventarioAcopio';
 import { VentaMaterial, createVentaMaterial, loadVentasMaterial, saveVentasMaterial } from '@/models/VentasMaterial';
+import VentasReportCard from '@/components/VentasReportCard';
 
 // Esquema de validación con Zod
 const ventaSchema = z.object({
@@ -154,7 +154,7 @@ const VentasMaterialPage: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Ventas de Material</h1>
           <Button 
-            variant="back" 
+            variant="outline" 
             onClick={() => navigate('/admin')}
             className="flex items-center gap-2"
           >
@@ -165,6 +165,11 @@ const VentasMaterialPage: React.FC = () => {
         <p className="text-muted-foreground mt-2">
           Registrar ventas de material y actualizar inventario automáticamente
         </p>
+      </div>
+
+      {/* Reportes de ventas */}
+      <div className="mb-8">
+        <VentasReportCard ventas={ventas} />
       </div>
 
       {/* Formulario de venta */}

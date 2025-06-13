@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useReport } from '@/context/ReportContext';
@@ -32,6 +31,7 @@ export const useInformesPage = () => {
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
     const operatorUsers = storedUsers.filter((u: any) => u.role === 'Operador');
     setOperators(operatorUsers);
+    console.log('Loaded operators:', operatorUsers);
   }, []);
 
   useEffect(() => {
@@ -51,6 +51,16 @@ export const useInformesPage = () => {
   }, [selectedCliente]);
 
   const generateReport = () => {
+    console.log('Generating report with filters:', {
+      selectedMachine,
+      selectedReportType,
+      selectedCliente,
+      selectedFinca,
+      selectedOperator,
+      startDate,
+      endDate
+    });
+
     const filters: any = {};
     
     if (selectedMachine !== 'all') {
@@ -71,6 +81,7 @@ export const useInformesPage = () => {
 
     if (selectedOperator !== 'all') {
       filters.userId = selectedOperator;
+      console.log('Filtering by operator userId:', selectedOperator);
     }
     
     if (startDate) {
@@ -81,7 +92,9 @@ export const useInformesPage = () => {
       filters.endDate = endDate;
     }
 
+    console.log('Final filters object:', filters);
     const reports = getFilteredReports(filters);
+    console.log('Filtered reports:', reports);
     
     const reportsWithCommission = reports.map(report => {
       const operator = operators.find(op => op.id === report.userId);

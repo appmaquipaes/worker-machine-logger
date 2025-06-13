@@ -16,22 +16,21 @@ interface MachineFormProps {
 const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
   const [newMachine, setNewMachine] = useState<Omit<Machine, 'id'>>({
     name: '',
-    type: 'Excavadora',
+    type: 'Retroexcavadora de Oruga',
     status: 'available',
   });
 
   const machineTypes: Machine['type'][] = [
-    'Volqueta',
-    'Camión', 
-    'Camabaja',
-    'Semirremolque',
-    'Tractomula',
-    'Excavadora',
-    'Bulldozer',
+    'Retroexcavadora de Oruga',
+    'Retroexcavadora de Llanta', 
     'Cargador',
-    'Motoniveladora',
-    'Compactador',
+    'Vibrocompactador',
     'Paladraga',
+    'Bulldozer',
+    'Camabaja',
+    'Volqueta',
+    'Motoniveladora',
+    'Otro',
   ];
 
   const handleAddMachine = () => {
@@ -46,7 +45,7 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
     // Limpiar el formulario
     setNewMachine({
       name: '',
-      type: 'Excavadora',
+      type: 'Retroexcavadora de Oruga',
       status: 'available',
     });
   };
@@ -80,21 +79,11 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
                 <SelectValue placeholder="Selecciona un tipo" />
               </SelectTrigger>
               <SelectContent>
-                <optgroup label="Vehículos de Transporte">
-                  <SelectItem value="Volqueta">Volqueta</SelectItem>
-                  <SelectItem value="Camión">Camión</SelectItem>
-                  <SelectItem value="Camabaja">Camabaja</SelectItem>
-                  <SelectItem value="Semirremolque">Semirremolque</SelectItem>
-                  <SelectItem value="Tractomula">Tractomula</SelectItem>
-                </optgroup>
-                <optgroup label="Maquinaria Pesada">
-                  <SelectItem value="Excavadora">Excavadora</SelectItem>
-                  <SelectItem value="Bulldozer">Bulldozer</SelectItem>
-                  <SelectItem value="Cargador">Cargador</SelectItem>
-                  <SelectItem value="Motoniveladora">Motoniveladora</SelectItem>
-                  <SelectItem value="Compactador">Compactador</SelectItem>
-                  <SelectItem value="Paladraga">Paladraga</SelectItem>
-                </optgroup>
+                {machineTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
