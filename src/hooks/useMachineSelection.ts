@@ -25,7 +25,7 @@ export const useMachineSelection = () => {
       selectMachine(machine);
       console.log('Machine selected successfully');
       
-      const machineTypeMessage = machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula'
+      const machineTypeMessage = machine.type === 'Volqueta' || machine.type === 'Camabaja'
         ? `Vehículo ${machine.name} seleccionado`
         : `Máquina ${machine.name} seleccionada`;
       
