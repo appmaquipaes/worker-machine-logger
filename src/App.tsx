@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
@@ -57,6 +56,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/machines" element={<MachineSelection />} />
+                    <Route path="/report-form" element={<ReportForm />} />
                     <Route path="/machines/:machineId/report" element={<ReportForm />} />
                     <Route path="/machines/:machineId/reports" element={<Reports />} />
                     <Route path="/informes" element={<InformesPage />} />
