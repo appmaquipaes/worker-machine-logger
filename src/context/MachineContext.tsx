@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Machine = {
@@ -37,7 +38,14 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const storedMachines = localStorage.getItem('machines');
     if (storedMachines) {
-      setMachines(JSON.parse(storedMachines));
+      const parsedMachines = JSON.parse(storedMachines);
+      // Ensure all machines have status set to available if not defined
+      const machinesWithStatus = parsedMachines.map((machine: any) => ({
+        ...machine,
+        status: machine.status || 'available'
+      }));
+      setMachines(machinesWithStatus);
+      console.log('Loaded machines from localStorage:', machinesWithStatus);
     } else {
       // Datos iniciales mejorados con más variedad de máquinas
       const initialMachines: Machine[] = [
@@ -54,6 +62,7 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ];
       setMachines(initialMachines);
       localStorage.setItem('machines', JSON.stringify(initialMachines));
+      console.log('Created initial machines:', initialMachines);
     }
   }, []);
 

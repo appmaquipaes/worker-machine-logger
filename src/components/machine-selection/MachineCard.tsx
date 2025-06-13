@@ -15,10 +15,16 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
 
   const handleClick = () => {
     console.log('MachineCard clicked for machine:', machine.name);
+    console.log('Machine object:', machine);
     console.log('Machine status:', machine.status);
     console.log('Calling onSelect function...');
     onSelect(machine);
   };
+
+  // Ensure machine is available if status is not set
+  const isAvailable = !machine.status || machine.status === 'available';
+  
+  console.log(`Machine ${machine.name} - Status: ${machine.status}, IsAvailable: ${isAvailable}`);
 
   return (
     <Card className="machine-card group relative overflow-hidden bg-gradient-to-br from-white to-slate-50 hover:from-blue-50 hover:to-slate-100 transition-all duration-500">
@@ -26,7 +32,7 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
         onClick={handleClick}
         className="w-full h-full p-0 bg-transparent hover:bg-transparent text-slate-800 flex flex-col relative"
         variant="ghost"
-        disabled={machine.status !== 'available'}
+        disabled={!isAvailable}
       >
         {/* Imagen principal con efecto de zoom */}
         <div className="relative w-full h-48 sm:h-56 overflow-hidden rounded-t-lg">
@@ -72,11 +78,19 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
           )}
           
           {/* Botón de acción solo para máquinas disponibles */}
-          {machine.status === 'available' && (
+          {isAvailable && (
             <div className="pt-2">
               <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 group-hover:scale-105 bg-blue-600 text-white group-hover:bg-blue-700 shadow-lg">
                 <span>Seleccionar</span>
                 <span className="text-lg">→</span>
+              </div>
+            </div>
+          )}
+          
+          {!isAvailable && (
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm bg-gray-400 text-white">
+                <span>No Disponible</span>
               </div>
             </div>
           )}
