@@ -46,7 +46,7 @@ export const getMachineImage = (type: string) => {
     case 'compactador':
       return "/lovable-uploads/bcacdd1b-4526-421b-b378-add2698c3d6b.png"; // Tu nueva imagen personalizada del vibrocompactador CC248 CAT
     case 'paladraga':
-      return "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=400&fit=crop&crop=center"; // Paladraga/Material handler
+      return "/lovable-uploads/dda7d9f6-a79e-4af4-b641-83fb6994e590.png"; // Tu nueva imagen personalizada de la paladraga Bucyrus
     default:
       return "/lovable-uploads/d8ff481c-bcff-4c36-8c82-691a61ebbb16.png"; // Tu imagen personalizada como imagen por defecto
   }
