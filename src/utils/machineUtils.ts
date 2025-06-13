@@ -29,7 +29,7 @@ export const getMachineImage = (type: string) => {
     case 'Retroexcavadora de Oruga':
       return "/lovable-uploads/976ad6e4-5509-4133-8fc5-949f8420ae1e.png"; // Nueva imagen actualizada de Retroexcavadora de Oruga
     case 'Retroexcavadora de Llanta':
-      return "/lovable-uploads/d8ff481c-bcff-4c36-8c82-691a61ebbb16.png"; // Imagen para retroexcavadora de llanta
+      return "/lovable-uploads/559d3680-50bd-42c6-b560-97ff1378a611.png"; // Nueva imagen actualizada de Retroexcavadora de Llanta
     case 'Bulldozer':
       return "/lovable-uploads/1798fae4-b011-4fd0-b9d1-e50863472534.png";
     case 'Volqueta':
