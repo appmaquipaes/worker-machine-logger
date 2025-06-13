@@ -11,6 +11,7 @@ import {
   Info, 
   Truck
 } from 'lucide-react';
+import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 
 interface ReportTypeSelectorProps {
   reportType: ReportType;
@@ -23,6 +24,8 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
   onReportTypeChange,
   selectedMachine
 }) => {
+  const { getAvailableReportTypes } = useMachineSpecificReports();
+
   const allReportTypes = [
     { type: 'Horas Trabajadas' as ReportType, icon: Clock, label: 'Horas Trabajadas', color: 'from-blue-500 to-blue-600' },
     { type: 'Horas Extras' as ReportType, icon: AlarmClock, label: 'Horas Extras', color: 'from-purple-500 to-purple-600' },
@@ -32,29 +35,11 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
     { type: 'Viajes' as ReportType, icon: Truck, label: 'Viajes', color: 'from-amber-500 to-yellow-500' }
   ];
 
-  // Obtener tipos de reporte disponibles según el tipo de máquina
-  const getAvailableReportTypes = () => {
-    if (!selectedMachine) return allReportTypes;
-
-    // Máquinas de transporte: pueden hacer viajes y todos los otros tipos
-    const transportMachines = ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'];
-    
-    // Maquinaria pesada: pueden hacer horas trabajadas, extras, mantenimiento, combustible y novedades
-    const heavyMachinery = ['Excavadora', 'Bulldozer', 'Cargador', 'Motoniveladora', 'Compactador', 'Paladraga'];
-    
-    if (transportMachines.includes(selectedMachine.type)) {
-      // Vehículos de transporte: todas las opciones disponibles
-      return allReportTypes;
-    } else if (heavyMachinery.includes(selectedMachine.type)) {
-      // Maquinaria pesada: excluir "Viajes" ya que no transportan materiales
-      return allReportTypes.filter(type => type.type !== 'Viajes');
-    } else {
-      // Para cualquier otro tipo, mostrar todas las opciones
-      return allReportTypes;
-    }
-  };
-
-  const availableReportTypes = getAvailableReportTypes();
+  // Obtener tipos de reporte disponibles según la máquina seleccionada
+  const availableReportTypeStrings = getAvailableReportTypes(selectedMachine);
+  const availableReportTypes = allReportTypes.filter(reportTypeItem => 
+    availableReportTypeStrings.includes(reportTypeItem.type)
+  );
 
   return (
     <div className="space-y-6">
@@ -107,7 +92,6 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
               </div>
             </div>
             
-            {/* Efecto de brillo para la opción seleccionada */}
             {reportType === type && (
               <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
             )}
@@ -115,7 +99,6 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
         ))}
       </div>
 
-      {/* Información contextual según el tipo de máquina */}
       {selectedMachine && (
         <div className="text-center mt-4 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-700">

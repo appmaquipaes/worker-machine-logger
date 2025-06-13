@@ -29,7 +29,7 @@ export const useMachineSpecificReports = () => {
       // La maquinaria pesada no puede registrar viajes
       return allReportTypes.filter(type => type !== 'Viajes');
     } else {
-      // Para otros tipos de máquina, permitir todos los reportes
+      // Para otros tipos de máquina, permitir todos los reportes por defecto
       return allReportTypes;
     }
   };

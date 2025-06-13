@@ -17,15 +17,17 @@ export const useMachineSelection = () => {
   }, [user, navigate]);
 
   const handleSelectMachine = (machine: typeof machines[0]) => {
+    console.log('Selecting machine:', machine);
     selectMachine(machine);
     
-    if (machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula') {
-      toast.success(`Vehículo ${machine.name} seleccionado`);
-    } else {
-      toast.success(`Máquina ${machine.name} seleccionada`);
-    }
+    const machineTypeMessage = machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula'
+      ? `Vehículo ${machine.name} seleccionado`
+      : `Máquina ${machine.name} seleccionada`;
     
-    navigate(`/machines/${machine.id}/report`);
+    toast.success(machineTypeMessage);
+    
+    // Navegar directamente al formulario de reporte
+    navigate('/report-form');
   };
 
   const getFilteredMachines = () => {

@@ -38,6 +38,8 @@ export const validateReportForm = (data: ReportFormData): string | null => {
     inventarioAcopio
   } = data;
 
+  console.log('Validating report form data:', { reportType, ...data });
+
   // Validaciones específicas por tipo de reporte
   switch (reportType) {
     case 'Horas Trabajadas':
@@ -88,7 +90,7 @@ export const validateReportForm = (data: ReportFormData): string | null => {
       if (!value || value <= 0) {
         return 'El valor del combustible es obligatorio y debe ser mayor a 0';
       }
-      if (!kilometraje || kilometraje < 0) {
+      if (kilometraje === undefined || kilometraje < 0) {
         return 'El kilometraje actual es obligatorio y debe ser mayor o igual a 0';
       }
       break;
@@ -115,5 +117,6 @@ export const validateReportForm = (data: ReportFormData): string | null => {
       return 'Tipo de reporte no válido';
   }
 
+  console.log('Validation passed for report type:', reportType);
   return null; // No hay errores de validación
 };
