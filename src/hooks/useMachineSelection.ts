@@ -12,33 +12,55 @@ export const useMachineSelection = () => {
 
   useEffect(() => {
     if (!user) {
+      console.log('useMachineSelection: No user found, redirecting to login');
       navigate('/login');
     }
   }, [user, navigate]);
 
   const handleSelectMachine = (machine: typeof machines[0]) => {
-    console.log('Selecting machine:', machine);
-    selectMachine(machine);
+    console.log('handleSelectMachine called with:', machine);
+    console.log('Current user:', user);
     
-    const machineTypeMessage = machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula'
-      ? `Vehículo ${machine.name} seleccionado`
-      : `Máquina ${machine.name} seleccionada`;
-    
-    toast.success(machineTypeMessage);
-    
-    // Navegar directamente al formulario de reporte
-    navigate('/report-form');
+    try {
+      selectMachine(machine);
+      console.log('Machine selected successfully');
+      
+      const machineTypeMessage = machine.type === 'Camión' || machine.type === 'Volqueta' || machine.type === 'Camabaja' || machine.type === 'Semirremolque' || machine.type === 'Tractomula'
+        ? `Vehículo ${machine.name} seleccionado`
+        : `Máquina ${machine.name} seleccionada`;
+      
+      console.log('Showing toast:', machineTypeMessage);
+      toast.success(machineTypeMessage);
+      
+      console.log('Attempting to navigate to /report-form');
+      navigate('/report-form');
+      console.log('Navigation command executed');
+      
+    } catch (error) {
+      console.error('Error in handleSelectMachine:', error);
+      toast.error('Error al seleccionar la máquina');
+    }
   };
 
   const getFilteredMachines = () => {
-    if (!user) return [];
+    if (!user) {
+      console.log('getFilteredMachines: No user, returning empty array');
+      return [];
+    }
+    
+    console.log('getFilteredMachines: User role:', user.role);
     
     if (user.role === 'Operador') {
       if (!user.assignedMachines || user.assignedMachines.length === 0) {
+        console.log('getFilteredMachines: Operador has no assigned machines');
         return [];
       }
-      return machines.filter(machine => user.assignedMachines!.includes(machine.id));
+      const filtered = machines.filter(machine => user.assignedMachines!.includes(machine.id));
+      console.log('getFilteredMachines: Filtered machines for operador:', filtered);
+      return filtered;
     }
+    
+    console.log('getFilteredMachines: Returning all machines for admin:', machines);
     return machines;
   };
 

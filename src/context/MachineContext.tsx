@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Machine = {
@@ -59,12 +58,15 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const selectMachine = (machine: Machine) => {
+    console.log('MachineContext.selectMachine called with:', machine);
     setSelectedMachine(machine);
     // Guardar la máquina seleccionada en localStorage para persistencia
     localStorage.setItem('selectedMachine', JSON.stringify(machine));
+    console.log('Machine saved to localStorage and state updated');
   };
 
   const clearSelectedMachine = () => {
+    console.log('MachineContext.clearSelectedMachine called');
     setSelectedMachine(null);
     localStorage.removeItem('selectedMachine');
   };
@@ -73,6 +75,7 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const storedSelectedMachine = localStorage.getItem('selectedMachine');
     if (storedSelectedMachine) {
+      console.log('Recovered selected machine from localStorage:', storedSelectedMachine);
       setSelectedMachine(JSON.parse(storedSelectedMachine));
     }
   }, []);

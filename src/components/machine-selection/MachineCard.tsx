@@ -13,10 +13,17 @@ interface MachineCardProps {
 const MachineCard: React.FC<MachineCardProps> = ({ machine, onSelect }) => {
   const machineImage = getMachineImage(machine.type);
 
+  const handleClick = () => {
+    console.log('MachineCard clicked for machine:', machine.name);
+    console.log('Machine status:', machine.status);
+    console.log('Calling onSelect function...');
+    onSelect(machine);
+  };
+
   return (
     <Card className="machine-card group relative overflow-hidden bg-gradient-to-br from-white to-slate-50 hover:from-blue-50 hover:to-slate-100 transition-all duration-500">
       <Button
-        onClick={() => onSelect(machine)}
+        onClick={handleClick}
         className="w-full h-full p-0 bg-transparent hover:bg-transparent text-slate-800 flex flex-col relative"
         variant="ghost"
         disabled={machine.status !== 'available'}
