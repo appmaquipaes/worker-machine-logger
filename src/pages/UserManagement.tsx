@@ -148,11 +148,11 @@ const UserManagement: React.FC = () => {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'Administrador':
-        return 'default';
+        return 'bg-blue-600 text-white hover:bg-blue-700';
       case 'Operador':
-        return 'secondary';
+        return 'bg-green-600 text-white hover:bg-green-700';
       default:
-        return 'outline';
+        return 'bg-slate-500 text-white hover:bg-slate-600';
     }
   };
 
@@ -160,68 +160,70 @@ const UserManagement: React.FC = () => {
   
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                Gestión de Usuarios
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Administra usuarios, máquinas asignadas y comisiones
-              </p>
+      {/* Header Section with Corporate Gradient */}
+      <div className="corporate-gradient rounded-2xl p-8 text-white shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+                  Gestión de Usuarios
+                </h1>
+                <p className="text-blue-100 text-lg font-medium">
+                  Administra usuarios, máquinas asignadas y comisiones
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button 
-            onClick={() => navigate('/register')}
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            Nuevo Usuario
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Panel Admin
-          </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={() => navigate('/register')}
+              className="bg-white text-blue-700 hover:bg-blue-50 font-semibold flex items-center gap-2 px-6 py-3"
+            >
+              <UserPlus className="h-5 w-5" />
+              Nuevo Usuario
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/admin')}
+              className="border-white/30 text-white hover:bg-white/10 font-semibold flex items-center gap-2 px-6 py-3"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Panel Admin
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-600 rounded-xl">
+                <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Usuarios</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Total Usuarios</p>
+                <p className="text-3xl font-bold text-blue-900">{users.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Settings className="h-5 w-5 text-green-600" />
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-600 rounded-xl">
+                <Settings className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Operadores</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm font-semibold text-green-700 uppercase tracking-wide">Operadores</p>
+                <p className="text-3xl font-bold text-green-900">
                   {users.filter(u => u.role === 'Operador').length}
                 </p>
               </div>
@@ -229,15 +231,15 @@ const UserManagement: React.FC = () => {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-yellow-600" />
+        <Card className="bg-gradient-to-br from-amber-50 to-yellow-100 border-yellow-200 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-yellow-600 rounded-xl">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Administradores</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm font-semibold text-yellow-700 uppercase tracking-wide">Administradores</p>
+                <p className="text-3xl font-bold text-yellow-900">
                   {users.filter(u => u.role === 'Administrador').length}
                 </p>
               </div>
@@ -246,14 +248,14 @@ const UserManagement: React.FC = () => {
         </Card>
       </div>
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+      {/* Enhanced Users Table */}
+      <Card className="shadow-xl border-0">
+        <CardHeader className="bg-slate-50 rounded-t-lg border-b">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
+            <Users className="h-6 w-6 text-blue-600" />
             Listado de Usuarios
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-slate-600 font-medium">
             Usuarios registrados con sus configuraciones y permisos
           </CardDescription>
         </CardHeader>
@@ -262,34 +264,34 @@ const UserManagement: React.FC = () => {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Usuario</TableHead>
-                    <TableHead className="font-semibold">Rol</TableHead>
-                    <TableHead className="font-semibold">Máquinas</TableHead>
-                    <TableHead className="font-semibold">Comisión/Hr</TableHead>
-                    <TableHead className="font-semibold text-center">Acciones</TableHead>
+                  <TableRow className="bg-slate-50 hover:bg-slate-50">
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Usuario</TableHead>
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Rol</TableHead>
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Máquinas</TableHead>
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Comisión/Hr</TableHead>
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide text-center">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
-                    <TableRow key={u.id} className="hover:bg-muted/30">
-                      <TableCell>
+                    <TableRow key={u.id} className="hover:bg-blue-50/30 transition-colors">
+                      <TableCell className="py-4">
                         <div className="space-y-1">
-                          <p className="font-medium text-foreground">{u.name}</p>
-                          <p className="text-sm text-muted-foreground">{u.email}</p>
+                          <p className="font-semibold text-slate-800 text-base">{u.name}</p>
+                          <p className="text-sm text-slate-500 font-medium">{u.email}</p>
                         </div>
                       </TableCell>
                       
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(u.role)}>
+                      <TableCell className="py-4">
+                        <Badge className={`${getRoleBadgeVariant(u.role)} font-semibold px-3 py-1 text-sm`}>
                           {u.role}
                         </Badge>
                       </TableCell>
                       
-                      <TableCell className="max-w-48">
+                      <TableCell className="max-w-48 py-4">
                         {u.role === 'Operador' ? (
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold text-slate-700">
                               {u.assignedMachines?.length || 0} asignada(s)
                             </p>
                             {(u.assignedMachines?.length || 0) > 0 && (
@@ -297,7 +299,7 @@ const UserManagement: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewMachines(u)}
-                                className="h-6 px-2 text-xs"
+                                className="h-7 px-3 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium"
                               >
                                 <Eye className="h-3 w-3 mr-1" />
                                 Ver detalles
@@ -305,29 +307,29 @@ const UserManagement: React.FC = () => {
                             )}
                           </div>
                         ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
+                          <span className="text-sm text-slate-400 font-medium">-</span>
                         )}
                       </TableCell>
                       
-                      <TableCell>
+                      <TableCell className="py-4">
                         {u.role === 'Operador' ? (
-                          <div className="font-medium text-green-600">
+                          <div className="font-bold text-green-700 text-base">
                             ${(u.comisionPorHora || 0).toLocaleString()}
                           </div>
                         ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
+                          <span className="text-sm text-slate-400 font-medium">-</span>
                         )}
                       </TableCell>
                       
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-1">
+                      <TableCell className="py-4">
+                        <div className="flex items-center justify-center gap-2">
                           {u.role === 'Operador' && (
                             <>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditMachines(u)}
-                                className="h-8 w-8 p-0"
+                                className="h-9 w-9 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                 title="Configurar máquinas"
                               >
                                 <Settings className="h-4 w-4" />
@@ -336,7 +338,7 @@ const UserManagement: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditCommission(u)}
-                                className="h-8 w-8 p-0"
+                                className="h-9 w-9 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
                                 title="Configurar comisión"
                               >
                                 <DollarSign className="h-4 w-4" />
@@ -349,7 +351,7 @@ const UserManagement: React.FC = () => {
                                 variant="ghost" 
                                 size="sm"
                                 disabled={u.id === user.id}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 title="Eliminar usuario"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -367,7 +369,7 @@ const UserManagement: React.FC = () => {
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleRemoveUser(u.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  className="bg-red-600 text-white hover:bg-red-700"
                                 >
                                   Eliminar Usuario
                                 </AlertDialogAction>
@@ -382,16 +384,21 @@ const UserManagement: React.FC = () => {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
+            <div className="text-center py-16">
+              <div className="p-4 bg-slate-50 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-700 mb-3">
                 No hay usuarios registrados
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-slate-500 mb-6 font-medium">
                 Comienza registrando el primer usuario del sistema
               </p>
-              <Button onClick={() => navigate('/register')}>
-                <UserPlus className="h-4 w-4 mr-2" />
+              <Button 
+                onClick={() => navigate('/register')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3"
+              >
+                <UserPlus className="h-5 w-5 mr-2" />
                 Registrar Usuario
               </Button>
             </div>
