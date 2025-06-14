@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
-import { Info, Truck, Settings } from 'lucide-react';
+import { Info, Truck, Settings, CheckCircle, Sparkles } from 'lucide-react';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 
 interface OperatorInstructionsProps {
@@ -70,37 +70,80 @@ const OperatorInstructions: React.FC<OperatorInstructionsProps> = ({
   };
 
   return (
-    <Card className="mb-6 border-blue-200 bg-blue-50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-blue-800">
-          <Info size={20} />
-          Instrucciones para el Operador
-        </CardTitle>
-        <CardDescription className="text-blue-600">
-          {getMachineTypeLabel(machine)}: {machine.type} {machine.name}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Alert className="mb-4 border-blue-300 bg-blue-100">
-          <div className="flex items-center gap-2 mb-2">
-            {isTransportVehicle ? <Truck size={16} /> : <Settings size={16} />}
-            <span className="font-semibold text-blue-800">Tipo de Reporte: {reportType}</span>
+    <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden animate-fade-in">
+      {/* Header con gradiente */}
+      <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.1\"%3E%3Ccircle cx=\"30\" cy=\"30\" r=\"2\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+        
+        <CardHeader className="relative pb-4">
+          <CardTitle className="flex items-center gap-3 text-white text-xl font-bold">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Info size={20} className="text-white" />
+            </div>
+            <div>
+              <span>Instrucciones para el Operador</span>
+              <div className="flex items-center gap-2 mt-1">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span className="text-blue-200 text-sm font-normal">Guía paso a paso</span>
+              </div>
+            </div>
+          </CardTitle>
+          <CardDescription className="text-blue-100 text-base mt-2">
+            {getMachineTypeLabel(machine)}: <span className="font-semibold text-white">{machine.type} {machine.name}</span>
+            {machine.plate && <span className="ml-2 text-blue-200">({machine.plate})</span>}
+          </CardDescription>
+        </CardHeader>
+      </div>
+
+      <CardContent className="p-6 space-y-6">
+        {/* Alert Principal */}
+        <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              {isTransportVehicle ? <Truck size={16} className="text-white" /> : <Settings size={16} className="text-white" />}
+            </div>
+            <span className="font-bold text-blue-800 text-lg">Tipo de Reporte: {reportType}</span>
           </div>
-          <AlertDescription className="text-blue-700">
+          <AlertDescription className="text-blue-700 text-base leading-relaxed">
             {getReportTypeDescription(machine, reportType)}
           </AlertDescription>
         </Alert>
         
-        <div className="space-y-2">
-          <h4 className="font-semibold text-blue-800 mb-3">Instrucciones específicas:</h4>
-          <ul className="space-y-2">
+        {/* Instrucciones Específicas */}
+        <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
+          <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-lg">
+            <CheckCircle className="w-5 h-5 text-emerald-500" />
+            Pasos a seguir:
+          </h4>
+          <ul className="space-y-3">
             {getSpecificInstructions().map((instruction, index) => (
-              <li key={index} className="flex items-start gap-2 text-blue-700">
-                <span className="text-blue-500 mt-1">•</span>
-                <span className="text-sm">{instruction}</span>
+              <li 
+                key={index} 
+                className="flex items-start gap-3 text-slate-700 p-3 rounded-xl bg-gradient-to-r from-slate-50 to-blue-50 hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 hover:shadow-md group"
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'both'
+                }}
+              >
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                  {index + 1}
+                </div>
+                <span className="text-sm leading-relaxed group-hover:text-slate-800 transition-colors">
+                  {instruction}
+                </span>
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* Nota Final */}
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-4">
+          <div className="flex items-center gap-2 text-amber-800">
+            <Sparkles className="w-5 h-5 text-amber-600" />
+            <span className="font-semibold text-sm">
+              💡 Recuerda: La precisión en los datos garantiza reportes confiables y una mejor gestión operativa.
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,71 +1,77 @@
 
 import React from 'react';
 import { Machine } from '@/context/MachineContext';
-import { getMachineIcon } from '@/utils/machineUtils';
 import MachineCard from './MachineCard';
+import { Separator } from '@/components/ui/separator';
 
 interface MachineGroupProps {
-  type: string;
+  title: string;
   machines: Machine[];
-  onSelectMachine: (machine: Machine) => void;
+  selectedMachine: Machine | null;
+  onMachineSelect: (machine: Machine) => void;
+  icon: React.ReactNode;
+  description: string;
+  groupIndex: number;
 }
 
-const MachineGroup: React.FC<MachineGroupProps> = ({ type, machines, onSelectMachine }) => {
-  if (!machines || machines.length === 0) return null;
-
-  const getGroupGradient = (type: string) => {
-    if (type.includes('Volqueta') || type.includes('Camión') || type.includes('Camabaja') || type.includes('Semirremolque') || type.includes('Tractomula')) {
-      return 'from-amber-500 to-orange-600';
-    }
-    if (type.includes('Retroexcavadora') || type.includes('Bulldozer') || type.includes('Motoniveladora') || type.includes('Paladraga')) {
-      return 'from-blue-500 to-indigo-600';
-    }
-    return 'from-emerald-500 to-teal-600';
-  };
-
-  const getGroupEmoji = (type: string) => {
-    if (type.includes('Volqueta') || type.includes('Camión') || type.includes('Camabaja') || type.includes('Semirremolque') || type.includes('Tractomula')) {
-      return '🚛';
-    }
-    if (type.includes('Retroexcavadora') || type.includes('Bulldozer') || type.includes('Motoniveladora') || type.includes('Paladraga')) {
-      return '🏗️';
-    }
-    return '⚡';
-  };
+const MachineGroup: React.FC<MachineGroupProps> = ({ 
+  title, 
+  machines, 
+  selectedMachine, 
+  onMachineSelect, 
+  icon,
+  description,
+  groupIndex
+}) => {
+  if (machines.length === 0) return null;
 
   return (
-    <div className="space-y-8">
+    <div 
+      className="space-y-6 animate-fade-in"
+      style={{
+        animationDelay: `${groupIndex * 200}ms`,
+        animationFillMode: 'both'
+      }}
+    >
       {/* Group Header */}
-      <div className="flex items-center gap-6">
-        <div className={`w-16 h-16 bg-gradient-to-br ${getGroupGradient(type)} rounded-2xl flex items-center justify-center shadow-lg`}>
-          <div className="text-white">
-            {getMachineIcon(type)}
+      <div className="relative">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform transition-all duration-300 hover:scale-110 hover:rotate-3">
+            {icon}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-slate-800 mb-1 group-hover:text-blue-700 transition-colors">
+              {title}
+            </h2>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              {description}
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-full px-4 py-2 border border-blue-200">
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse"></div>
+            <span className="text-blue-700 text-sm font-medium">{machines.length} disponibles</span>
           </div>
         </div>
         
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">{getGroupEmoji(type)}</span>
-            <h2 className="text-3xl font-bold text-slate-800">
-              {type}
-            </h2>
-            <div className="bg-slate-200 text-slate-700 rounded-full px-4 py-1 text-sm font-semibold">
-              {machines.length} {machines.length === 1 ? 'unidad' : 'unidades'}
-            </div>
-          </div>
-          <div className="h-1 bg-gradient-to-r from-slate-300 via-slate-200 to-transparent rounded-full"></div>
-        </div>
+        <Separator className="bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       </div>
 
       {/* Machines Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {machines.map((machine) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {machines.map((machine, index) => (
           <MachineCard
             key={machine.id}
             machine={machine}
-            onSelect={onSelectMachine}
+            isSelected={selectedMachine?.id === machine.id}
+            onClick={() => onMachineSelect(machine)}
+            index={index}
           />
         ))}
+      </div>
+
+      {/* Bottom Spacer */}
+      <div className="pt-8">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-50"></div>
       </div>
     </div>
   );
