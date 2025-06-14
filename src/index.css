@@ -74,62 +74,82 @@
 
   body {
     @apply bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-foreground min-h-screen;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-variant-numeric: oldstyle-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  p, span {
+    line-height: 1.6;
+    letter-spacing: -0.01em;
   }
 }
 
 /* Custom Styles - Corporate Mobile First */
 .corporate-header {
-  @apply bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg;
+  @apply bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-xl;
 }
 
 .machine-card {
-  @apply transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-pointer;
-  @apply bg-white border-2 border-slate-200 rounded-2xl;
+  @apply transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer;
+  @apply bg-white/95 border-2 border-slate-200 rounded-2xl backdrop-blur-sm;
 }
 
 .machine-card.selected {
-  @apply ring-4 ring-blue-500 ring-offset-2 shadow-xl scale-[1.02] border-blue-300;
+  @apply ring-4 ring-blue-500/50 ring-offset-2 shadow-2xl scale-[1.02] border-blue-300;
 }
 
 .machine-card:hover {
-  @apply border-blue-300 shadow-xl;
+  @apply border-blue-300 shadow-2xl;
 }
 
-/* Botones estilo corporativo mobile-first */
+/* Botones estilo corporativo mobile-first mejorados */
 .btn-primary-large {
-  @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800;
-  @apply text-white font-semibold py-4 px-6 rounded-xl shadow-lg;
-  @apply transition-all duration-200 hover:shadow-xl hover:scale-[1.02];
+  @apply bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900;
+  @apply text-white font-semibold py-4 px-8 rounded-xl shadow-lg;
+  @apply transition-all duration-200 hover:shadow-2xl hover:scale-[1.02];
   @apply text-lg min-h-[60px] flex items-center justify-center gap-3;
+  @apply tracking-tight backdrop-blur-sm;
 }
 
 .btn-secondary-large {
-  @apply bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600;
-  @apply text-slate-900 font-semibold py-4 px-6 rounded-xl shadow-lg;
-  @apply transition-all duration-200 hover:shadow-xl hover:scale-[1.02];
+  @apply bg-gradient-to-r from-amber-500 via-yellow-500 to-yellow-600 hover:from-amber-600 hover:via-yellow-600 hover:to-yellow-700;
+  @apply text-slate-900 font-semibold py-4 px-8 rounded-xl shadow-lg;
+  @apply transition-all duration-200 hover:shadow-2xl hover:scale-[1.02];
   @apply text-lg min-h-[60px] flex items-center justify-center gap-3;
+  @apply tracking-tight backdrop-blur-sm;
 }
 
 .btn-outline-large {
-  @apply bg-white border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50;
-  @apply text-slate-700 hover:text-blue-700 font-semibold py-4 px-6 rounded-xl shadow-md;
-  @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+  @apply bg-white/90 border-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50/90;
+  @apply text-slate-700 hover:text-blue-700 font-semibold py-4 px-8 rounded-xl shadow-md;
+  @apply transition-all duration-200 hover:shadow-xl hover:scale-[1.02];
   @apply text-lg min-h-[60px] flex items-center justify-center gap-3;
+  @apply tracking-tight backdrop-blur-sm;
 }
 
 /* Grid responsivo para botones de acción */
 .action-grid {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
 }
 
 .action-grid-2 {
-  @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-6;
 }
 
-/* Cards corporativas */
+/* Cards corporativas mejoradas */
 .corporate-card {
-  @apply bg-white rounded-2xl shadow-lg border border-slate-200;
-  @apply hover:shadow-xl transition-all duration-300;
+  @apply bg-white/95 rounded-2xl shadow-xl border border-slate-200;
+  @apply hover:shadow-2xl transition-all duration-300 backdrop-blur-sm;
 }
 
 /* Iconos más grandes para mobile */
@@ -141,26 +161,26 @@
   @apply w-12 h-12 sm:w-16 sm:h-16;
 }
 
-/* Header corporativo */
+/* Header corporativo mejorado */
 .page-header {
-  @apply corporate-header px-4 py-6 mb-6 rounded-b-2xl;
+  @apply corporate-header px-4 py-8 mb-8 rounded-b-3xl;
 }
 
-/* Status badges más visibles */
+/* Status badges más visibles y corporativos */
 .status-badge {
-  @apply px-4 py-2 rounded-full font-semibold text-sm;
+  @apply px-4 py-2 rounded-full font-semibold text-sm backdrop-blur-sm;
 }
 
 .status-available {
-  @apply bg-green-100 text-green-800 border border-green-300;
+  @apply bg-emerald-100/90 text-emerald-800 border border-emerald-300/50;
 }
 
 .status-in-use {
-  @apply bg-yellow-100 text-yellow-800 border border-yellow-300;
+  @apply bg-amber-100/90 text-amber-800 border border-amber-300/50;
 }
 
 .status-maintenance {
-  @apply bg-red-100 text-red-800 border border-red-300;
+  @apply bg-red-100/90 text-red-800 border border-red-300/50;
 }
 
 /* Animaciones corporativas mejoradas */
@@ -243,7 +263,25 @@
   }
 }
 
-/* Clases de animación */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gentle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Clases de animación mejoradas */
 .animate-fade-in {
   animation: fade-in 0.6s ease-out;
 }
@@ -264,6 +302,14 @@
   animation: bounce-in 0.6s ease-out;
 }
 
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-gentle-bounce {
+  animation: gentle-bounce 2s ease-in-out infinite;
+}
+
 .pulse-corporate {
   animation: pulse-corporate 2s ease-in-out infinite;
 }
@@ -274,13 +320,13 @@
   animation: shimmer 2s infinite;
 }
 
-/* Gradientes corporativos */
+/* Gradientes corporativos mejorados */
 .caterpillar-gradient {
   background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #D97706 100%);
 }
 
 .corporate-gradient {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 50%, #1E40AF 100%);
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 30%, #1E40AF 70%, #1E3A8A 100%);
 }
 
 .glass-effect {
@@ -289,33 +335,43 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.glass-effect-dark {
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Hover effects mejorados */
 .hover-lift {
   @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02];
 }
 
 .hover-glow {
-  @apply transition-all duration-300 hover:shadow-lg;
+  @apply transition-all duration-300 hover:shadow-xl;
 }
 
 .hover-glow:hover {
-  box-shadow: 0 10px 40px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 20px 60px rgba(37, 99, 235, 0.3);
 }
 
-/* Responsive text scaling */
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Responsive text scaling mejorado */
 .text-responsive-xl {
-  @apply text-xl sm:text-2xl lg:text-3xl;
+  @apply text-2xl sm:text-3xl lg:text-4xl;
 }
 
 .text-responsive-lg {
-  @apply text-lg sm:text-xl lg:text-2xl;
+  @apply text-xl sm:text-2xl lg:text-3xl;
 }
 
 .text-responsive-base {
-  @apply text-base sm:text-lg;
+  @apply text-base sm:text-lg lg:text-xl;
 }
 
-/* Loading states */
+/* Loading states mejorados */
 .loading-skeleton {
   @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse rounded;
   background-size: 200% 100%;
@@ -324,15 +380,15 @@
 
 /* Form improvements */
 .form-floating {
-  @apply transition-all duration-300 focus-within:shadow-lg focus-within:-translate-y-1;
+  @apply transition-all duration-300 focus-within:shadow-xl focus-within:-translate-y-1;
 }
 
-/* Button press effect */
+/* Button press effect mejorado */
 .btn-press {
   @apply transition-all duration-150 active:scale-95 active:shadow-inner;
 }
 
-/* Card stack effect */
+/* Card stack effect mejorado */
 .card-stack {
   position: relative;
 }
@@ -340,10 +396,10 @@
 .card-stack::before {
   content: '';
   position: absolute;
-  top: 4px;
-  left: 4px;
-  right: -4px;
-  bottom: -4px;
+  top: 6px;
+  left: 6px;
+  right: -6px;
+  bottom: -6px;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(79, 70, 229, 0.1));
   border-radius: inherit;
   z-index: -1;
@@ -353,4 +409,40 @@
 
 .card-stack:hover::before {
   opacity: 1;
+}
+
+/* Texto con mejor legibilidad */
+.text-corporate {
+  @apply text-slate-800 tracking-tight leading-relaxed;
+}
+
+.text-corporate-muted {
+  @apply text-slate-600 tracking-normal leading-relaxed;
+}
+
+/* Efectos de glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Mejoras para selectores de reporte */
+.report-selector-card {
+  @apply relative overflow-hidden rounded-2xl border-2 transition-all duration-300;
+  @apply hover:scale-103 hover:shadow-2xl backdrop-blur-sm;
+}
+
+.report-selector-card.selected {
+  @apply scale-103 shadow-2xl ring-4 ring-blue-200/50;
+}
+
+.report-selector-icon {
+  @apply transition-all duration-300 group-hover:scale-110;
+}
+
+.report-selector-badge {
+  @apply absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full;
+  @apply flex items-center justify-center shadow-xl animate-bounce-in;
 }
