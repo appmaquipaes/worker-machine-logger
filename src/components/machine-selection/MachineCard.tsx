@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Machine } from '@/context/MachineContext';
 import { Truck, Settings, Wrench, Fuel } from 'lucide-react';
+import { getMachineImage } from '@/utils/machineUtils';
 
 interface MachineCardProps {
   machine: Machine;
@@ -76,85 +77,108 @@ const MachineCard: React.FC<MachineCardProps> = ({
       <div className={`
         absolute top-4 right-4 w-3 h-3 rounded-full 
         ${getStatusColor(machine.status)}
-        animate-pulse shadow-lg
+        animate-pulse shadow-lg z-20
       `} />
       
-      <CardContent className="p-6 relative z-10">
-        <div className="flex items-center gap-4 mb-4">
+      <CardContent className="p-0 relative z-10">
+        {/* Machine Image */}
+        <div className="relative h-48 overflow-hidden rounded-t-2xl">
+          <img 
+            src={getMachineImage(machine.type)} 
+            alt={machine.name}
+            className={`
+              w-full h-full object-cover transition-all duration-500
+              ${isSelected ? 'scale-110' : 'group-hover:scale-110'}
+            `}
+            onError={(e) => {
+              e.currentTarget.src = "/lovable-uploads/976ad6e4-5509-4133-8fc5-949f8420ae1e.png";
+            }}
+          />
           <div className={`
-            w-16 h-16 rounded-2xl flex items-center justify-center
-            transition-all duration-300 group-hover:scale-110 group-hover:rotate-3
-            ${isSelected 
-              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg' 
-              : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100'
-            }
-          `}>
-            {getMachineIcon(machine.type)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className={`
-              font-bold text-lg mb-1 truncate
-              transition-colors duration-300
-              ${isSelected ? 'text-blue-800' : 'text-slate-800 group-hover:text-blue-700'}
-            `}>
-              {machine.name}
-            </h3>
-            <p className={`
-              text-sm font-medium truncate
-              transition-colors duration-300
-              ${isSelected ? 'text-blue-600' : 'text-slate-600 group-hover:text-blue-600'}
-            `}>
-              {machine.type}
-            </p>
-          </div>
+            absolute inset-0 bg-gradient-to-t from-black/20 to-transparent
+            ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+            transition-opacity duration-300
+          `} />
         </div>
 
-        {machine.plate && (
-          <div className="mb-3">
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-4">
             <div className={`
-              inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold
-              transition-all duration-300 group-hover:scale-105
+              w-12 h-12 rounded-xl flex items-center justify-center
+              transition-all duration-300 group-hover:scale-110 group-hover:rotate-3
               ${isSelected 
-                ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                : 'bg-slate-100 text-slate-700 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700'
+                ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg' 
+                : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100'
               }
             `}>
-              <span>📋</span>
-              <span>{machine.plate}</span>
+              {getMachineIcon(machine.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className={`
+                font-bold text-lg mb-1 truncate
+                transition-colors duration-300
+                ${isSelected ? 'text-blue-800' : 'text-slate-800 group-hover:text-blue-700'}
+              `}>
+                {machine.name}
+              </h3>
+              <p className={`
+                text-sm font-medium truncate
+                transition-colors duration-300
+                ${isSelected ? 'text-blue-600' : 'text-slate-600 group-hover:text-blue-600'}
+              `}>
+                {machine.type}
+              </p>
             </div>
           </div>
-        )}
 
-        <div className="flex items-center justify-between">
-          <Badge 
-            variant="outline"
-            className={`
-              border-2 font-medium text-xs px-3 py-1
-              transition-all duration-300 group-hover:scale-105
-              ${getStatusTextColor(machine.status)}
-            `}
-          >
-            {machine.status}
-          </Badge>
-          
-          <div className="flex items-center gap-1">
-            <Fuel className={`
-              w-4 h-4 transition-all duration-300
-              ${isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}
-            `} />
-            <span className={`
-              text-xs font-medium transition-colors duration-300
-              ${isSelected ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-600'}
-            `}>
-              Operativa
-            </span>
+          {machine.plate && (
+            <div className="mb-3">
+              <div className={`
+                inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold
+                transition-all duration-300 group-hover:scale-105
+                ${isSelected 
+                  ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                  : 'bg-slate-100 text-slate-700 border border-slate-200 group-hover:bg-blue-50 group-hover:text-blue-700'
+                }
+              `}>
+                <span>📋</span>
+                <span>{machine.plate}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <Badge 
+              variant="outline"
+              className={`
+                border-2 font-medium text-xs px-3 py-1
+                transition-all duration-300 group-hover:scale-105
+                ${getStatusTextColor(machine.status)}
+              `}
+            >
+              {machine.status}
+            </Badge>
+            
+            <div className="flex items-center gap-1">
+              <Fuel className={`
+                w-4 h-4 transition-all duration-300
+                ${isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}
+              `} />
+              <span className={`
+                text-xs font-medium transition-colors duration-300
+                ${isSelected ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-600'}
+              `}>
+                Operativa
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Selection indicator */}
-        {isSelected && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse" />
-        )}
+          {/* Selection indicator */}
+          {isSelected && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse" />
+          )}
+        </div>
       </CardContent>
     </Card>
   );

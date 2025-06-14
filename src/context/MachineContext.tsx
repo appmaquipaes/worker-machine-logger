@@ -1,12 +1,13 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Machine = {
   id: string;
   name: string;
-  type: 'Retroexcavadora de Oruga' | 'Retroexcavadora de Llanta' | 'Cargador' | 'Vibrocompactador' | 'Paladraga' | 'Bulldozer' | 'Camabaja' | 'Volqueta' | 'Motoniveladora' | 'Otro';
+  type: 'Retroexcavadora de Oruga' | 'Retroexcavadora de Llanta' | 'Cargador' | 'Vibrocompactador' | 'Paladraga' | 'Bulldozer' | 'Camabaja' | 'Volqueta' | 'Camión' | 'Semirremolque' | 'Tractomula' | 'Motoniveladora' | 'Otro';
   plate?: string;
   imageUrl?: string;
-  status: 'available' | 'in-use' | 'maintenance';
+  status: 'Disponible' | 'En Uso' | 'Mantenimiento';
 };
 
 type MachineContextType = {
@@ -38,28 +39,28 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const storedMachines = localStorage.getItem('machines');
     if (storedMachines) {
       const parsedMachines = JSON.parse(storedMachines);
-      // Ensure all machines have status set to available if not defined
+      // Ensure all machines have status set to Disponible if not defined
       const machinesWithStatus = parsedMachines.map((machine: any) => ({
         ...machine,
-        status: machine.status || 'available'
+        status: machine.status || 'Disponible'
       }));
       setMachines(machinesWithStatus);
       console.log('Loaded machines from localStorage:', machinesWithStatus);
     } else {
-      // Datos iniciales actualizados con los nuevos tipos
+      // Datos iniciales actualizados con los nuevos tipos y estado en español
       const initialMachines: Machine[] = [
-        { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'available' },
-        { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'available' },
-        { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'available' },
-        { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'available' },
-        { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'available' },
-        { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'available' },
-        { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'available' },
-        { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'available' },
-        { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'available' },
-        { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'available' },
-        { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'available' },
-        { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'available' },
+        { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'Disponible' },
+        { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+        { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'Disponible' },
+        { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'Disponible' },
+        { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'Disponible' },
+        { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'Disponible' },
+        { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+        { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'Disponible' },
+        { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'Disponible' },
+        { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'Disponible' },
+        { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'Disponible' },
+        { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'Disponible' },
       ];
       setMachines(initialMachines);
       localStorage.setItem('machines', JSON.stringify(initialMachines));
