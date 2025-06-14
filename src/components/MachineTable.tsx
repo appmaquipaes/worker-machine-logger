@@ -37,11 +37,11 @@ const MachineTable: React.FC<MachineTableProps> = ({ machines, onDeleteMachine }
 
   const getStatusBadge = (status: Machine['status']) => {
     switch (status) {
-      case 'available':
+      case 'Disponible':
         return <Badge variant="default" className="bg-green-500">Disponible</Badge>;
-      case 'in-use':
-        return <Badge variant="secondary" className="bg-yellow-500">En uso</Badge>;
-      case 'maintenance':
+      case 'En Uso':
+        return <Badge variant="secondary" className="bg-yellow-500">En Uso</Badge>;
+      case 'Mantenimiento':
         return <Badge variant="destructive">Mantenimiento</Badge>;
       default:
         return <Badge variant="outline">Desconocido</Badge>;

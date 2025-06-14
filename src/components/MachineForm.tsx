@@ -17,7 +17,7 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
   const [newMachine, setNewMachine] = useState<Omit<Machine, 'id'>>({
     name: '',
     type: 'Retroexcavadora de Oruga',
-    status: 'available',
+    status: 'Disponible',
   });
 
   const machineTypes: Machine['type'][] = [
@@ -46,7 +46,7 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
     setNewMachine({
       name: '',
       type: 'Retroexcavadora de Oruga',
-      status: 'available',
+      status: 'Disponible',
     });
   };
 
