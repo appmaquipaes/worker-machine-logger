@@ -7,29 +7,28 @@ export const useMachineSpecificReports = () => {
   const getAvailableReportTypes = (machine: Machine | null): ReportType[] => {
     if (!machine) return [];
 
-    // Vehículos de transporte: pueden registrar todos los tipos de reporte
-    const transportVehicles = ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'];
+    // Solo vehículos de transporte específicos pueden registrar viajes
+    const transportVehicles = ['Volqueta', 'Cargador'];
     
     // Maquinaria pesada: pueden registrar todo excepto viajes
-    const heavyMachinery = ['Excavadora', 'Bulldozer', 'Cargador', 'Motoniveladora', 'Compactador', 'Paladraga'];
+    const heavyMachinery = ['Retroexcavadora de Oruga', 'Retroexcavadora de Llanta', 'Bulldozer', 'Motoniveladora', 'Vibrocompactador', 'Paladraga'];
 
     const allReportTypes: ReportType[] = [
       'Horas Trabajadas',
       'Horas Extras', 
       'Mantenimiento',
       'Combustible',
-      'Novedades',
-      'Viajes'
+      'Novedades'
     ];
 
     if (transportVehicles.includes(machine.type)) {
-      // Los vehículos de transporte pueden usar todos los tipos de reporte
-      return allReportTypes;
+      // Solo volquetas y cargadores pueden usar viajes
+      return [...allReportTypes, 'Viajes'];
     } else if (heavyMachinery.includes(machine.type)) {
       // La maquinaria pesada no puede registrar viajes
-      return allReportTypes.filter(type => type !== 'Viajes');
+      return allReportTypes;
     } else {
-      // Para otros tipos de máquina, permitir todos los reportes por defecto
+      // Para otros tipos de máquina (como camiones, etc.), no permitir viajes por ahora
       return allReportTypes;
     }
   };
@@ -37,7 +36,7 @@ export const useMachineSpecificReports = () => {
   const getReportTypeDescription = (machine: Machine | null, reportType: ReportType): string => {
     if (!machine) return '';
 
-    const isTransportVehicle = ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'].includes(machine.type);
+    const isTransportVehicle = ['Volqueta', 'Cargador'].includes(machine.type);
     
     switch (reportType) {
       case 'Horas Trabajadas':
@@ -76,7 +75,7 @@ export const useMachineSpecificReports = () => {
   const getMachineTypeLabel = (machine: Machine | null): string => {
     if (!machine) return '';
     
-    const transportVehicles = ['Volqueta', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'];
+    const transportVehicles = ['Volqueta', 'Cargador'];
     
     return transportVehicles.includes(machine.type) ? 'Vehículo de Transporte' : 'Maquinaria Pesada';
   };
