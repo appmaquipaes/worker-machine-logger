@@ -6,151 +6,260 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Edit, Trash2, DollarSign, Search, Users, AlertTriangle } from 'lucide-react';
-import { TarifaCliente, loadTarifasCliente, saveTarifasCliente, createTarifaAlquiler } from '@/models/TarifasCliente';
-import { loadClientes } from '@/models/Clientes';
+import { ArrowLeft, Plus, Edit, Trash2, DollarSign, Search, Users, AlertTriangle, Truck, Settings } from 'lucide-react';
+import {
+  TarifaCliente,
+  loadTarifasCliente,
+  saveTarifasCliente,
+  createTarifaTransporte,
+  createTarifaAlquiler
+} from '@/models/TarifasCliente';
+import { loadClientes, getClienteByName } from '@/models/Clientes';
 import { useMachine } from '@/context/MachineContext';
-
-// Schema for tariff validation
-const tarifaSchema = z.object({
-  cliente: z.string().min(1, { message: "Debe seleccionar un cliente" }),
-  maquina_id: z.string().min(1, { message: "Debe seleccionar una máquina" }),
-  valor_por_hora: z.coerce.number().positive({ message: "La tarifa debe ser mayor a 0" }),
-  observaciones: z.string().optional()
-});
+import { loadMateriales } from '@/models/Materiales';
+import { loadProveedores } from '@/models/Proveedores';
+import ClienteFincaSelector from '@/components/ClienteFincaSelector';
+import TarifaTransporteForm from '@/components/TarifaTransporteForm';
+import TarifaAlquilerForm from '@/components/TarifaAlquilerForm';
 
 const TarifasClientePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { machines } = useMachine();
-  
-  // States
+
+  // Estados principales
   const [tarifas, setTarifas] = useState<TarifaCliente[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
+  const [materiales, setMateriales] = useState<any[]>([]);
+  const [proveedores, setProveedores] = useState<any[]>([]);
+
+  const [showDialog, setShowDialog] = useState(false);
   const [editingTarifa, setEditingTarifa] = useState<TarifaCliente | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Form setup
-  const form = useForm<z.infer<typeof tarifaSchema>>({
-    resolver: zodResolver(tarifaSchema),
-    defaultValues: {
-      cliente: "",
-      maquina_id: "",
-      valor_por_hora: 0,
-      observaciones: ""
-    }
+
+  // Formulario compartido
+  const [tipoServicio, setTipoServicio] = useState<'transporte' | 'alquiler_maquina'>('transporte');
+  const [cliente, setCliente] = useState('');
+  const [finca, setFinca] = useState('');
+  // Transporte
+  const [origen, setOrigen] = useState('');
+  const [destino, setDestino] = useState('');
+  const [valorFlete, setValorFlete] = useState<number>(0);
+  const [tipoMaterial, setTipoMaterial] = useState('');
+  const [valorMaterial, setValorMaterial] = useState<number>(0);
+  const [valorMaterialCliente, setValorMaterialCliente] = useState<number>(0);
+  // Alquiler
+  const [maquinaId, setMaquinaId] = useState('');
+  const [valorPorHora, setValorPorHora] = useState<number>(0);
+  const [valorPorDia, setValorPorDia] = useState<number>(0);
+  const [valorPorMes, setValorPorMes] = useState<number>(0);
+  // Observaciones
+  const [observaciones, setObservaciones] = useState('');
+
+  // Para filtrar búsqueda
+  const tarifasFiltradas = tarifas.filter(t => {
+    const clienteObj = clientes.find(c => c.id === t.cliente || c.nombre_cliente === t.cliente);
+    const clienteNombre = clienteObj?.nombre_cliente || t.cliente || '';
+    const maquina = machines.find(m => m.id === t.maquina_id);
+    const maquinaNombre = maquina?.name || t.tipo_maquina || '';
+    const destinoText = t.destino || '';
+    return (
+      clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      maquinaNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      destinoText.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
-  
-  // Load data on mount
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-    
     if (user.role !== 'Administrador') {
       toast.error('No tienes permisos para acceder a esta página');
       navigate('/dashboard');
       return;
     }
-    
     setTarifas(loadTarifasCliente());
     setClientes(loadClientes());
+    setProveedores(loadProveedores());
+    setMateriales(loadMateriales());
   }, [user, navigate]);
-  
-  // Filter tarifas based on search
-  const filteredTarifas = tarifas.filter(tarifa => {
-    const cliente = clientes.find(c => c.id === tarifa.cliente);
-    const maquina = machines.find(m => m.id === tarifa.maquina_id);
-    const clienteNombre = cliente?.nombre_cliente || '';
-    const maquinaNombre = maquina?.name || '';
-    
-    return clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           maquinaNombre.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-  
-  // Function to add a new tariff
-  const handleAddTarifa = (data: z.infer<typeof tarifaSchema>) => {
-    const maquina = machines.find(m => m.id === data.maquina_id);
-    const nuevaTarifa = createTarifaAlquiler(
-      data.cliente,
-      undefined,
-      data.maquina_id,
-      maquina?.name || 'Máquina',
-      data.valor_por_hora,
-      undefined,
-      undefined,
-      data.observaciones
-    );
-    
-    const tarifasActualizadas = [...tarifas, nuevaTarifa];
-    saveTarifasCliente(tarifasActualizadas);
-    setTarifas(tarifasActualizadas);
-    form.reset();
-    toast.success('Tarifa agregada correctamente');
+
+  // Resetear formulario
+  const resetForm = () => {
+    setTipoServicio('transporte');
+    setCliente('');
+    setFinca('');
+    setOrigen('');
+    setDestino('');
+    setValorFlete(0);
+    setTipoMaterial('');
+    setValorMaterial(0);
+    setValorMaterialCliente(0);
+    setMaquinaId('');
+    setValorPorHora(0);
+    setValorPorDia(0);
+    setValorPorMes(0);
+    setObservaciones('');
   };
-  
-  // Function to update a tariff
-  const handleUpdateTarifa = (data: z.infer<typeof tarifaSchema>) => {
-    if (!editingTarifa) return;
-    
-    const tarifasActualizadas = tarifas.map(tarifa => 
-      tarifa.id === editingTarifa.id ? {
-        ...tarifa,
-        cliente: data.cliente,
-        maquina_id: data.maquina_id,
-        valor_por_hora: data.valor_por_hora,
-        observaciones: data.observaciones
-      } : tarifa
-    );
-    
+
+  // Selección de cliente y finca
+  const handleClienteChange = (nuevoCliente: string) => {
+    setCliente(nuevoCliente);
+    setFinca('');
+    // para transporte, destino default según cliente o finca
+    if (tipoServicio === 'transporte' && nuevoCliente) {
+      const clienteData = getClienteByName(nuevoCliente) || clientes.find(c => c.id === nuevoCliente);
+      if (clienteData) {
+        const fincas = (clienteData.fincas || []);
+        if (fincas.length === 0) {
+          setDestino(clienteData.nombre_cliente || nuevoCliente);
+        } else {
+          setDestino('');
+        }
+      }
+    } else {
+      setDestino('');
+    }
+  };
+  const handleFincaChange = (nuevaFinca: string) => {
+    setFinca(nuevaFinca);
+    if (tipoServicio === 'transporte') {
+      if (nuevaFinca) setDestino(nuevaFinca);
+      else if (cliente) {
+        const clienteData = getClienteByName(cliente) || clientes.find(c => c.id === cliente);
+        if (clienteData) {
+          const fincas = (clienteData.fincas || []);
+          if (fincas.length === 0) setDestino(clienteData.nombre_cliente || cliente);
+          else setDestino('');
+        }
+      }
+    }
+  };
+  // Material
+  const handleMaterialChange = (materialId: string) => {
+    setTipoMaterial(materialId);
+    if (materialId) {
+      const material = materiales.find(m => m.id === materialId);
+      if (material) {
+        setValorMaterial(material.valor_por_m3);
+        setValorMaterialCliente(material.valor_por_m3);
+      }
+    } else {
+      setValorMaterial(0);
+      setValorMaterialCliente(0);
+    }
+  };
+
+  // Crear o actualizar tarifa según tipo
+  const handleSubmit = () => {
+    if (!cliente) {
+      toast.error('Debe seleccionar un cliente');
+      return;
+    }
+    let nuevaTarifa: TarifaCliente;
+    if (tipoServicio === 'transporte') {
+      if (!origen || !destino || valorFlete <= 0) {
+        toast.error('Complete todos los campos obligatorios para Transporte');
+        return;
+      }
+      nuevaTarifa = createTarifaTransporte(
+        cliente,
+        finca || undefined,
+        origen,
+        destino,
+        valorFlete,
+        valorMaterial > 0 ? valorMaterial : undefined,
+        valorMaterialCliente > 0 ? valorMaterialCliente : undefined,
+        observaciones || undefined,
+        tipoMaterial || undefined
+      );
+    } else {
+      if (!maquinaId || (valorPorHora <= 0 && valorPorDia <= 0 && valorPorMes <= 0)) {
+        toast.error('Debe seleccionar una máquina y definir al menos un valor de alquiler');
+        return;
+      }
+      const maquina = machines.find(m => m.id === maquinaId);
+      nuevaTarifa = createTarifaAlquiler(
+        cliente,
+        finca || undefined,
+        maquinaId,
+        maquina?.type || 'Desconocido',
+        valorPorHora > 0 ? valorPorHora : undefined,
+        valorPorDia > 0 ? valorPorDia : undefined,
+        valorPorMes > 0 ? valorPorMes : undefined,
+        observaciones || undefined
+      );
+    }
+    let tarifasActualizadas: TarifaCliente[];
+    if (editingTarifa) {
+      tarifasActualizadas = tarifas.map(t => t.id === editingTarifa.id
+        ? { ...nuevaTarifa, id: editingTarifa.id, fecha_creacion: editingTarifa.fecha_creacion, activa: t.activa }
+        : t
+      );
+      toast.success('Tarifa actualizada');
+    } else {
+      tarifasActualizadas = [...tarifas, nuevaTarifa];
+      toast.success('Tarifa agregada');
+    }
     saveTarifasCliente(tarifasActualizadas);
     setTarifas(tarifasActualizadas);
+    setShowDialog(false);
     setEditingTarifa(null);
-    toast.success('Tarifa actualizada correctamente');
+    resetForm();
   };
-  
-  // Function to delete a tariff
+
+  const handleEdit = (tarifa: TarifaCliente) => {
+    setEditingTarifa(tarifa);
+    setShowDialog(true);
+    setTipoServicio(tarifa.tipo_servicio);
+    setCliente(tarifa.cliente);
+    setFinca(tarifa.finca || '');
+    setObservaciones(tarifa.observaciones || '');
+    if (tarifa.tipo_servicio === 'transporte') {
+      setOrigen(tarifa.origen || '');
+      setDestino(tarifa.destino || '');
+      setValorFlete(tarifa.valor_flete_m3 || 0);
+      setTipoMaterial(tarifa.tipo_material || '');
+      setValorMaterial(tarifa.valor_material_m3 || 0);
+      setValorMaterialCliente(tarifa.valor_material_cliente_m3 || 0);
+      setMaquinaId('');
+      setValorPorHora(0);
+      setValorPorDia(0);
+      setValorPorMes(0);
+    } else {
+      setOrigen('');
+      setDestino('');
+      setValorFlete(0);
+      setTipoMaterial('');
+      setValorMaterial(0);
+      setValorMaterialCliente(0);
+      setMaquinaId(tarifa.maquina_id || '');
+      setValorPorHora(tarifa.valor_por_hora || 0);
+      setValorPorDia(tarifa.valor_por_dia || 0);
+      setValorPorMes(tarifa.valor_por_mes || 0);
+    }
+  };
+
   const handleDeleteTarifa = (id: string) => {
-    const tarifasActualizadas = tarifas.filter(tarifa => tarifa.id !== id);
+    const tarifasActualizadas = tarifas.filter(t => t.id !== id);
     saveTarifasCliente(tarifasActualizadas);
     setTarifas(tarifasActualizadas);
-    toast.success('Tarifa eliminada correctamente');
+    toast.success('Tarifa eliminada');
   };
-  
-  // Function to open edit tariff dialog
-  const openEditTarifa = (tarifa: TarifaCliente) => {
-    setEditingTarifa(tarifa);
-    form.reset({
-      cliente: tarifa.cliente,
-      maquina_id: tarifa.maquina_id || '',
-      valor_por_hora: tarifa.valor_por_hora || 0,
-      observaciones: tarifa.observaciones || ""
-    });
+
+  const handleToggleStatus = (id: string) => {
+    const tarifasActualizadas = tarifas.map(t =>
+      t.id === id ? { ...t, activa: !t.activa } : t
+    );
+    saveTarifasCliente(tarifasActualizadas);
+    setTarifas(tarifasActualizadas);
   };
-  
-  // Get client name by ID
-  const getClienteName = (clienteId: string): string => {
-    const cliente = clientes.find(c => c.id === clienteId);
-    return cliente?.nombre_cliente || 'Cliente no encontrado';
-  };
-  
-  // Get machine name by ID
-  const getMachineName = (machineId: string): string => {
-    const machine = machines.find(m => m.id === machineId);
-    return machine?.name || 'Máquina no encontrada';
-  };
-  
-  // Format number as currency
+
+  // Utilidades visuales
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -158,9 +267,27 @@ const TarifasClientePage: React.FC = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
-  
+  const getMaterialName = (id?: string) => {
+    if (!id) return '-';
+    const m = materiales.find(mat => mat.id === id);
+    return m ? m.nombre_material : id;
+  };
+  const getMachineName = (id?: string) => {
+    if (!id) return '-';
+    const machine = machines.find(m => m.id === id);
+    return machine ? `${machine.name} (${machine.plate})` : id;
+  };
+
+  // Porcentaje margen material
+  const calcularMargen = (tarifa: TarifaCliente) => {
+    if (!tarifa.valor_material_m3 || !tarifa.valor_material_cliente_m3) return null;
+    const margen = tarifa.valor_material_cliente_m3 - tarifa.valor_material_m3;
+    const porcentaje = ((margen / tarifa.valor_material_m3) * 100).toFixed(1);
+    return { margen, porcentaje };
+  };
+
   if (!user || user.role !== 'Administrador') return null;
-  
+
   return (
     <div className="container mx-auto py-8 px-4 animate-fade-in">
       {/* Header */}
@@ -171,7 +298,7 @@ const TarifasClientePage: React.FC = () => {
               Tarifas por Cliente
             </h1>
             <p className="text-lg text-slate-600">
-              Gestiona las tarifas especiales por cliente y máquina
+              Gestiona las tarifas especiales de transporte y alquiler
             </p>
           </div>
           <Button 
@@ -185,7 +312,7 @@ const TarifasClientePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg">
           <CardContent className="p-6">
@@ -200,7 +327,6 @@ const TarifasClientePage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -216,17 +342,18 @@ const TarifasClientePage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-600 text-sm font-medium">Tarifa Promedio</p>
+                <p className="text-purple-600 text-sm font-medium">Tarifa Promedio Alquiler (hora)</p>
                 <p className="text-3xl font-bold text-purple-700">
-                  {tarifas.length > 0 ? 
-                    formatCurrency(tarifas.reduce((sum, t) => sum + (t.valor_por_hora || 0), 0) / tarifas.length) : 
-                    '$0'
-                  }
+                  {(() => {
+                    const alquileres = tarifas.filter(t => t.tipo_servicio === 'alquiler_maquina' && t.valor_por_hora);
+                    return alquileres.length > 0
+                      ? formatCurrency(alquileres.reduce((sum, t) => sum + (t.valor_por_hora || 0), 0) / alquileres.length)
+                      : '$0';
+                  })()}
                 </p>
               </div>
               <div className="p-3 bg-purple-200 rounded-xl">
@@ -236,383 +363,320 @@ const TarifasClientePage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Main Content Card */}
+
+      {/* Card principal */}
       <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
           <div className="flex justify-between items-center">
             <div className="space-y-2">
               <CardTitle className="text-2xl font-bold text-slate-800">Gestión de Tarifas</CardTitle>
               <CardDescription className="text-base text-slate-600">
-                Administra las tarifas especiales por cliente y máquina
+                Administra tarifas personalizadas para ambos servicios
               </CardDescription>
             </div>
-            <Dialog>
+            <Dialog open={showDialog} onOpenChange={(open) => {
+              setShowDialog(open);
+              if (!open) {
+                setEditingTarifa(null);
+                resetForm();
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                   <Plus className="mr-2 h-5 w-5" />
                   Agregar Tarifa
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-white shadow-2xl border-0">
+              <DialogContent className="sm:max-w-[700px] bg-white shadow-2xl border-0">
                 <DialogHeader className="text-center space-y-4 pb-6">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Plus className="h-8 w-8 text-white" />
+                    {tipoServicio === 'transporte'
+                      ? <Truck className="h-8 w-8 text-white" />
+                      : <Settings className="h-8 w-8 text-white" />}
                   </div>
                   <div className="space-y-2">
-                    <DialogTitle className="text-2xl font-bold text-slate-800">Agregar Nueva Tarifa</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-slate-800">
+                      {editingTarifa ? 'Editar Tarifa' : 'Agregar Nueva Tarifa'}
+                    </DialogTitle>
                     <DialogDescription className="text-base text-slate-600">
-                      Define una tarifa específica para un cliente y máquina
+                      {tipoServicio === 'transporte'
+                        ? 'Define una tarifa especial para flete y material'
+                        : 'Define una tarifa especial para alquiler de maquinaria'}
                     </DialogDescription>
                   </div>
                 </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleAddTarifa)} className="space-y-6 pt-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="cliente"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-slate-700 font-semibold">Cliente *</FormLabel>
-                            <FormControl>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
-                                  <SelectValue placeholder="Seleccionar cliente" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {clientes.map((cliente) => (
-                                    <SelectItem key={cliente.id} value={cliente.id}>
-                                      {cliente.nombre_cliente}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="maquina_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-slate-700 font-semibold">Máquina *</FormLabel>
-                            <FormControl>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
-                                  <SelectValue placeholder="Seleccionar máquina" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {machines.map((machine) => (
-                                    <SelectItem key={machine.id} value={machine.id}>
-                                      {machine.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="valor_por_hora"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-semibold">Tarifa por Hora *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              placeholder="Ej: 150000"
-                              className="h-12 border-slate-300 focus:border-blue-500"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="observaciones"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-700 font-semibold">Observaciones</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="Observaciones adicionales (opcional)"
-                              className="h-12 border-slate-300 focus:border-blue-500"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="flex gap-3 pt-6 border-t border-slate-200">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => form.reset()}
-                        className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
-                      >
-                        Cancelar
-                      </Button>
-                      <Button 
-                        type="submit"
-                        className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
-                      >
-                        <DollarSign className="h-4 w-4 mr-2" />
-                        Guardar Tarifa
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
+
+                {/* Selector tipo de servicio */}
+                <div className="mb-4">
+                  <label className="font-semibold text-slate-700">Tipo de Servicio *</label>
+                  <select
+                    value={tipoServicio}
+                    onChange={e => setTipoServicio(e.target.value as any)}
+                    className="w-full p-2 border rounded-md mt-1"
+                    disabled={!!editingTarifa}
+                  >
+                    <option value="transporte">Transporte (flete/material)</option>
+                    <option value="alquiler_maquina">Alquiler de Maquinaria</option>
+                  </select>
+                </div>
+                <ClienteFincaSelector
+                  selectedCliente={cliente}
+                  selectedFinca={finca}
+                  onClienteChange={handleClienteChange}
+                  onFincaChange={handleFincaChange}
+                />
+                {tipoServicio === 'transporte' ? (
+                  <TarifaTransporteForm
+                    origen={origen}
+                    destino={destino}
+                    valorFlete={valorFlete}
+                    tipoMaterial={tipoMaterial}
+                    valorMaterial={valorMaterial}
+                    valorMaterialCliente={valorMaterialCliente}
+                    proveedores={proveedores}
+                    materiales={materiales}
+                    cliente={cliente}
+                    clienteTieneFincas={!!finca}
+                    onOrigenChange={setOrigen}
+                    onDestinoChange={setDestino}
+                    onValorFleteChange={setValorFlete}
+                    onMaterialChange={handleMaterialChange}
+                    onValorMaterialClienteChange={setValorMaterialCliente}
+                  />
+                ) : (
+                  <TarifaAlquilerForm
+                    maquinaId={maquinaId}
+                    valorPorHora={valorPorHora}
+                    valorPorDia={valorPorDia}
+                    valorPorMes={valorPorMes}
+                    machines={machines}
+                    onMaquinaChange={setMaquinaId}
+                    onValorPorHoraChange={setValorPorHora}
+                    onValorPorDiaChange={setValorPorDia}
+                    onValorPorMesChange={setValorPorMes}
+                  />
+                )}
+                <div>
+                  <label className="font-semibold text-slate-700">Observaciones</label>
+                  <Input
+                    value={observaciones}
+                    onChange={e => setObservaciones(e.target.value)}
+                    placeholder="Observaciones adicionales"
+                  />
+                </div>
+                <div className="flex gap-3 pt-6 border-t border-slate-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingTarifa(null);
+                      resetForm();
+                      setShowDialog(false);
+                    }}
+                    className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    {editingTarifa ? 'Actualizar Tarifa' : 'Guardar Tarifa'}
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
-        
         <CardContent className="p-8">
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
               <Input
-                placeholder="Buscar por cliente o máquina..."
+                placeholder="Buscar por cliente, máquina, destino..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 h-12 border-slate-300 focus:border-blue-500 bg-white"
               />
             </div>
           </div>
-          
-          {filteredTarifas.length > 0 ? (
-            <div className="rounded-xl border border-slate-200 overflow-hidden shadow-lg">
+          {tarifasFiltradas.length > 0 ? (
+            <div className="rounded-xl border border-slate-200 overflow-x-auto shadow-lg">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 hover:bg-slate-50">
+                    <TableHead className="font-bold text-slate-700 h-14">Tipo</TableHead>
                     <TableHead className="font-bold text-slate-700 h-14">Cliente</TableHead>
-                    <TableHead className="font-bold text-slate-700 h-14">Máquina</TableHead>
-                    <TableHead className="font-bold text-slate-700 h-14">Tarifa por Hora</TableHead>
-                    <TableHead className="font-bold text-slate-700 h-14">Observaciones</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Detalle</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Origen/Destino</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Tarifas</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Material</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Margen</TableHead>
+                    <TableHead className="font-bold text-slate-700 h-14">Estado</TableHead>
                     <TableHead className="w-32 font-bold text-slate-700 h-14">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTarifas.map((tarifa, index) => (
-                    <TableRow 
-                      key={tarifa.id}
-                      className="hover:bg-blue-50/50 transition-colors duration-200"
-                      style={{
-                        animationDelay: `${index * 100}ms`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      <TableCell className="font-semibold text-slate-800 py-4">
-                        {getClienteName(tarifa.cliente)}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {getMachineName(tarifa.maquina_id || '')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="font-bold text-emerald-600">
-                          {formatCurrency(tarifa.valor_por_hora || 0)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {tarifa.observaciones || '-'}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditTarifa(tarifa)}
-                                className="h-9 w-9 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] bg-white shadow-2xl border-0">
-                              <DialogHeader className="text-center space-y-4 pb-6">
-                                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                  <Edit className="h-8 w-8 text-white" />
+                  {tarifasFiltradas.map((tarifa) => {
+                    const margen = calcularMargen(tarifa);
+                    return (
+                      <TableRow key={tarifa.id}>
+                        {/* TIPO */}
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {tarifa.tipo_servicio === 'transporte'
+                              ? <Truck className="h-4 w-4 text-blue-600" />
+                              : <Settings className="h-4 w-4 text-orange-600" />}
+                            <span className="text-xs">
+                              {tarifa.tipo_servicio === 'transporte' ? 'Transporte' : 'Alquiler'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        {/* CLIENTE */}
+                        <TableCell className="font-medium">
+                          {(clientes.find(c => c.id === tarifa.cliente)?.nombre_cliente) || tarifa.cliente}
+                        </TableCell>
+                        {/* DETALLE */}
+                        <TableCell>
+                          {tarifa.tipo_servicio === 'transporte' ? (
+                            <div className="text-sm">
+                              <div>Servicio de transporte</div>
+                              {tarifa.finca && <div className="text-muted-foreground">Finca: {tarifa.finca}</div>}
+                            </div>
+                          ) : (
+                            <div className="text-sm">
+                              <div>{tarifa.tipo_maquina}</div>
+                              <div className="text-muted-foreground">{getMachineName(tarifa.maquina_id)}</div>
+                            </div>
+                          )}
+                        </TableCell>
+                        {/* ORIGEN/DESTINO */}
+                        <TableCell>
+                          {tarifa.tipo_servicio === 'transporte' ? (
+                            <div className="text-sm">
+                              <div>De: {tarifa.origen}</div>
+                              <div>A: {tarifa.destino}</div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        {/* TARIFAS */}
+                        <TableCell>
+                          {tarifa.tipo_servicio === 'transporte' ? (
+                            <div className="text-sm">
+                              <div>{formatCurrency(tarifa.valor_flete_m3 ?? 0)}/m³</div>
+                              <div className="text-muted-foreground">Flete</div>
+                            </div>
+                          ) : (
+                            <div className="text-sm">
+                              {tarifa.valor_por_hora && <span>{formatCurrency(tarifa.valor_por_hora)}/h</span>}
+                              {tarifa.valor_por_dia && <span> | {formatCurrency(tarifa.valor_por_dia)}/d</span>}
+                              {tarifa.valor_por_mes && <span> | {formatCurrency(tarifa.valor_por_mes)}/m</span>}
+                            </div>
+                          )}
+                        </TableCell>
+                        {/* MATERIAL */}
+                        <TableCell>
+                          {tarifa.tipo_servicio === 'transporte' ? (
+                            <div className="text-sm">
+                              <div>{getMaterialName(tarifa.tipo_material)}</div>
+                              {tarifa.valor_material_cliente_m3 && (
+                                <div className="text-muted-foreground">
+                                  {formatCurrency(tarifa.valor_material_cliente_m3)}/m³
                                 </div>
-                                <div className="space-y-2">
-                                  <DialogTitle className="text-2xl font-bold text-slate-800">Editar Tarifa</DialogTitle>
-                                  <DialogDescription className="text-base text-slate-600">
-                                    Modifica los datos de la tarifa
-                                  </DialogDescription>
-                                </div>
-                              </DialogHeader>
-                              <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleUpdateTarifa)} className="space-y-6 pt-6">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                      control={form.control}
-                                      name="cliente"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel className="text-slate-700 font-semibold">Cliente *</FormLabel>
-                                          <FormControl>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                              <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
-                                                <SelectValue placeholder="Seleccionar cliente" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {clientes.map((cliente) => (
-                                                  <SelectItem key={cliente.id} value={cliente.id}>
-                                                    {cliente.nombre_cliente}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    
-                                    <FormField
-                                      control={form.control}
-                                      name="maquina_id"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel className="text-slate-700 font-semibold">Máquina *</FormLabel>
-                                          <FormControl>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                              <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
-                                                <SelectValue placeholder="Seleccionar máquina" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {machines.map((machine) => (
-                                                  <SelectItem key={machine.id} value={machine.id}>
-                                                    {machine.name}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  </div>
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="valor_por_hora"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel className="text-slate-700 font-semibold">Tarifa por Hora *</FormLabel>
-                                        <FormControl>
-                                          <Input 
-                                            type="number" 
-                                            {...field} 
-                                            className="h-12 border-slate-300 focus:border-blue-500"
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name="observaciones"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel className="text-slate-700 font-semibold">Observaciones</FormLabel>
-                                        <FormControl>
-                                          <Input 
-                                            {...field} 
-                                            className="h-12 border-slate-300 focus:border-blue-500"
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <div className="flex gap-3 pt-6 border-t border-slate-200">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      onClick={() => setEditingTarifa(null)}
-                                      className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
-                                    >
-                                      Cancelar
-                                    </Button>
-                                    <Button 
-                                      type="submit"
-                                      className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
-                                    >
-                                      <DollarSign className="h-4 w-4 mr-2" />
-                                      Actualizar Tarifa
-                                    </Button>
-                                  </div>
-                                </form>
-                              </Form>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                className="h-9 w-9 p-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-md bg-white shadow-2xl border-0">
-                              <AlertDialogHeader className="text-center space-y-4 pb-4">
-                                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                  <AlertTriangle className="h-8 w-8 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                  <AlertDialogTitle className="text-2xl font-bold text-slate-800">
-                                    ¿Confirmar Eliminación?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
-                                    Esta acción eliminará permanentemente la tarifa para <span className="font-bold text-slate-800">"{getClienteName(tarifa.cliente)}"</span> y <span className="font-bold text-slate-800">"{getMachineName(tarifa.maquina_id || '')}"</span>.
-                                    <br /><br />
-                                    Esta acción no se puede deshacer.
-                                  </AlertDialogDescription>
-                                </div>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter className="gap-3 pt-6 border-t border-slate-200">
-                                <AlertDialogCancel className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50">
-                                  Cancelar
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteTarifa(tarifa.id)}
-                                  className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        {/* MARGEN */}
+                        <TableCell>
+                          {margen ? (
+                            <div className="text-sm">
+                              <div className="font-medium text-green-600">{formatCurrency(margen.margen)}</div>
+                              <div className="text-muted-foreground">({margen.porcentaje}%)</div>
+                            </div>
+                          ) : '-'}
+                        </TableCell>
+                        {/* ESTADO */}
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            tarifa.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {tarifa.activa ? 'Activa' : 'Inactiva'}
+                          </span>
+                        </TableCell>
+                        {/* ACCIONES */}
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(tarifa)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Eliminar Tarifa
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-md bg-white shadow-2xl border-0">
+                                <DialogHeader className="text-center space-y-4 pb-4">
+                                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <AlertTriangle className="h-8 w-8 text-white" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <DialogTitle className="text-2xl font-bold text-slate-800">
+                                      ¿Confirmar Eliminación?
+                                    </DialogTitle>
+                                    <DialogDescription className="text-base text-slate-600 leading-relaxed">
+                                      Esta acción eliminará permanentemente la tarifa de <span className="font-bold text-slate-800">{tarifa.cliente}</span>.
+                                      <br />No se puede deshacer.
+                                    </DialogDescription>
+                                  </div>
+                                </DialogHeader>
+                                <div className="flex gap-3 pt-6 border-t border-slate-200">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {}}
+                                    className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                                  >
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleDeleteTarifa(tarifa.id)}
+                                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Eliminar Tarifa
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleStatus(tarifa.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <span className={`inline-block w-3 h-3 rounded-full mr-1 ${tarifa.activa ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className="sr-only">Activar/Desactivar</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -624,7 +688,9 @@ const TarifasClientePage: React.FC = () => {
               <div className="space-y-2">
                 <p className="text-xl font-semibold text-slate-600">No hay tarifas registradas</p>
                 <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                  {searchTerm ? 'No se encontraron tarifas que coincidan con tu búsqueda.' : 'Agrega nuevas tarifas para comenzar.'}
+                  {searchTerm
+                    ? 'No se encontraron tarifas que coincidan con tu búsqueda.'
+                    : 'Agrega nuevas tarifas para comenzar.'}
                 </p>
               </div>
             </div>
@@ -636,3 +702,4 @@ const TarifasClientePage: React.FC = () => {
 };
 
 export default TarifasClientePage;
+
