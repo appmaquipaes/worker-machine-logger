@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,11 +5,12 @@ import { useMachine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Search, FileText, Calendar, DollarSign, Download, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Plus, Search, FileText, Calendar, DollarSign, Download, BarChart3, Package, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Compra, loadCompras } from '@/models/Compras';
 import { loadProveedores } from '@/models/Proveedores';
 import { toast } from 'sonner';
@@ -55,7 +55,6 @@ const ComprasPage: React.FC = () => {
     setFilteredCompras(comprasData);
   }, []);
 
-  // Aplicar filtros
   useEffect(() => {
     let filtered = [...compras];
 
@@ -156,14 +155,22 @@ const ComprasPage: React.FC = () => {
   if (!user || user.role !== 'Administrador') return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 animate-fade-in">
+      {/* Header */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Gestión de Compras</h1>
-          <div className="flex gap-2">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gestión de Compras
+            </h1>
+            <p className="text-lg text-slate-600">
+              Registro y seguimiento de todas las compras de materiales, lubricantes, repuestos y servicios
+            </p>
+          </div>
+          <div className="flex gap-3">
             <Button 
               onClick={() => setShowRegistrarDialog(true)}
-              className="flex items-center gap-2"
+              className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <Plus size={18} />
               Nueva Compra
@@ -171,49 +178,92 @@ const ComprasPage: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/admin')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-12 px-6 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
             >
               <ArrowLeft size={18} />
               Volver al panel admin
             </Button>
           </div>
         </div>
-        <p className="text-muted-foreground">
-          Registro y seguimiento de todas las compras de materiales, lubricantes, repuestos y servicios
-        </p>
       </div>
 
       <Tabs defaultValue="compras" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
           <TabsTrigger value="compras">Lista de Compras</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="compras">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-600 text-sm font-medium">Total Compras</p>
+                    <p className="text-3xl font-bold text-blue-700">{totalComprasCount}</p>
+                  </div>
+                  <div className="p-3 bg-blue-200 rounded-xl">
+                    <FileText className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-600 text-sm font-medium">Valor Total</p>
+                    <p className="text-3xl font-bold text-green-700">${formatNumber(totalCompras)}</p>
+                  </div>
+                  <div className="p-3 bg-green-200 rounded-xl">
+                    <DollarSign className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-600 text-sm font-medium">Promedio por Compra</p>
+                    <p className="text-3xl font-bold text-purple-700">${formatNumber(promedioCompra)}</p>
+                  </div>
+                  <div className="p-3 bg-purple-200 rounded-xl">
+                    <Calendar className="h-8 w-8 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Filtros */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="mb-8 shadow-2xl border-0 bg-white/80 backdrop-blur">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-slate-800">
                 <Search size={20} />
                 Filtros de Búsqueda
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <div>
-                  <Label htmlFor="filter-proveedor">Proveedor</Label>
+                  <Label htmlFor="filter-proveedor" className="text-slate-700 font-semibold">Proveedor</Label>
                   <Input
                     id="filter-proveedor"
                     placeholder="Buscar proveedor..."
                     value={filterProveedor}
                     onChange={(e) => setFilterProveedor(e.target.value)}
+                    className="h-12 border-slate-300 focus:border-blue-500"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="filter-tipo">Tipo de Insumo</Label>
+                  <Label htmlFor="filter-tipo" className="text-slate-700 font-semibold">Tipo de Insumo</Label>
                   <Select onValueChange={setFilterTipoInsumo} value={filterTipoInsumo}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -228,9 +278,9 @@ const ComprasPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="filter-maquina">Máquina/Destino</Label>
+                  <Label htmlFor="filter-maquina" className="text-slate-700 font-semibold">Máquina/Destino</Label>
                   <Select onValueChange={setFilterMaquina} value={filterMaquina}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -245,9 +295,9 @@ const ComprasPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="filter-pago">Forma de Pago</Label>
+                  <Label htmlFor="filter-pago" className="text-slate-700 font-semibold">Forma de Pago</Label>
                   <Select onValueChange={setFilterFormaPago} value={filterFormaPago}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 border-slate-300 focus:border-blue-500">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -260,36 +310,38 @@ const ComprasPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="filter-fecha-desde">Fecha Desde</Label>
+                  <Label htmlFor="filter-fecha-desde" className="text-slate-700 font-semibold">Fecha Desde</Label>
                   <Input
                     id="filter-fecha-desde"
                     type="date"
                     value={filterFechaDesde}
                     onChange={(e) => setFilterFechaDesde(e.target.value)}
+                    className="h-12 border-slate-300 focus:border-blue-500"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="filter-fecha-hasta">Fecha Hasta</Label>
+                  <Label htmlFor="filter-fecha-hasta" className="text-slate-700 font-semibold">Fecha Hasta</Label>
                   <Input
                     id="filter-fecha-hasta"
                     type="date"
                     value={filterFechaHasta}
                     onChange={(e) => setFilterFechaHasta(e.target.value)}
+                    className="h-12 border-slate-300 focus:border-blue-500"
                   />
                 </div>
               </div>
               
-              <div className="flex justify-between items-center mt-4">
-                <Button variant="outline" onClick={limpiarFiltros}>
+              <div className="flex justify-between items-center mt-8">
+                <Button variant="outline" onClick={limpiarFiltros} className="h-12 px-6 font-semibold">
                   Limpiar Filtros
                 </Button>
-                <div className="flex gap-2">
-                  <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
+                <div className="flex gap-4 items-center">
+                  <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2 h-12 px-6 font-semibold">
                     <Download className="h-4 w-4" />
                     Exportar Excel
                   </Button>
-                  <div className="text-lg font-semibold">
+                  <div className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
                     Total Filtrado: ${formatNumber(totalCompras)}
                   </div>
                 </div>
@@ -297,95 +349,77 @@ const ComprasPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Estadísticas rápidas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Total Compras</p>
-                  <p className="text-2xl font-bold">{totalComprasCount}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <DollarSign className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">${formatNumber(totalCompras)}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <Calendar className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-muted-foreground">Promedio por Compra</p>
-                  <p className="text-2xl font-bold">${formatNumber(promedioCompra)}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Tabla de compras */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Registro de Compras</CardTitle>
-              <CardDescription>
+          <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+              <CardTitle className="text-2xl font-bold text-slate-800">Registro de Compras</CardTitle>
+              <CardDescription className="text-base text-slate-600">
                 {filteredCompras.length} compra(s) encontrada(s)
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8">
               {filteredCompras.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
+                <div className="rounded-xl border border-slate-200 overflow-hidden shadow-lg">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Documento</TableHead>
-                        <TableHead>Proveedor</TableHead>
-                        <TableHead>Tipo Insumo</TableHead>
-                        <TableHead>Destino</TableHead>
-                        <TableHead>Forma Pago</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Items</TableHead>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50">
+                        <TableHead className="font-bold text-slate-700 h-14">Fecha</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Documento</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Proveedor</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Tipo Insumo</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Destino</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Forma Pago</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Total</TableHead>
+                        <TableHead className="font-bold text-slate-700 h-14">Items</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredCompras.map((compra) => (
-                        <TableRow key={compra.id}>
-                          <TableCell>{formatDate(compra.fecha)}</TableCell>
-                          <TableCell>
+                      {filteredCompras.map((compra, index) => (
+                        <TableRow 
+                          key={compra.id}
+                          className="hover:bg-blue-50/50 transition-colors duration-200"
+                          style={{
+                            animationDelay: `${index * 100}ms`,
+                            animationFillMode: 'both'
+                          }}
+                        >
+                          <TableCell className="py-4">{formatDate(compra.fecha)}</TableCell>
+                          <TableCell className="py-4">
                             <div className="font-medium">{compra.tipo_documento}</div>
                             <div className="text-sm text-muted-foreground">{compra.numero_documento}</div>
                           </TableCell>
-                          <TableCell className="font-medium">{compra.proveedor_nombre}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              compra.tipo_insumo === 'Material' ? 'bg-blue-100 text-blue-800' :
-                              compra.tipo_insumo === 'Lubricante' ? 'bg-yellow-100 text-yellow-800' :
-                              compra.tipo_insumo === 'Repuesto' ? 'bg-red-100 text-red-800' :
-                              compra.tipo_insumo === 'Servicio' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
+                          <TableCell className="font-semibold text-slate-800 py-4">{compra.proveedor_nombre}</TableCell>
+                          <TableCell className="py-4">
+                            <Badge variant="outline" className={`${
+                              compra.tipo_insumo === 'Material' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              compra.tipo_insumo === 'Lubricante' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              compra.tipo_insumo === 'Repuesto' ? 'bg-red-50 text-red-700 border-red-200' :
+                              compra.tipo_insumo === 'Servicio' ? 'bg-green-50 text-green-700 border-green-200' :
+                              'bg-gray-50 text-gray-700 border-gray-200'
                             }`}>
                               {compra.tipo_insumo}
-                            </span>
+                            </Badge>
                           </TableCell>
-                          <TableCell>{compra.destino_insumo}</TableCell>
-                          <TableCell>{compra.forma_pago}</TableCell>
-                          <TableCell className="font-medium">${formatNumber(compra.total)}</TableCell>
-                          <TableCell>{compra.detalles.length} item(s)</TableCell>
+                          <TableCell className="py-4">{compra.destino_insumo}</TableCell>
+                          <TableCell className="py-4">{compra.forma_pago}</TableCell>
+                          <TableCell className="font-bold text-emerald-600 py-4">${formatNumber(compra.total)}</TableCell>
+                          <TableCell className="py-4">{compra.detalles.length} item(s)</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">No se encontraron compras</p>
+                <div className="text-center py-16 space-y-6">
+                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+                    <Package className="w-12 h-12 text-slate-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-slate-600">No se encontraron compras</p>
+                    <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+                      Ajusta los filtros o agrega nuevas compras
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -393,31 +427,31 @@ const ComprasPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="reportes">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+          <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-slate-800">
+                <BarChart3 className="h-6 w-6" />
                 Reportes de Compras
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base text-slate-600">
                 Análisis y estadísticas detalladas de compras
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {/* Reporte por Tipo de Insumo */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription>Por Tipo de Insumo</CardDescription>
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="font-semibold text-blue-700">Por Tipo de Insumo</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {['Material', 'Lubricante', 'Repuesto', 'Servicio', 'Otro'].map(tipo => {
                       const comprasTipo = filteredCompras.filter(c => c.tipo_insumo === tipo);
                       const totalTipo = comprasTipo.reduce((sum, c) => sum + c.total, 0);
                       return (
-                        <div key={tipo} className="flex justify-between text-sm mb-1">
-                          <span>{tipo}:</span>
-                          <span className="font-medium">${formatNumber(totalTipo)}</span>
+                        <div key={tipo} className="flex justify-between text-sm mb-2">
+                          <span className="font-medium text-slate-700">{tipo}:</span>
+                          <span className="font-bold text-emerald-600">${formatNumber(totalTipo)}</span>
                         </div>
                       );
                     })}
@@ -425,18 +459,18 @@ const ComprasPage: React.FC = () => {
                 </Card>
 
                 {/* Reporte por Proveedor */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription>Top Proveedores</CardDescription>
+                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="font-semibold text-green-700">Top Proveedores</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {proveedores.slice(0, 5).map(proveedor => {
                       const comprasProveedor = filteredCompras.filter(c => c.proveedor_nombre === proveedor.nombre);
                       const totalProveedor = comprasProveedor.reduce((sum, c) => sum + c.total, 0);
                       return (
-                        <div key={proveedor.id} className="flex justify-between text-sm mb-1">
-                          <span className="truncate">{proveedor.nombre}:</span>
-                          <span className="font-medium">${formatNumber(totalProveedor)}</span>
+                        <div key={proveedor.id} className="flex justify-between text-sm mb-2">
+                          <span className="truncate font-medium text-slate-700">{proveedor.nombre}:</span>
+                          <span className="font-bold text-emerald-600">${formatNumber(totalProveedor)}</span>
                         </div>
                       );
                     })}
@@ -444,18 +478,18 @@ const ComprasPage: React.FC = () => {
                 </Card>
 
                 {/* Reporte por Máquina */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription>Por Máquina/Destino</CardDescription>
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="font-semibold text-purple-700">Por Máquina/Destino</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {machines.slice(0, 5).map(machine => {
                       const comprasMaquina = filteredCompras.filter(c => c.destino_insumo === machine.name);
                       const totalMaquina = comprasMaquina.reduce((sum, c) => sum + c.total, 0);
                       return (
-                        <div key={machine.id} className="flex justify-between text-sm mb-1">
-                          <span className="truncate">{machine.name}:</span>
-                          <span className="font-medium">${formatNumber(totalMaquina)}</span>
+                        <div key={machine.id} className="flex justify-between text-sm mb-2">
+                          <span className="truncate font-medium text-slate-700">{machine.name}:</span>
+                          <span className="font-bold text-emerald-600">${formatNumber(totalMaquina)}</span>
                         </div>
                       );
                     })}
@@ -463,18 +497,18 @@ const ComprasPage: React.FC = () => {
                 </Card>
 
                 {/* Reporte por Forma de Pago */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription>Por Forma de Pago</CardDescription>
+                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="font-semibold text-orange-700">Por Forma de Pago</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {['Contado', 'Crédito', 'Otro'].map(forma => {
                       const comprasForma = filteredCompras.filter(c => c.forma_pago === forma);
                       const totalForma = comprasForma.reduce((sum, c) => sum + c.total, 0);
                       return (
-                        <div key={forma} className="flex justify-between text-sm mb-1">
-                          <span>{forma}:</span>
-                          <span className="font-medium">${formatNumber(totalForma)}</span>
+                        <div key={forma} className="flex justify-between text-sm mb-2">
+                          <span className="font-medium text-slate-700">{forma}:</span>
+                          <span className="font-bold text-emerald-600">${formatNumber(totalForma)}</span>
                         </div>
                       );
                     })}
@@ -483,8 +517,11 @@ const ComprasPage: React.FC = () => {
               </div>
 
               <div className="text-center">
-                <Button onClick={exportToExcel} className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
+                <Button 
+                  onClick={exportToExcel} 
+                  className="flex items-center gap-2 h-12 px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                >
+                  <Download className="h-5 w-5" />
                   Exportar Reporte Completo
                 </Button>
               </div>
