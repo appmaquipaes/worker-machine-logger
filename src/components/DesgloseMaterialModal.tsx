@@ -22,7 +22,7 @@ interface DesgloseMaterialModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inventario: InventarioAcopio[];
-  onDesgloseRealizado: () => void;
+  onDesgloseRealizado: (movimiento: { cantidadRecebo: number, subproductos: { [key: string]: number } }) => void;
 }
 
 const DesgloseMaterialModal: React.FC<DesgloseMaterialModalProps> = ({
@@ -50,7 +50,6 @@ const DesgloseMaterialModal: React.FC<DesgloseMaterialModalProps> = ({
   };
 
   const handleGuardar = () => {
-    // Validaciones básicas
     const totalSubproductos = Object.values(subproductos).reduce((acc, val) => acc + (val || 0), 0);
     if (!recebo) {
       toast.error("No hay Recebo Común en inventario");
@@ -68,13 +67,11 @@ const DesgloseMaterialModal: React.FC<DesgloseMaterialModalProps> = ({
       toast.error("Debes ingresar al menos un subproducto mayor a cero");
       return;
     }
-    if (totalSubproductos > cantidadRecebo + 0.01) { // +0.01 para flotantes
+    if (totalSubproductos > cantidadRecebo + 0.01) {
       toast.error("La suma de los subproductos no puede superar la cantidad desglosada");
       return;
     }
-
-    // Lanza evento al padre, para que realice el movimiento (lo maneja InventarioPage)
-    onDesgloseRealizado && onDesgloseRealizado({
+    onDesgloseRealizado({
       cantidadRecebo,
       subproductos,
     });
@@ -136,4 +133,3 @@ const DesgloseMaterialModal: React.FC<DesgloseMaterialModalProps> = ({
 };
 
 export default DesgloseMaterialModal;
-
