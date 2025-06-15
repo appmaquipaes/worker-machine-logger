@@ -292,29 +292,29 @@ const TarifasClientePage: React.FC = () => {
   if (!user || user.role !== 'Administrador') return null;
 
   return (
-    <div className="container mx-auto py-8 px-4 animate-fade-in">
+    <div className="container mx-auto py-8 px-4 animate-fade-in min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-2 mb-4">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
               Tarifas por Cliente
             </h1>
             <p className="text-lg text-slate-600">
-              Gestiona las tarifas especiales de transporte y alquiler
+              Gestiona las tarifas especiales de transporte y alquiler con una interfaz renovada.
             </p>
           </div>
           <Button 
             variant="outline" 
             onClick={() => navigate('/admin')}
-            className="flex items-center gap-2 h-12 px-6 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
+            className="flex items-center gap-2 h-12 px-6 font-semibold border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all duration-300 shadow-sm hover:scale-105 hover:shadow-md"
           >
             <ArrowLeft size={18} />
             Volver al panel admin
           </Button>
         </div>
       </div>
-
+      
       {/* Estadísticas */}
       <TarifasClienteStats
         totalTarifas={tarifas.length}
@@ -330,13 +330,13 @@ const TarifasClientePage: React.FC = () => {
       />
 
       {/* Card principal */}
-      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur">
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="space-y-2">
               <CardTitle className="text-2xl font-bold text-slate-800">Gestión de Tarifas</CardTitle>
               <CardDescription className="text-base text-slate-600">
-                Administra tarifas personalizadas para ambos servicios
+                Administra tarifas personalizadas para ambos servicios con más claridad visual.
               </CardDescription>
             </div>
             <Dialog open={showDialog} onOpenChange={(open) => {
@@ -347,12 +347,12 @@ const TarifasClientePage: React.FC = () => {
               }
             }}>
               <DialogTrigger asChild>
-                <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-scale-in">
                   <Plus className="mr-2 h-5 w-5" />
                   Agregar Tarifa
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[700px] bg-white shadow-2xl border-0">
+              <DialogContent className="sm:max-w-[700px] bg-white shadow-2xl border-0 animate-fade-in">
                 <DialogHeader className="text-center space-y-4 pb-6">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                     {tipoServicio === 'transporte'
@@ -365,8 +365,8 @@ const TarifasClientePage: React.FC = () => {
                     </DialogTitle>
                     <DialogDescription className="text-base text-slate-600">
                       {tipoServicio === 'transporte'
-                        ? 'Define una tarifa especial para flete y material'
-                        : 'Define una tarifa especial para alquiler de maquinaria'}
+                        ? 'Define una tarifa especial para flete y material, ahora más claro.'
+                        : 'Define una tarifa especial para alquiler de maquinaria.'}
                     </DialogDescription>
                   </div>
                 </DialogHeader>
@@ -377,59 +377,63 @@ const TarifasClientePage: React.FC = () => {
                   <select
                     value={tipoServicio}
                     onChange={e => setTipoServicio(e.target.value as any)}
-                    className="w-full p-2 border rounded-md mt-1"
+                    className="w-full p-2 border rounded-md focus:border-blue-500 focus:ring focus:ring-blue-100 transition"
                     disabled={!!editingTarifa}
                   >
-                    <option value="transporte">Transporte (flete/material)</option>
+                    <option value="transporte">Transporte (flete y material)</option>
                     <option value="alquiler_maquina">Alquiler de Maquinaria</option>
                   </select>
                 </div>
+
                 <ClienteFincaSelector
                   selectedCliente={cliente}
                   selectedFinca={finca}
                   onClienteChange={handleClienteChange}
                   onFincaChange={handleFincaChange}
                 />
-                {tipoServicio === 'transporte' ? (
-                  <TarifaTransporteForm
-                    origen={origen}
-                    destino={destino}
-                    valorFlete={valorFlete}
-                    tipoMaterial={tipoMaterial}
-                    valorMaterial={valorMaterial}
-                    valorMaterialCliente={valorMaterialCliente}
-                    proveedores={proveedores}
-                    materiales={materiales}
-                    cliente={cliente}
-                    clienteTieneFincas={!!finca}
-                    onOrigenChange={setOrigen}
-                    onDestinoChange={setDestino}
-                    onValorFleteChange={setValorFlete}
-                    onMaterialChange={handleMaterialChange}
-                    onValorMaterialClienteChange={setValorMaterialCliente}
-                  />
-                ) : (
-                  <TarifaAlquilerForm
-                    maquinaId={maquinaId}
-                    valorPorHora={valorPorHora}
-                    valorPorDia={valorPorDia}
-                    valorPorMes={valorPorMes}
-                    machines={machines}
-                    onMaquinaChange={setMaquinaId}
-                    onValorPorHoraChange={setValorPorHora}
-                    onValorPorDiaChange={setValorPorDia}
-                    onValorPorMesChange={setValorPorMes}
-                  />
-                )}
+                <div className="mt-2">
+                  {tipoServicio === 'transporte' ? (
+                    <TarifaTransporteForm
+                      origen={origen}
+                      destino={destino}
+                      valorFlete={valorFlete}
+                      tipoMaterial={tipoMaterial}
+                      valorMaterial={valorMaterial}
+                      valorMaterialCliente={valorMaterialCliente}
+                      proveedores={proveedores}
+                      materiales={materiales}
+                      cliente={cliente}
+                      clienteTieneFincas={!!finca}
+                      onOrigenChange={setOrigen}
+                      onDestinoChange={setDestino}
+                      onValorFleteChange={setValorFlete}
+                      onMaterialChange={handleMaterialChange}
+                      onValorMaterialClienteChange={setValorMaterialCliente}
+                    />
+                  ) : (
+                    <TarifaAlquilerForm
+                      maquinaId={maquinaId}
+                      valorPorHora={valorPorHora}
+                      valorPorDia={valorPorDia}
+                      valorPorMes={valorPorMes}
+                      machines={machines}
+                      onMaquinaChange={setMaquinaId}
+                      onValorPorHoraChange={setValorPorHora}
+                      onValorPorDiaChange={setValorPorDia}
+                      onValorPorMesChange={setValorPorMes}
+                    />
+                  )}
+                </div>
                 <div>
                   <label className="font-semibold text-slate-700">Observaciones</label>
                   <Input
                     value={observaciones}
                     onChange={e => setObservaciones(e.target.value)}
                     placeholder="Observaciones adicionales"
+                    className="border rounded-md mt-1"
                   />
                 </div>
-                <div className="flex gap-3 pt-6 border-t border-slate-200">
+                <div className="flex gap-3 pt-6 border-t border-slate-200 mt-4">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -437,13 +441,13 @@ const TarifasClientePage: React.FC = () => {
                       resetForm();
                       setShowDialog(false);
                     }}
-                    className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleSubmit}
-                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
+                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg animate-scale-in"
                   >
                     <DollarSign className="h-4 w-4 mr-2" />
                     {editingTarifa ? 'Actualizar Tarifa' : 'Guardar Tarifa'}
@@ -453,16 +457,16 @@ const TarifasClientePage: React.FC = () => {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent className="p-8">
+        <CardContent className="p-4 md:p-8">
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 pointer-events-none" />
               <Input
                 placeholder="Buscar por cliente, máquina, destino..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 h-12 border-slate-300 focus:border-blue-500 bg-white"
+                className="pl-12 h-12 border-slate-300 focus:border-blue-500 bg-white rounded-lg shadow-sm"
               />
             </div>
           </div>
@@ -482,7 +486,7 @@ const TarifasClientePage: React.FC = () => {
             />
           ) : (
             <div className="text-center py-16 space-y-6">
-              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center animate-fade-in">
                 <DollarSign className="w-12 h-12 text-slate-400" />
               </div>
               <div className="space-y-2">
