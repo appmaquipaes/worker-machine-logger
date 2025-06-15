@@ -259,10 +259,10 @@ const ClientesPage: React.FC = () => {
 
       {/* Dialog para editar cliente */}
       <Dialog open={!!editingCliente} onOpenChange={(open) => !open && setEditingCliente(null)}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[700px] animate-scale-in corporate-card shadow-2xl bg-background border">
           <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-responsive-lg font-bold">Editar Cliente</DialogTitle>
+            <DialogDescription className="text-corporate-muted">
               Modifica los datos del cliente
             </DialogDescription>
           </DialogHeader>
