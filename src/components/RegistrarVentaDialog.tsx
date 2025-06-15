@@ -229,26 +229,30 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
             <CardHeader>
               <CardTitle>Información General</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fecha">Fecha *</Label>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="fecha" className="text-xs font-medium text-muted-foreground">
+                  Fecha <span className="text-primary">*</span>
+                </Label>
                 <Input
                   id="fecha"
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
+                  className="rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition placeholder:text-xs"
                 />
               </div>
-
-              <div>
-                <Label htmlFor="tipo-venta">Tipo de Venta *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="tipo-venta" className="text-xs font-medium text-muted-foreground">
+                  Tipo de Venta <span className="text-primary">*</span>
+                </Label>
                 <Select onValueChange={setTipoVenta} value={tipoVenta}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition text-xs">
                     <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[99]">
                     {tiposVenta.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
+                      <SelectItem key={tipo} value={tipo} className="text-sm">
                         {tipo}
                       </SelectItem>
                     ))}
@@ -256,33 +260,40 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                 </Select>
               </div>
 
-              <ClienteFincaSelector
-                selectedCliente={cliente}
-                selectedFinca={finca}
-                onClienteChange={setCliente}
-                onFincaChange={setFinca}
-                onCiudadChange={setCiudadEntrega}
-              />
+              <div className="md:col-span-2">
+                <ClienteFincaSelector
+                  selectedCliente={cliente}
+                  selectedFinca={finca}
+                  onClienteChange={setCliente}
+                  onFincaChange={setFinca}
+                  onCiudadChange={setCiudadEntrega}
+                />
+              </div>
 
-              <div>
-                <Label htmlFor="ciudad-entrega">Ciudad de Entrega</Label>
+              <div className="space-y-2">
+                <Label htmlFor="ciudad-entrega" className="text-xs font-medium text-muted-foreground">
+                  Ciudad de Entrega
+                </Label>
                 <Input
                   id="ciudad-entrega"
                   value={ciudadEntrega}
                   onChange={(e) => setCiudadEntrega(e.target.value)}
                   placeholder="Ciudad de entrega"
+                  className="rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition placeholder:text-xs"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="origen-material">Origen del Material</Label>
+              <div className="space-y-2">
+                <Label htmlFor="origen-material" className="text-xs font-medium text-muted-foreground">
+                  Origen del Material
+                </Label>
                 <Select onValueChange={setOrigenMaterial} value={origenMaterial}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition text-xs">
                     <SelectValue placeholder="Seleccionar origen" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[99]">
                     {origenesMaterial.map((origen) => (
-                      <SelectItem key={origen} value={origen}>
+                      <SelectItem key={origen} value={origen} className="text-sm">
                         {origen}
                       </SelectItem>
                     ))}
@@ -290,15 +301,17 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="forma-pago">Forma de Pago *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="forma-pago" className="text-xs font-medium text-muted-foreground">
+                  Forma de Pago <span className="text-primary">*</span>
+                </Label>
                 <Select onValueChange={setFormaPago} value={formaPago}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition text-xs">
                     <SelectValue placeholder="Seleccionar forma de pago" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[99]">
                     {formasPago.map((forma) => (
-                      <SelectItem key={forma} value={forma}>
+                      <SelectItem key={forma} value={forma} className="text-sm">
                         {forma}
                       </SelectItem>
                     ))}
@@ -306,13 +319,16 @@ const RegistrarVentaDialog: React.FC<RegistrarVentaDialogProps> = ({
                 </Select>
               </div>
 
-              <div className="md:col-span-2">
-                <Label htmlFor="observaciones">Observaciones</Label>
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="observaciones" className="text-xs font-medium text-muted-foreground">
+                  Observaciones
+                </Label>
                 <Textarea
                   id="observaciones"
                   value={observaciones}
                   onChange={(e) => setObservaciones(e.target.value)}
                   placeholder="Observaciones adicionales..."
+                  className="min-h-[62px] rounded-lg border bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition placeholder:text-xs"
                 />
               </div>
             </CardContent>
