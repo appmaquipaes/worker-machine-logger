@@ -172,7 +172,7 @@ const InventarioPage: React.FC = () => {
   };
 
   // Lógica para manejador del desglose
-  const handleDesgloseRealizado = (movimiento: { cantidadRecebo: number, subproductos: { [key: string]: number } }) => {
+  const handleDesgloseRealizado = (movimiento: { cantidadRecebo: number; subproductos: { [key: string]: number } }) => {
     if (!movimiento) return;
 
     const { cantidadRecebo, subproductos } = movimiento;
