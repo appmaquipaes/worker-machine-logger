@@ -177,53 +177,56 @@ const VentasPage = () => {
   if (!user || user.role !== 'Administrador') return null;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-2 sm:px-4">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Gestión de Ventas</h1>
-          <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-2 gap-2 md:gap-0">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-1">Gestión de Ventas</h1>
+            <p className="text-muted-foreground text-sm">Registra y gestiona todas las ventas de material y transporte</p>
+          </div>
+          <div className="flex gap-2 mt-2 md:mt-0">
             <Button
               onClick={() => setDialogOpen(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 shadow-sm transition-transform hover:scale-[1.03] duration-150"
+              variant="default"
+              size="sm"
             >
               <Plus size={18} />
               Nueva Venta
             </Button>
             <Button 
-              variant="outline" 
+              variant="back"
               onClick={() => navigate('/admin')}
-              className="flex items-center gap-2"
+              className="shadow-sm"
+              size="sm"
             >
               <ArrowLeft size={18} />
               Volver
             </Button>
           </div>
         </div>
-        <p className="text-muted-foreground">
-          Registra y gestiona todas las ventas de material y transporte.
-        </p>
       </div>
 
       {/* Filtros */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="mb-6 shadow-xs border border-muted">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Filter className="h-5 w-5" />
             Filtros de Búsqueda
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Cliente */}
             <div>
-              <Label htmlFor="filtro-cliente" className="flex items-center gap-1">
-                <Users size={16} />
-                Cliente
+              <Label className="flex items-center gap-1 text-xs mb-1">
+                <Users size={15} /> Cliente
               </Label>
               <Select onValueChange={setFiltroCliente} value={filtroCliente}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border hover:bg-accent shadow-sm transition">
                   <SelectValue placeholder="Todos los clientes" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[51]">
                   <SelectItem value="all">Todos los clientes</SelectItem>
                   {clientes.map((cliente) => (
                     <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
@@ -233,18 +236,17 @@ const VentasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Finca */}
             <div>
-              <Label htmlFor="filtro-finca" className="flex items-center gap-1">
-                <MapPin size={16} />
-                Finca
+              <Label className="flex items-center gap-1 text-xs mb-1">
+                <MapPin size={15} /> Finca
               </Label>
               <Select 
                 onValueChange={setFiltroFinca} 
                 value={filtroFinca}
                 disabled={filtroCliente === 'all' || fincas.length === 0}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border hover:bg-accent shadow-sm transition">
                   <SelectValue placeholder={
                     filtroCliente === 'all' 
                       ? "Primero seleccione un cliente" 
@@ -253,7 +255,7 @@ const VentasPage = () => {
                         : "Todas las fincas"
                   } />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[51]">
                   <SelectItem value="all">Todas las fincas</SelectItem>
                   {fincas.map((finca) => (
                     <SelectItem key={finca.id} value={finca.nombre_finca}>
@@ -263,14 +265,14 @@ const VentasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Tipo de Venta */}
             <div>
-              <Label htmlFor="filtro-tipo">Tipo de Venta</Label>
+              <Label className="text-xs mb-1">Tipo de Venta</Label>
               <Select onValueChange={setFiltroTipoVenta} value={filtroTipoVenta}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border hover:bg-accent shadow-sm transition">
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[51]">
                   <SelectItem value="all">Todos los tipos</SelectItem>
                   {tiposVenta.map((tipo) => (
                     <SelectItem key={tipo} value={tipo}>
@@ -280,14 +282,14 @@ const VentasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Forma de Pago */}
             <div>
-              <Label htmlFor="filtro-forma-pago">Forma de Pago</Label>
+              <Label className="text-xs mb-1">Forma de Pago</Label>
               <Select onValueChange={setFiltroFormaPago} value={filtroFormaPago}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border hover:bg-accent shadow-sm transition">
                   <SelectValue placeholder="Todas las formas" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[51]">
                   <SelectItem value="all">Todas las formas</SelectItem>
                   {formasPago.map((forma) => (
                     <SelectItem key={forma} value={forma}>
@@ -297,39 +299,45 @@ const VentasPage = () => {
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Fecha Inicio */}
             <div>
-              <Label htmlFor="fecha-inicio">Fecha Inicio</Label>
+              <Label className="text-xs mb-1">Fecha Inicio</Label>
               <Input
                 id="fecha-inicio"
                 type="date"
                 value={filtroFechaInicio}
                 onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                className="bg-white border hover:bg-accent shadow-sm transition"
               />
             </div>
-
+            {/* Fecha Fin */}
             <div>
-              <Label htmlFor="fecha-fin">Fecha Fin</Label>
+              <Label className="text-xs mb-1">Fecha Fin</Label>
               <Input
                 id="fecha-fin"
                 type="date"
                 value={filtroFechaFin}
                 onChange={(e) => setFiltroFechaFin(e.target.value)}
+                className="bg-white border hover:bg-accent shadow-sm transition"
               />
             </div>
           </div>
           
-          <div className="flex justify-between items-center mt-4">
-            <Button variant="outline" onClick={limpiarFiltros}>
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-center mt-5 gap-4">
+            <Button 
+              variant="ghost"
+              className="text-sm bg-accent/70 hover:bg-accent transition"
+              onClick={limpiarFiltros}
+            >
               Limpiar Filtros
             </Button>
             <div className="flex gap-2 items-center">
-              <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2">
+              <Button onClick={exportToExcel} variant="outline" className="flex items-center gap-2 transition" size="sm">
                 <Download className="h-4 w-4" />
                 Exportar Excel
               </Button>
-              <div className="text-lg font-semibold">
-                Total Filtrado: ${calcularTotalVentas().toLocaleString()}
+              <div className="text-sm md:text-base font-semibold whitespace-nowrap">
+                Total Filtrado: <span className="text-primary">${calcularTotalVentas().toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -338,33 +346,30 @@ const VentasPage = () => {
 
       {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
+        <Card className="shadow-xs border border-muted bg-accent/40">
           <CardHeader className="pb-2">
-            <CardDescription>Total Ventas</CardDescription>
-            <CardTitle className="text-2xl">{ventasFiltradas.length}</CardTitle>
+            <CardDescription className="uppercase text-xs">Total Ventas</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-primary">{ventasFiltradas.length}</CardTitle>
           </CardHeader>
         </Card>
-        
-        <Card>
+        <Card className="shadow-xs border border-muted bg-accent/40">
           <CardHeader className="pb-2">
-            <CardDescription>Valor Total</CardDescription>
-            <CardTitle className="text-2xl">${calcularTotalVentas().toLocaleString()}</CardTitle>
+            <CardDescription className="uppercase text-xs">Valor Total</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-primary">${calcularTotalVentas().toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        
-        <Card>
+        <Card className="shadow-xs border border-muted bg-accent/40">
           <CardHeader className="pb-2">
-            <CardDescription>Promedio por Venta</CardDescription>
-            <CardTitle className="text-2xl">
+            <CardDescription className="uppercase text-xs">Promedio por Venta</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-primary">
               ${ventasFiltradas.length > 0 ? (calcularTotalVentas() / ventasFiltradas.length).toLocaleString() : '0'}
             </CardTitle>
           </CardHeader>
         </Card>
-
-        <Card>
+        <Card className="shadow-xs border border-muted bg-accent/40">
           <CardHeader className="pb-2">
-            <CardDescription>Clientes Únicos</CardDescription>
-            <CardTitle className="text-2xl">
+            <CardDescription className="uppercase text-xs">Clientes Únicos</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-primary">
               {new Set(ventasFiltradas.map(v => v.cliente)).size}
             </CardTitle>
           </CardHeader>
@@ -372,17 +377,18 @@ const VentasPage = () => {
       </div>
 
       {/* Tabla de Ventas */}
-      <Card>
+      <Card className="shadow-xs border border-muted">
         <CardHeader>
-          <CardTitle>Listado de Ventas</CardTitle>
+          <CardTitle className="text-lg">Listado de Ventas</CardTitle>
           <CardDescription>
-            {ventasFiltradas.length} venta(s) encontrada(s)
+            <span className="text-sm">{ventasFiltradas.length} venta(s) encontrada(s)</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="rounded-lg border overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-accent/30">
                 <TableHead>Fecha</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Finca/Destino</TableHead>
@@ -395,19 +401,24 @@ const VentasPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ventasFiltradas.map((venta) => (
-                <TableRow key={venta.id}>
-                  <TableCell>
-                    {new Date(venta.fecha).toLocaleDateString()}
-                  </TableCell>
+              {ventasFiltradas.map((venta, idx) => (
+                <TableRow 
+                  key={venta.id}
+                  className={idx % 2 === 1 ? "bg-muted/20" : ""}
+                  tabIndex={0}
+                  aria-label={`Ver detalle de venta del ${new Date(venta.fecha).toLocaleDateString()}`}
+                >
+                  <TableCell>{new Date(venta.fecha).toLocaleDateString()}</TableCell>
                   <TableCell className="font-medium">{venta.cliente}</TableCell>
                   <TableCell>{getFincaFromDestino(venta.destino_material) || venta.destino_material}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      venta.tipo_venta === 'Solo material' ? 'bg-blue-100 text-blue-800' :
-                      venta.tipo_venta === 'Solo transporte' ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium transition
+                      ${
+                        venta.tipo_venta === 'Solo material' ? 'bg-blue-100 text-blue-800' :
+                        venta.tipo_venta === 'Solo transporte' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }
+                    `}>
                       {venta.tipo_venta}
                     </span>
                   </TableCell>
@@ -426,9 +437,9 @@ const VentasPage = () => {
               ))}
             </TableBody>
           </Table>
-
+          </div>
           {ventasFiltradas.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground animate-fade-in">
               No se encontraron ventas con los filtros aplicados.
             </div>
           )}
