@@ -256,6 +256,26 @@ const ClientesPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para editar cliente */}
+      <Dialog open={!!editingCliente} onOpenChange={(open) => !open && setEditingCliente(null)}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
+              Modifica los datos del cliente
+            </DialogDescription>
+          </DialogHeader>
+          <ClienteDialogForm
+            form={form}
+            tiposPersona={tiposPersona}
+            tiposCliente={tiposCliente}
+            isEdit={true}
+            onSubmit={form.handleSubmit(handleUpdateCliente)}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog para gestión de fincas */}
       <Dialog open={showFincasDialog} onOpenChange={setShowFincasDialog}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
