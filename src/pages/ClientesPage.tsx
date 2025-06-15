@@ -22,6 +22,7 @@ import FincasManagement from '@/components/FincasManagement';
 import ClienteDialogForm from "@/components/clientes/ClienteDialogForm";
 import ClientesTable from "@/components/clientes/ClientesTable";
 import ClientesEmptyState from "@/components/clientes/ClientesEmptyState";
+import EditarClienteDialog from "@/components/clientes/EditarClienteDialog";
 
 // Schema for client validation
 const clienteSchema = z.object({
@@ -257,24 +258,16 @@ const ClientesPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog para editar cliente */}
-      <Dialog open={!!editingCliente} onOpenChange={(open) => !open && setEditingCliente(null)}>
-        <DialogContent className="sm:max-w-[700px] animate-scale-in corporate-card shadow-2xl bg-background border">
-          <DialogHeader>
-            <DialogTitle className="text-responsive-lg font-bold">Editar Cliente</DialogTitle>
-            <DialogDescription className="text-corporate-muted">
-              Modifica los datos del cliente
-            </DialogDescription>
-          </DialogHeader>
-          <ClienteDialogForm
-            form={form}
-            tiposPersona={tiposPersona}
-            tiposCliente={tiposCliente}
-            isEdit={true}
-            onSubmit={form.handleSubmit(handleUpdateCliente)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Dialog para editar cliente - ahora refactorizado */}
+      <EditarClienteDialog
+        open={!!editingCliente}
+        onOpenChange={(open) => !open && setEditingCliente(null)}
+        cliente={editingCliente}
+        form={form}
+        tiposPersona={tiposPersona}
+        tiposCliente={tiposCliente}
+        onSubmit={form.handleSubmit(handleUpdateCliente)}
+      />
 
       {/* Dialog para gestión de fincas */}
       <Dialog open={showFincasDialog} onOpenChange={setShowFincasDialog}>
