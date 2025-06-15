@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Material, loadMateriales, saveMateriales } from '@/models/Materiales';
 import { Tarifa, loadTarifas, saveTarifas, migrateTarifas } from '@/models/Tarifas';
 import MovimientoInventarioModal, { MovimientoInventarioFormState } from "@/components/MovimientoInventarioModal";
+import { createServicioTransporte, loadServiciosTransporte, saveServiciosTransporte } from "@/models/ServiciosTransporte";
+import ClienteFincaMaterialSelector from "@/components/ClienteFincaMaterialSelector";
 
 // Esquemas de validación con Zod
 const materialSchema = z.object({
@@ -62,6 +64,14 @@ const VolquetaManagement: React.FC = () => {
       valor_por_m3: 0
     }
   });
+
+  // Estados para registrar viaje
+  const [viajeOrigen, setViajeOrigen] = useState("");
+  const [viajeCliente, setViajeCliente] = useState("");
+  const [viajeFinca, setViajeFinca] = useState("");
+  const [viajeMaterial, setViajeMaterial] = useState("");
+  const [viajeCantidad, setViajeCantidad] = useState<number>(0);
+  const [viajeMensaje, setViajeMensaje] = useState<string | null>(null);
 
   // Control de acceso - solo administradores
   useEffect(() => {
@@ -157,40 +167,6 @@ const VolquetaManagement: React.FC = () => {
     toast.success('Tarifa agregada correctamente');
   };
 
-  const handleUpdateTarifa = (data: z.infer<typeof tarifaSchema>) => {
-    if (!editingTarifa) return;
-    
-    const updatedTarifas = tarifas.map(tarifa => 
-      tarifa.id === editingTarifa.id ? { 
-        ...tarifa, 
-        origen: data.origen,
-        destino: data.destino,
-        valor_por_m3: data.valor_por_m3
-      } : tarifa
-    );
-    
-    saveTarifas(updatedTarifas);
-    setTarifas(updatedTarifas);
-    setEditingTarifa(null);
-    toast.success('Tarifa actualizada correctamente');
-  };
-
-  const handleDeleteTarifa = (id: string) => {
-    const updatedTarifas = tarifas.filter(tarifa => tarifa.id !== id);
-    saveTarifas(updatedTarifas);
-    setTarifas(updatedTarifas);
-    toast.success('Tarifa eliminada correctamente');
-  };
-
-  const openEditTarifa = (tarifa: Tarifa) => {
-    setEditingTarifa(tarifa);
-    tarifaForm.reset({
-      origen: tarifa.origen,
-      destino: tarifa.destino,
-      valor_por_m3: tarifa.valor_por_m3
-    });
-  };
-
   // Helper para registrar movimiento e impactar inventario
   const handleRegistrarMovimiento = (mov: MovimientoInventarioFormState) => {
     if (!materialMovimiento) return;
@@ -239,6 +215,74 @@ const VolquetaManagement: React.FC = () => {
     setMovimientoModalOpen(false);
   };
 
+  const handleUpdateTarifa = (data: z.infer<typeof tarifaSchema>) => {
+    if (!editingTarifa) return;
+    
+    const updatedTarifas = tarifas.map(tarifa => 
+      tarifa.id === editingTarifa.id ? { 
+        ...tarifa, 
+        origen: data.origen,
+        destino: data.destino,
+        valor_por_m3: data.valor_por_m3
+      } : tarifa
+    );
+    
+    saveTarifas(updatedTarifas);
+    setTarifas(updatedTarifas);
+    setEditingTarifa(null);
+    toast.success('Tarifa actualizada correctamente');
+  };
+
+  const handleDeleteTarifa = (id: string) => {
+    const updatedTarifas = tarifas.filter(tarifa => tarifa.id !== id);
+    saveTarifas(updatedTarifas);
+    setTarifas(updatedTarifas);
+    toast.success('Tarifa eliminada correctamente');
+  };
+
+  const openEditTarifa = (tarifa: Tarifa) => {
+    setEditingTarifa(tarifa);
+    tarifaForm.reset({
+      origen: tarifa.origen,
+      destino: tarifa.destino,
+      valor_por_m3: tarifa.valor_por_m3
+    });
+  };
+
+  // Guardar viaje en localStorage
+  const handleRegistrarViaje = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viajeOrigen || !viajeCliente || !viajeMaterial || !viajeCantidad) {
+      setViajeMensaje("Todos los campos son obligatorios");
+      return;
+    }
+    const destino = viajeFinca || viajeCliente;
+    const viaje = createServicioTransporte(
+      new Date(),
+      viajeCliente,
+      viajeFinca || "",
+      viajeOrigen,
+      destino,
+      viajeMaterial,
+      viajeCantidad,
+      0, // valor_flete_m3, aquí puedes poner por defecto 0 o mejorar luego
+      undefined, // valor_material_m3
+      undefined, // vehiculo
+      undefined, // conductor
+      undefined, // observacion
+      1 // numero_viajes
+    );
+    const viajesActuales = loadServiciosTransporte();
+    saveServiciosTransporte([...viajesActuales, viaje]);
+    setViajeOrigen("");
+    setViajeCliente("");
+    setViajeFinca("");
+    setViajeMaterial("");
+    setViajeCantidad(0);
+    setViajeMensaje("Viaje registrado exitosamente");
+    setTimeout(() => setViajeMensaje(null), 2500);
+  };
+
   if (!user || user.role !== 'Administrador') return null;
   
   return (
@@ -259,6 +303,50 @@ const VolquetaManagement: React.FC = () => {
           Gestión de materiales y tarifas para volquetas
         </p>
       </div>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <div>
+            <CardTitle>Registrar Viaje</CardTitle>
+            <CardDescription>
+              Registra un viaje de volqueta indicando el material y destino del cliente.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleRegistrarViaje} className="space-y-4 flex flex-col md:flex-row gap-3 items-center">
+            <Input
+              className="md:max-w-xs"
+              value={viajeOrigen}
+              onChange={e => setViajeOrigen(e.target.value)}
+              placeholder="Origen (ej: Acopio)"
+              required
+            />
+            <ClienteFincaMaterialSelector
+              selectedCliente={viajeCliente}
+              onClienteChange={setViajeCliente}
+              selectedFinca={viajeFinca}
+              onFincaChange={setViajeFinca}
+              selectedMaterial={viajeMaterial}
+              onMaterialChange={setViajeMaterial}
+            />
+            <Input
+              className="md:max-w-[110px]"
+              value={viajeCantidad === 0 ? "" : viajeCantidad}
+              onChange={e => setViajeCantidad(Number(e.target.value))}
+              type="number"
+              min={0.1}
+              step={0.1}
+              placeholder="m³"
+              required
+            />
+            <Button type="submit" className="shrink-0">Guardar Viaje</Button>
+          </form>
+          {viajeMensaje && (
+            <div className="text-xs mt-1 text-green-600">{viajeMensaje}</div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Sección 1: Tipos de Materiales */}
       <Card className="mb-8">
