@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioA
 import { toast } from "sonner";
 import { ArrowLeft, Download, FileText, Edit, Trash2, Package, TrendingUp, AlertTriangle, Plus, BarChart3 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import DesgloseMaterialModal from '@/components/DesgloseMaterialModal';
 
 const InventarioPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +29,7 @@ const InventarioPage: React.FC = () => {
   });
   const [orden, setOrden] = useState<'asc' | 'desc'>('asc');
   const [columnaOrdenada, setColumnaOrdenada] = useState<string>('tipo_material');
+  const [modalDesgloseOpen, setModalDesgloseOpen] = useState(false);
 
   useEffect(() => {
     cargarInventario();
@@ -170,6 +171,41 @@ const InventarioPage: React.FC = () => {
     };
   };
 
+  // Lógica para manejador del desglose
+  const handleDesgloseRealizado = (movimiento: { cantidadRecebo: number, subproductos: { [key: string]: number } }) => {
+    if (!movimiento) return;
+
+    const { cantidadRecebo, subproductos } = movimiento;
+
+    // Buscar Recebo
+    const inventarioActual = [...inventario];
+    const idxRecebo = inventarioActual.findIndex(i => i.tipo_material.toLowerCase().includes("recebo común"));
+    if (idxRecebo === -1) return;
+
+    // Descontar Recebo Común
+    inventarioActual[idxRecebo].cantidad_disponible -= cantidadRecebo;
+
+    // Agregar/sumar subproductos al inventario
+    Object.entries(subproductos).forEach(([nombre, cantidad]) => {
+      if (!cantidad || cantidad <= 0) return;
+      const idxSub = inventarioActual.findIndex(i => i.tipo_material === nombre);
+      if (idxSub === -1) {
+        // Crear nueva línea
+        inventarioActual.push({
+          id: Date.now().toString() + Math.random().toString().slice(2,7),
+          tipo_material: nombre,
+          cantidad_disponible: cantidad,
+          costo_promedio_m3: 0, // Se puede ajustar según lógica contable
+        });
+      } else {
+        inventarioActual[idxSub].cantidad_disponible += cantidad;
+      }
+    });
+
+    guardarInventario(inventarioActual);
+    cargarInventario();
+  };
+
   const stats = generarReporteStock();
 
   return (
@@ -253,6 +289,16 @@ const InventarioPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="default"
+          onClick={() => setModalDesgloseOpen(true)}
+          className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-white font-semibold px-6 h-10 shadow-lg hover:from-yellow-500 hover:to-yellow-300"
+        >
+          Desglosar/Transformar Material
+        </Button>
       </div>
 
       {/* Agregar Material */}
@@ -520,6 +566,12 @@ const InventarioPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      <DesgloseMaterialModal
+        open={modalDesgloseOpen}
+        onOpenChange={setModalDesgloseOpen}
+        inventario={inventario}
+        onDesgloseRealizado={handleDesgloseRealizado}
+      />
     </div>
   );
 };

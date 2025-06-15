@@ -1,4 +1,3 @@
-
 // Define el tipo para el inventario de acopio
 export type InventarioAcopio = {
   id: string;
@@ -99,4 +98,17 @@ export const updateInventarioAfterViaje = (
     }
     return item;
   });
+};
+
+// Nueva función utilitaria para registrar movimientos de desglose (opcional, para llevar historial después)
+export type MovimientoDesglose = {
+  fecha: string;
+  cantidadRecebo: number;
+  subproductos: { [key: string]: number };
+  usuario?: string;
+};
+export const saveMovimientoDesglose = (movimiento: MovimientoDesglose) => {
+  const historial = JSON.parse(localStorage.getItem('historial_desgloses') || '[]');
+  historial.push(movimiento);
+  localStorage.setItem('historial_desgloses', JSON.stringify(historial));
 };
