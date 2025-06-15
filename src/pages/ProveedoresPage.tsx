@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -14,9 +13,10 @@ import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Edit, Trash2, Package, Building, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Package, Building, Eye, Store, Settings, Users, AlertTriangle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { 
   Proveedor, 
   ProductoProveedor,
@@ -26,7 +26,6 @@ import {
   loadProductosProveedores,
   saveProductosProveedores,
   createProductoProveedor,
-  getProductosByProveedorId
 } from '@/models/Proveedores';
 
 // Schema for provider validation
@@ -50,23 +49,15 @@ const productoSchema = z.object({
   observaciones: z.string().optional()
 });
 
-const ProveedoresPage: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  // States
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [productos, setProductos] = useState<ProductoProveedor[]>([]);
-  const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
-  const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null);
-  const [showProductDialog, setShowProductDialog] = useState(false);
-  const [showProveedorDialog, setShowProveedorDialog] = useState(false);
-  
-  // Form setup
-  const proveedorForm = useForm<z.infer<typeof proveedorSchema>>({
+const ProveedorForm: React.FC<{
+  onSubmit: (data: z.infer<typeof proveedorSchema>) => void;
+  onCancel: () => void;
+  defaultValues?: z.infer<typeof proveedorSchema>;
+  isEditing?: boolean;
+}> = ({ onSubmit, onCancel, defaultValues, isEditing }) => {
+  const form = useForm<z.infer<typeof proveedorSchema>>({
     resolver: zodResolver(proveedorSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       nombre: "",
       ciudad: "",
       contacto: "",
@@ -78,9 +69,348 @@ const ProveedoresPage: React.FC = () => {
     }
   });
 
-  const productoForm = useForm<z.infer<typeof productoSchema>>({
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="nombre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Nombre del Proveedor *
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="Nombre del proveedor" 
+                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="ciudad"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Ciudad *
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="Ciudad" 
+                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="contacto"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Persona de Contacto *
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="Nombre del contacto" 
+                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="correo_electronico"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Correo Electrónico *
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="email" 
+                    placeholder="correo@ejemplo.com" 
+                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="nit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  NIT *
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="123456789-0" 
+                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="tipo_proveedor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                  Tipo de Proveedor *
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors">
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Materiales">Materiales</SelectItem>
+                    <SelectItem value="Lubricantes">Lubricantes</SelectItem>
+                    <SelectItem value="Repuestos">Repuestos</SelectItem>
+                    <SelectItem value="Servicios">Servicios</SelectItem>
+                    <SelectItem value="Otros">Otros</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="forma_pago"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                Forma de Pago *
+              </FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder="Ej: Contado, 30 días, 60 días" 
+                  className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="observaciones"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                Observaciones
+              </FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Observaciones adicionales (opcional)" 
+                  className="min-h-[80px] text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors resize-none"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter className="gap-3 pt-6 border-t border-slate-200">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit"
+            className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isEditing ? 'Actualizar' : 'Guardar'} Proveedor
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+};
+
+const ProveedorTable: React.FC<{
+  proveedores: Proveedor[];
+  onEdit: (proveedor: Proveedor) => void;
+  onDelete: (id: string) => void;
+  onSelect: (proveedor: Proveedor) => void;
+  getProductosCount: (proveedorId: string) => number;
+}> = ({ proveedores, onEdit, onDelete, onSelect, getProductosCount }) => {
+  return (
+    <>
+      {proveedores.length > 0 ? (
+        <div className="rounded-xl border border-slate-200 overflow-hidden shadow-lg">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50 hover:bg-slate-50">
+                <TableHead className="font-bold text-slate-700 h-14">Nombre</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Ciudad</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Tipo</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Contacto</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">NIT</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Productos</TableHead>
+                <TableHead className="w-32 font-bold text-slate-700 h-14">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {proveedores.map((proveedor, index) => (
+                <TableRow 
+                  key={proveedor.id}
+                  className="hover:bg-emerald-50/50 transition-colors duration-200"
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                    animationFillMode: 'both'
+                  }}
+                >
+                  <TableCell className="font-semibold text-slate-800 py-4">{proveedor.nombre}</TableCell>
+                  <TableCell className="py-4">{proveedor.ciudad}</TableCell>
+                  <TableCell className="py-4">
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      {proveedor.tipo_proveedor}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4">{proveedor.contacto}</TableCell>
+                  <TableCell className="py-4">
+                    <span className="bg-slate-100 px-3 py-1 rounded-full text-slate-700 font-mono text-sm">
+                      {proveedor.nit}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <span className="text-sm text-emerald-600 font-medium">
+                      {getProductosCount(proveedor.id)} productos
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onSelect(proveedor)}
+                        className="h-9 w-9 p-0 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(proveedor)}
+                        className="h-9 w-9 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            className="h-9 w-9 p-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-md bg-white shadow-2xl border-0">
+                          <AlertDialogHeader className="text-center space-y-4 pb-4">
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                              <AlertTriangle className="h-8 w-8 text-white" />
+                            </div>
+                            <div className="space-y-2">
+                              <AlertDialogTitle className="text-2xl font-bold text-slate-800">
+                                ¿Confirmar Eliminación?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
+                                Esta acción eliminará permanentemente el proveedor <span className="font-bold text-slate-800">"{proveedor.nombre}"</span> y todos sus productos asociados.
+                                <br /><br />
+                                Esta acción no se puede deshacer.
+                              </AlertDialogDescription>
+                            </div>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-3 pt-6 border-t border-slate-200">
+                            <AlertDialogCancel className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50">
+                              Cancelar
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDelete(proveedor.id)}
+                              className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar Proveedor
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="text-center py-16 space-y-6">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+            <Building className="w-12 h-12 text-slate-400" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-slate-600">No hay proveedores registrados</p>
+            <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+              Agrega un nuevo proveedor para comenzar a gestionar tu red de suministro
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const ProductoForm: React.FC<{
+  onSubmit: (data: z.infer<typeof productoSchema>) => void;
+  onCancel: () => void;
+  defaultValues?: z.infer<typeof productoSchema>;
+  isEditing?: boolean;
+  proveedorNombre: string;
+}> = ({ onSubmit, onCancel, defaultValues, isEditing, proveedorNombre }) => {
+  const form = useForm<z.infer<typeof productoSchema>>({
     resolver: zodResolver(productoSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       tipo_insumo: "Material",
       nombre_producto: "",
       unidad: "",
@@ -88,8 +418,243 @@ const ProveedoresPage: React.FC = () => {
       observaciones: ""
     }
   });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-6">
+        <FormField
+          control={form.control}
+          name="tipo_insumo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Insumo</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Material">Material</SelectItem>
+                  <SelectItem value="Lubricante">Lubricante</SelectItem>
+                  <SelectItem value="Repuesto">Repuesto</SelectItem>
+                  <SelectItem value="Servicio">Servicio</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nombre_producto"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre del Producto</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Ej: Arena fina, Aceite 15W40" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="unidad"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unidad</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="m³, galón, unidad" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="precio_unitario"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Precio Unitario</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} placeholder="0" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="observaciones"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observaciones</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter className="gap-3 pt-6 border-t border-slate-200">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit"
+            className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
+          >
+            <Package className="h-4 w-4 mr-2" />
+            {isEditing ? 'Actualizar' : 'Guardar'} Producto
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+};
+
+const ProductoTable: React.FC<{
+  productos: ProductoProveedor[];
+  onEdit: (producto: ProductoProveedor) => void;
+  onDelete: (id: string) => void;
+}> = ({ productos, onEdit, onDelete }) => {
+  const formatNumber = (value: number): string => {
+    return value.toLocaleString();
+  };
+
+  return (
+    <>
+      {productos.length > 0 ? (
+        <div className="rounded-xl border border-slate-200 overflow-hidden shadow-lg">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50 hover:bg-slate-50">
+                <TableHead className="font-bold text-slate-700 h-14">Tipo</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Producto</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Unidad</TableHead>
+                <TableHead className="font-bold text-slate-700 h-14">Precio</TableHead>
+                <TableHead className="w-24 font-bold text-slate-700 h-14">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {productos.map((producto, index) => (
+                <TableRow 
+                  key={producto.id}
+                  className="hover:bg-blue-50/50 transition-colors duration-200"
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                    animationFillMode: 'both'
+                  }}
+                >
+                  <TableCell className="py-4">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {producto.tipo_insumo}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-semibold text-slate-800 py-4">{producto.nombre_producto}</TableCell>
+                  <TableCell className="py-4">{producto.unidad}</TableCell>
+                  <TableCell className="py-4">
+                    <span className="font-bold text-emerald-600">${formatNumber(producto.precio_unitario)}</span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(producto)}
+                        className="h-9 w-9 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            className="h-9 w-9 p-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-md bg-white shadow-2xl border-0">
+                          <AlertDialogHeader className="text-center space-y-4 pb-4">
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                              <AlertTriangle className="h-8 w-8 text-white" />
+                            </div>
+                            <div className="space-y-2">
+                              <AlertDialogTitle className="text-2xl font-bold text-slate-800">
+                                ¿Confirmar Eliminación?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
+                                Esta acción eliminará permanentemente el producto <span className="font-bold text-slate-800">"{producto.nombre_producto}"</span>.
+                                <br /><br />
+                                Esta acción no se puede deshacer.
+                              </AlertDialogDescription>
+                            </div>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-3 pt-6 border-t border-slate-200">
+                            <AlertDialogCancel className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50">
+                              Cancelar
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDelete(producto.id)}
+                              className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar Producto
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="text-center py-16 space-y-6">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+            <Package className="w-12 h-12 text-slate-400" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-slate-600">No hay productos registrados</p>
+            <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+              Agrega productos y servicios para este proveedor
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const ProveedoresPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
-  // Load data on mount
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [productos, setProductos] = useState<ProductoProveedor[]>([]);
+  const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
+  const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
+  const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null);
+  const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showProveedorDialog, setShowProveedorDialog] = useState(false);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -105,21 +670,11 @@ const ProveedoresPage: React.FC = () => {
     setProveedores(loadProveedores());
     setProductos(loadProductosProveedores());
   }, [user, navigate]);
-  
-  // Helper functions
+
   const formatNumber = (value: number): string => {
     return value.toLocaleString();
   };
   
-  const formatDate = (date: Date): string => {
-    return new Intl.DateTimeFormat('es-CO', {
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric'
-    }).format(date);
-  };
-  
-  // Provider functions
   const handleAddProveedor = (data: z.infer<typeof proveedorSchema>) => {
     const nuevoProveedor = createProveedor(
       data.nombre,
@@ -136,7 +691,6 @@ const ProveedoresPage: React.FC = () => {
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
     
-    proveedorForm.reset();
     setShowProveedorDialog(false);
     toast.success('Proveedor agregado correctamente');
   };
@@ -167,15 +721,16 @@ const ProveedoresPage: React.FC = () => {
     setProveedores(proveedoresActualizados);
     setProductos(productosActualizados);
     toast.success('Proveedor eliminado correctamente');
+    if (selectedProveedor?.id === id) {
+      setSelectedProveedor(null);
+    }
   };
   
   const openEditProveedor = (proveedor: Proveedor) => {
     setEditingProveedor(proveedor);
-    proveedorForm.reset(proveedor);
     setShowProveedorDialog(true);
   };
 
-  // Product functions
   const handleAddProducto = (data: z.infer<typeof productoSchema>) => {
     if (!selectedProveedor) return;
     
@@ -192,7 +747,6 @@ const ProveedoresPage: React.FC = () => {
     saveProductosProveedores(productosActualizados);
     setProductos(productosActualizados);
     
-    productoForm.reset();
     setShowProductDialog(false);
     toast.success('Producto agregado correctamente');
   };
@@ -223,313 +777,179 @@ const ProveedoresPage: React.FC = () => {
 
   const openEditProducto = (producto: ProductoProveedor) => {
     setEditingProducto(producto);
-    productoForm.reset(producto);
     setShowProductDialog(true);
   };
 
   const getProveedorProductos = (proveedorId: string) => {
     return productos.filter(producto => producto.proveedor_id === proveedorId);
   };
-  
+
   if (!user || user.role !== 'Administrador') return null;
   
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Gestión de Proveedores</h1>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={18} />
-            Volver al panel admin
-          </Button>
-        </div>
-        <p className="text-muted-foreground mt-2">
-          Administra los proveedores y sus productos/servicios asociados
-        </p>
-      </div>
-
-      <Tabs defaultValue="proveedores" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
-          <TabsTrigger value="productos">Productos y Servicios</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="proveedores">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Lista de Proveedores</CardTitle>
-                  <CardDescription>
-                    Gestiona la información de tus proveedores
-                  </CardDescription>
-                </div>
-                <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setEditingProveedor(null);
-                      proveedorForm.reset();
-                    }}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Agregar Proveedor
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingProveedor ? 'Editar Proveedor' : 'Agregar Proveedor'}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingProveedor ? 'Modifica los datos del proveedor' : 'Ingresa los datos del nuevo proveedor'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Form {...proveedorForm}>
-                      <form onSubmit={proveedorForm.handleSubmit(editingProveedor ? handleUpdateProveedor : handleAddProveedor)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={proveedorForm.control}
-                            name="nombre"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Nombre</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="Nombre del proveedor" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={proveedorForm.control}
-                            name="ciudad"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Ciudad</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="Ciudad" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={proveedorForm.control}
-                            name="contacto"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Contacto</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="Nombre del contacto" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={proveedorForm.control}
-                            name="correo_electronico"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Correo Electrónico</FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="email" placeholder="correo@ejemplo.com" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={proveedorForm.control}
-                            name="nit"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>NIT</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="123456789-0" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={proveedorForm.control}
-                            name="tipo_proveedor"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Tipo de Proveedor</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Seleccionar tipo" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Materiales">Materiales</SelectItem>
-                                    <SelectItem value="Lubricantes">Lubricantes</SelectItem>
-                                    <SelectItem value="Repuestos">Repuestos</SelectItem>
-                                    <SelectItem value="Servicios">Servicios</SelectItem>
-                                    <SelectItem value="Otros">Otros</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <FormField
-                          control={proveedorForm.control}
-                          name="forma_pago"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Forma de Pago</FormLabel>
-                              <FormControl>
-                                <Input {...field} placeholder="Ej: Contado, 30 días, 60 días" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={proveedorForm.control}
-                          name="observaciones"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Observaciones</FormLabel>
-                              <FormControl>
-                                <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <DialogFooter>
-                          <Button type="submit">
-                            {editingProveedor ? 'Actualizar' : 'Guardar'} Proveedor
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto py-8 px-4">
+        {/* Modern Header with improved visual design */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-800 rounded-3xl mb-12 shadow-2xl">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.08%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+          
+          <div className="relative px-8 py-12">
+            <div className="flex justify-between items-start mb-8">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/admin')}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                <span className="font-medium">Volver al panel admin</span>
+              </Button>
+              
+              <div className="flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm rounded-full px-4 py-2">
+                <Settings className="w-4 h-4 text-amber-300" />
+                <span className="text-amber-100 text-sm font-medium">Administración</span>
               </div>
-            </CardHeader>
-            <CardContent>
-              {proveedores.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Ciudad</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Contacto</TableHead>
-                        <TableHead>NIT</TableHead>
-                        <TableHead>Productos</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {proveedores.map((proveedor) => (
-                        <TableRow key={proveedor.id}>
-                          <TableCell className="font-medium">{proveedor.nombre}</TableCell>
-                          <TableCell>{proveedor.ciudad}</TableCell>
-                          <TableCell>{proveedor.tipo_proveedor}</TableCell>
-                          <TableCell>{proveedor.contacto}</TableCell>
-                          <TableCell>{proveedor.nit}</TableCell>
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground">
-                              {getProveedorProductos(proveedor.id).length} productos
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedProveedor(proveedor);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditProveedor(proveedor)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta acción eliminará permanentemente el proveedor "{proveedor.nombre}" y todos sus productos asociados.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteProveedor(proveedor.id)}
-                                      className="bg-destructive text-destructive-foreground"
-                                    >
-                                      Eliminar
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <Building size={32} className="text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-medium">No hay proveedores registrados</h3>
-                  <p className="text-muted-foreground mt-2">Agrega un nuevo proveedor para comenzar</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="productos">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Productos y Servicios</CardTitle>
-                  <CardDescription>
-                    Gestiona los productos y servicios de tus proveedores
-                  </CardDescription>
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
+                <Store className="w-10 h-10 text-amber-300" />
+              </div>
+              
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                  Gestión de <span className="text-amber-300">Proveedores</span>
+                </h1>
+                <p className="text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed">
+                  Administra la red completa de proveedores, sus productos y servicios. 
+                  Controla inventarios, precios y mantén actualizados los datos de contacto.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 pt-4">
+                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                  <span className="text-white/90 text-sm">🏪 Red de Proveedores</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                  <span className="text-white/90 text-sm">📦 Catálogo de Productos</span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                  <span className="text-white/90 text-sm">💰 Control de Precios</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Tabs defaultValue="proveedores" className="space-y-8">
+          <div className="flex justify-center">
+            <TabsList className="bg-white/70 backdrop-blur-sm border-0 shadow-lg rounded-xl p-2">
+              <TabsTrigger 
+                value="proveedores" 
+                className="px-6 py-3 rounded-lg font-semibold data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Proveedores
+              </TabsTrigger>
+              <TabsTrigger 
+                value="productos" 
+                className="px-6 py-3 rounded-lg font-semibold data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Productos y Servicios
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="proveedores">
+            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-t-lg">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Building className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold">Lista de Proveedores</CardTitle>
+                      <CardDescription className="text-emerald-50 mt-1">
+                        Gestiona la información completa de tus proveedores registrados
+                      </CardDescription>
+                    </div>
+                    <div className="ml-auto hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-emerald-100 text-sm font-medium">{proveedores.length} proveedores activos</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        onClick={() => {
+                          setEditingProveedor(null);
+                        }}
+                        className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+                      >
+                        <Plus className="mr-2 h-5 w-5" />
+                        <span className="font-semibold">Agregar Proveedor</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-white shadow-2xl border-0">
+                      <DialogHeader className="text-center space-y-4 pb-6 border-b border-slate-200">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                          <Building className="h-8 w-8 text-white" />
+                        </div>
+                        <div className="space-y-2">
+                          <DialogTitle className="text-2xl font-bold text-slate-800">
+                            {editingProveedor ? 'Editar Proveedor' : 'Agregar Nuevo Proveedor'}
+                          </DialogTitle>
+                          <DialogDescription className="text-base text-slate-600">
+                            {editingProveedor ? 'Modifica los datos del proveedor seleccionado' : 'Completa la información del nuevo proveedor'}
+                          </DialogDescription>
+                        </div>
+                      </DialogHeader>
+                      <ProveedorForm 
+                        onSubmit={editingProveedor ? handleUpdateProveedor : handleAddProveedor} 
+                        onCancel={() => setShowProveedorDialog(false)} 
+                        defaultValues={editingProveedor || undefined}
+                        isEditing={!!editingProveedor}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <ProveedorTable 
+                  proveedores={proveedores} 
+                  onEdit={(p) => {
+                    setEditingProveedor(p);
+                    setShowProveedorDialog(true);
+                  }} 
+                  onDelete={handleDeleteProveedor} 
+                  onSelect={setSelectedProveedor}
+                  getProductosCount={getProveedorProductos.length ? (id) => getProveedorProductos(id).length : () => 0}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="productos">
+            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-t-lg">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold">Productos y Servicios</CardTitle>
+                      <CardDescription className="text-blue-50 mt-1">
+                        Gestiona el catálogo completo de productos y servicios de tus proveedores
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex flex-col sm:flex-row gap-4">
                   <Select
                     value={selectedProveedor?.id || ""}
                     onValueChange={(value) => {
@@ -537,7 +957,7 @@ const ProveedoresPage: React.FC = () => {
                       setSelectedProveedor(proveedor || null);
                     }}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[250px] bg-white/10 border-white/20 text-white placeholder:text-white/70 h-12">
                       <SelectValue placeholder="Seleccionar proveedor" />
                     </SelectTrigger>
                     <SelectContent>
@@ -552,210 +972,86 @@ const ProveedoresPage: React.FC = () => {
                   {selectedProveedor && (
                     <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
                       <DialogTrigger asChild>
-                        <Button onClick={() => {
-                          setEditingProducto(null);
-                          productoForm.reset();
-                        }}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Agregar Producto
+                        <Button 
+                          onClick={() => {
+                            setEditingProducto(null);
+                          }}
+                          className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+                        >
+                          <Plus className="mr-2 h-5 w-5" />
+                          <span className="font-semibold">Agregar Producto</span>
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                          <DialogTitle>
-                            {editingProducto ? 'Editar Producto' : 'Agregar Producto'}
-                          </DialogTitle>
-                          <DialogDescription>
-                            {editingProducto ? 'Modifica el producto o servicio' : `Agregar producto para ${selectedProveedor.nombre}`}
-                          </DialogDescription>
+                      <DialogContent className="sm:max-w-[600px] bg-white shadow-2xl border-0">
+                        <DialogHeader className="text-center space-y-4 pb-6 border-b border-slate-200">
+                          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <Package className="h-8 w-8 text-white" />
+                          </div>
+                          <div className="space-y-2">
+                            <DialogTitle className="text-2xl font-bold text-slate-800">
+                              {editingProducto ? 'Editar Producto' : 'Agregar Nuevo Producto'}
+                            </DialogTitle>
+                            <DialogDescription className="text-base text-slate-600">
+                              {editingProducto ? 'Modifica el producto o servicio seleccionado' : `Agregar producto para ${selectedProveedor.nombre}`}
+                            </DialogDescription>
+                          </div>
                         </DialogHeader>
-                        <Form {...productoForm}>
-                          <form onSubmit={productoForm.handleSubmit(editingProducto ? handleUpdateProducto : handleAddProducto)} className="space-y-4">
-                            <FormField
-                              control={productoForm.control}
-                              name="tipo_insumo"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Tipo de Insumo</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar tipo" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="Material">Material</SelectItem>
-                                      <SelectItem value="Lubricante">Lubricante</SelectItem>
-                                      <SelectItem value="Repuesto">Repuesto</SelectItem>
-                                      <SelectItem value="Servicio">Servicio</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={productoForm.control}
-                              name="nombre_producto"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Nombre del Producto</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} placeholder="Ej: Arena fina, Aceite 15W40" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={productoForm.control}
-                                name="unidad"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Unidad</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} placeholder="m³, galón, unidad" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={productoForm.control}
-                                name="precio_unitario"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Precio Unitario</FormLabel>
-                                    <FormControl>
-                                      <Input type="number" {...field} placeholder="0" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <FormField
-                              control={productoForm.control}
-                              name="observaciones"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Observaciones</FormLabel>
-                                  <FormControl>
-                                    <Textarea {...field} placeholder="Observaciones adicionales (opcional)" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <DialogFooter>
-                              <Button type="submit">
-                                {editingProducto ? 'Actualizar' : 'Guardar'} Producto
-                              </Button>
-                            </DialogFooter>
-                          </form>
-                        </Form>
+                        <ProductoForm 
+                          onSubmit={editingProducto ? handleUpdateProducto : handleAddProducto} 
+                          onCancel={() => setShowProductDialog(false)} 
+                          defaultValues={editingProducto || undefined}
+                          isEditing={!!editingProducto}
+                          proveedorNombre={selectedProveedor.nombre}
+                        />
                       </DialogContent>
                     </Dialog>
                   )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {selectedProveedor ? (
-                <div>
-                  <div className="mb-4 p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">Productos de: {selectedProveedor.nombre}</h3>
-                    <p className="text-sm text-muted-foreground">Tipo: {selectedProveedor.tipo_proveedor}</p>
-                  </div>
-                  
-                  {getProveedorProductos(selectedProveedor.id).length > 0 ? (
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Unidad</TableHead>
-                            <TableHead>Precio</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getProveedorProductos(selectedProveedor.id).map((producto) => (
-                            <TableRow key={producto.id}>
-                              <TableCell>{producto.tipo_insumo}</TableCell>
-                              <TableCell className="font-medium">{producto.nombre_producto}</TableCell>
-                              <TableCell>{producto.unidad}</TableCell>
-                              <TableCell>${formatNumber(producto.precio_unitario)}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openEditProducto(producto)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="destructive" size="sm">
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Esta acción eliminará permanentemente el producto "{producto.nombre_producto}".
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteProducto(producto.id)}
-                                          className="bg-destructive text-destructive-foreground"
-                                        >
-                                          Eliminar
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-10">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                        <Package size={32} className="text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="p-8">
+                {selectedProveedor ? (
+                  <div>
+                    <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl border border-emerald-200">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                          <Store className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Productos de: {selectedProveedor.nombre}</h3>
+                          <p className="text-sm text-slate-600">Tipo: {selectedProveedor.tipo_proveedor} • Ciudad: {selectedProveedor.ciudad}</p>
+                        </div>
+                        <div className="ml-auto bg-white/80 backdrop-blur-sm rounded-full px-4 py-2">
+                          <span className="text-emerald-600 text-sm font-medium">
+                            {getProveedorProductos(selectedProveedor.id).length} productos registrados
+                          </span>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-medium">No hay productos registrados</h3>
-                      <p className="text-muted-foreground mt-2">Agrega productos para este proveedor</p>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <Package size={32} className="text-muted-foreground" />
+                    
+                    <ProductoTable 
+                      productos={getProveedorProductos(selectedProveedor.id)} 
+                      onEdit={openEditProducto} 
+                      onDelete={handleDeleteProducto} 
+                    />
                   </div>
-                  <h3 className="text-lg font-medium">Selecciona un proveedor</h3>
-                  <p className="text-muted-foreground mt-2">Selecciona un proveedor para ver y gestionar sus productos</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                ) : (
+                  <div className="text-center py-16 space-y-6">
+                    <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+                      <Package className="w-12 h-12 text-slate-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xl font-semibold text-slate-600">Selecciona un proveedor</p>
+                      <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+                        Selecciona un proveedor para ver y gestionar sus productos y servicios
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
