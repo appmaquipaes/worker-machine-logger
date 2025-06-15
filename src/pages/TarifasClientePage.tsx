@@ -16,15 +16,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Plus, Edit, Trash2, DollarSign, Search, Users, AlertTriangle } from 'lucide-react';
-import { TarifaCliente, loadTarifasCliente, saveTarifasCliente, createTarifaCliente } from '@/models/TarifasCliente';
+import { TarifaCliente, loadTarifasCliente, saveTarifasCliente, createTarifaAlquiler } from '@/models/TarifasCliente';
 import { loadClientes } from '@/models/Clientes';
 import { useMachine } from '@/context/MachineContext';
 
 // Schema for tariff validation
 const tarifaSchema = z.object({
-  cliente_id: z.string().min(1, { message: "Debe seleccionar un cliente" }),
+  cliente: z.string().min(1, { message: "Debe seleccionar un cliente" }),
   maquina_id: z.string().min(1, { message: "Debe seleccionar una máquina" }),
-  tarifa_por_hora: z.coerce.number().positive({ message: "La tarifa debe ser mayor a 0" }),
+  valor_por_hora: z.coerce.number().positive({ message: "La tarifa debe ser mayor a 0" }),
   observaciones: z.string().optional()
 });
 
@@ -43,9 +43,9 @@ const TarifasClientePage: React.FC = () => {
   const form = useForm<z.infer<typeof tarifaSchema>>({
     resolver: zodResolver(tarifaSchema),
     defaultValues: {
-      cliente_id: "",
+      cliente: "",
       maquina_id: "",
-      tarifa_por_hora: 0,
+      valor_por_hora: 0,
       observaciones: ""
     }
   });
@@ -69,7 +69,7 @@ const TarifasClientePage: React.FC = () => {
   
   // Filter tarifas based on search
   const filteredTarifas = tarifas.filter(tarifa => {
-    const cliente = clientes.find(c => c.id === tarifa.cliente_id);
+    const cliente = clientes.find(c => c.id === tarifa.cliente);
     const maquina = machines.find(m => m.id === tarifa.maquina_id);
     const clienteNombre = cliente?.nombre_cliente || '';
     const maquinaNombre = maquina?.name || '';
@@ -80,10 +80,15 @@ const TarifasClientePage: React.FC = () => {
   
   // Function to add a new tariff
   const handleAddTarifa = (data: z.infer<typeof tarifaSchema>) => {
-    const nuevaTarifa = createTarifaCliente(
-      data.cliente_id,
+    const maquina = machines.find(m => m.id === data.maquina_id);
+    const nuevaTarifa = createTarifaAlquiler(
+      data.cliente,
+      undefined,
       data.maquina_id,
-      data.tarifa_por_hora,
+      maquina?.name || 'Máquina',
+      data.valor_por_hora,
+      undefined,
+      undefined,
       data.observaciones
     );
     
@@ -101,9 +106,9 @@ const TarifasClientePage: React.FC = () => {
     const tarifasActualizadas = tarifas.map(tarifa => 
       tarifa.id === editingTarifa.id ? {
         ...tarifa,
-        cliente_id: data.cliente_id,
+        cliente: data.cliente,
         maquina_id: data.maquina_id,
-        tarifa_por_hora: data.tarifa_por_hora,
+        valor_por_hora: data.valor_por_hora,
         observaciones: data.observaciones
       } : tarifa
     );
@@ -126,9 +131,9 @@ const TarifasClientePage: React.FC = () => {
   const openEditTarifa = (tarifa: TarifaCliente) => {
     setEditingTarifa(tarifa);
     form.reset({
-      cliente_id: tarifa.cliente_id,
-      maquina_id: tarifa.maquina_id,
-      tarifa_por_hora: tarifa.tarifa_por_hora,
+      cliente: tarifa.cliente,
+      maquina_id: tarifa.maquina_id || '',
+      valor_por_hora: tarifa.valor_por_hora || 0,
       observaciones: tarifa.observaciones || ""
     });
   };
@@ -202,7 +207,7 @@ const TarifasClientePage: React.FC = () => {
               <div>
                 <p className="text-green-600 text-sm font-medium">Clientes con Tarifas</p>
                 <p className="text-3xl font-bold text-green-700">
-                  {new Set(tarifas.map(t => t.cliente_id)).size}
+                  {new Set(tarifas.map(t => t.cliente)).size}
                 </p>
               </div>
               <div className="p-3 bg-green-200 rounded-xl">
@@ -219,7 +224,7 @@ const TarifasClientePage: React.FC = () => {
                 <p className="text-purple-600 text-sm font-medium">Tarifa Promedio</p>
                 <p className="text-3xl font-bold text-purple-700">
                   {tarifas.length > 0 ? 
-                    formatCurrency(tarifas.reduce((sum, t) => sum + t.tarifa_por_hora, 0) / tarifas.length) : 
+                    formatCurrency(tarifas.reduce((sum, t) => sum + (t.valor_por_hora || 0), 0) / tarifas.length) : 
                     '$0'
                   }
                 </p>
@@ -266,7 +271,7 @@ const TarifasClientePage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="cliente_id"
+                        name="cliente"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-slate-700 font-semibold">Cliente *</FormLabel>
@@ -317,7 +322,7 @@ const TarifasClientePage: React.FC = () => {
                     
                     <FormField
                       control={form.control}
-                      name="tarifa_por_hora"
+                      name="valor_por_hora"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-slate-700 font-semibold">Tarifa por Hora *</FormLabel>
@@ -413,16 +418,16 @@ const TarifasClientePage: React.FC = () => {
                       }}
                     >
                       <TableCell className="font-semibold text-slate-800 py-4">
-                        {getClienteName(tarifa.cliente_id)}
+                        {getClienteName(tarifa.cliente)}
                       </TableCell>
                       <TableCell className="py-4">
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {getMachineName(tarifa.maquina_id)}
+                          {getMachineName(tarifa.maquina_id || '')}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
                         <span className="font-bold text-emerald-600">
-                          {formatCurrency(tarifa.tarifa_por_hora)}
+                          {formatCurrency(tarifa.valor_por_hora || 0)}
                         </span>
                       </TableCell>
                       <TableCell className="py-4">
@@ -458,7 +463,7 @@ const TarifasClientePage: React.FC = () => {
                                   <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                       control={form.control}
-                                      name="cliente_id"
+                                      name="cliente"
                                       render={({ field }) => (
                                         <FormItem>
                                           <FormLabel className="text-slate-700 font-semibold">Cliente *</FormLabel>
@@ -509,7 +514,7 @@ const TarifasClientePage: React.FC = () => {
                                   
                                   <FormField
                                     control={form.control}
-                                    name="tarifa_por_hora"
+                                    name="valor_por_hora"
                                     render={({ field }) => (
                                       <FormItem>
                                         <FormLabel className="text-slate-700 font-semibold">Tarifa por Hora *</FormLabel>
@@ -584,7 +589,7 @@ const TarifasClientePage: React.FC = () => {
                                     ¿Confirmar Eliminación?
                                   </AlertDialogTitle>
                                   <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
-                                    Esta acción eliminará permanentemente la tarifa para <span className="font-bold text-slate-800">"{getClienteName(tarifa.cliente_id)}"</span> y <span className="font-bold text-slate-800">"{getMachineName(tarifa.maquina_id)}"</span>.
+                                    Esta acción eliminará permanentemente la tarifa para <span className="font-bold text-slate-800">"{getClienteName(tarifa.cliente)}"</span> y <span className="font-bold text-slate-800">"{getMachineName(tarifa.maquina_id || '')}"</span>.
                                     <br /><br />
                                     Esta acción no se puede deshacer.
                                   </AlertDialogDescription>
