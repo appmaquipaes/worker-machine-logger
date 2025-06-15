@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Material, loadMateriales, saveMateriales } from '@/models/Materiales';
 import { Tarifa, loadTarifas, saveTarifas, migrateTarifas } from '@/models/Tarifas';
+import MovimientoInventarioModal, { MovimientoInventarioFormState } from "@/components/MovimientoInventarioModal";
 
 // Esquemas de validación con Zod
 const materialSchema = z.object({
@@ -39,6 +40,10 @@ const VolquetaManagement: React.FC = () => {
   // Estados para modal de edición
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editingTarifa, setEditingTarifa] = useState<Tarifa | null>(null);
+
+  // Estado para movimiento de inventario de materiales
+  const [movimientoModalOpen, setMovimientoModalOpen] = useState(false);
+  const [materialMovimiento, setMaterialMovimiento] = useState<null | { id: string; nombre_material: string }>(null);
   
   // Configuración de formularios
   const materialForm = useForm<z.infer<typeof materialSchema>>({
@@ -184,6 +189,54 @@ const VolquetaManagement: React.FC = () => {
       destino: tarifa.destino,
       valor_por_m3: tarifa.valor_por_m3
     });
+  };
+
+  // Helper para registrar movimiento e impactar inventario
+  const handleRegistrarMovimiento = (mov: MovimientoInventarioFormState) => {
+    if (!materialMovimiento) return;
+    // Cargar inventario actual de localStorage o inicializar
+    let inventario = [];
+    try {
+      const raw = localStorage.getItem("inventario_acopio");
+      inventario = raw ? JSON.parse(raw) : [];
+    } catch {
+      inventario = [];
+    }
+
+    // Buscar registro existente o crear nuevo
+    const idx = inventario.findIndex((mat: any) => mat.id_material === materialMovimiento.id);
+    if (idx === -1 && mov.tipo === "salida") {
+      toast.error("No puedes registrar saldo negativo para este material.");
+      return;
+    }
+
+    // Movimiento de entrada
+    if (mov.tipo === "entrada") {
+      if (idx === -1) {
+        inventario.push({
+          id_material: materialMovimiento.id,
+          nombre_material: materialMovimiento.nombre_material,
+          cantidad_disponible: mov.cantidad,
+        });
+      } else {
+        inventario[idx].cantidad_disponible += mov.cantidad;
+      }
+      toast.success("Movimiento de entrada registrado.");
+    }
+
+    // Movimiento de salida
+    if (mov.tipo === "salida") {
+      if (inventario[idx].cantidad_disponible < mov.cantidad) {
+        toast.error("No hay suficiente cantidad en inventario para este retiro.");
+        return;
+      }
+      inventario[idx].cantidad_disponible -= mov.cantidad;
+      toast.success("Movimiento de salida registrado.");
+    }
+
+    // Guardar inventario actualizado
+    localStorage.setItem("inventario_acopio", JSON.stringify(inventario));
+    setMovimientoModalOpen(false);
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -363,6 +416,18 @@ const VolquetaManagement: React.FC = () => {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
+
+                          {/* Nuevo: Registrar Movimiento */}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setMaterialMovimiento(material);
+                              setMovimientoModalOpen(true);
+                            }}
+                          >
+                            Registrar Movimiento
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -377,6 +442,16 @@ const VolquetaManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de movimiento inventario */}
+      {materialMovimiento && (
+        <MovimientoInventarioModal
+          open={movimientoModalOpen}
+          onClose={() => setMovimientoModalOpen(false)}
+          material={materialMovimiento}
+          onRegistrar={handleRegistrarMovimiento}
+        />
+      )}
 
       {/* Sección 2: Tarifas por Ruta */}
       <Card>
