@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/DatePicker';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
+import MaquinariaSelector from '@/components/MaquinariaSelector';
+import { useMachine } from '@/context/MachineContext';
+import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { 
   Clock, 
   AlarmClock, 
@@ -60,6 +63,8 @@ interface ReportInputFieldsProps {
   onClienteChangeForWorkSite: (cliente: string) => void;
   onClienteChangeForDestination: (cliente: string) => void;
   onFincaChangeForDestination: (finca: string) => void;
+  selectedMaquinaria?: string;
+  setSelectedMaquinaria?: (value: string) => void;
 }
 
 const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
@@ -75,6 +80,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   value,
   setValue,
   workSite,
+  setWorkSite,
   origin,
   setOrigin,
   selectedCliente,
@@ -96,8 +102,13 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   inventarioAcopio,
   onClienteChangeForWorkSite,
   onClienteChangeForDestination,
-  onFincaChangeForDestination
+  onFincaChangeForDestination,
+  selectedMaquinaria = '',
+  setSelectedMaquinaria = () => {}
 }) => {
+  const { selectedMachine } = useMachine();
+  const { isMachineryTransportVehicle, isMaterialTransportVehicle } = useMachineSpecificReports();
+
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
       case 'Horas Trabajadas':
@@ -122,9 +133,10 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   const shouldShowValueInput = reportType === 'Combustible';
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
   const shouldShowOriginDestination = reportType === 'Viajes';
-  const shouldShowM3Input = reportType === 'Viajes';
-  const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes';
-  const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes';
+  const shouldShowM3Input = reportType === 'Viajes' && isMaterialTransportVehicle(selectedMachine);
+  const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
+  const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
+  const shouldShowMaquinariaSelector = reportType === 'Viajes' && isMachineryTransportVehicle(selectedMachine);
   const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowProveedorInput = reportType === 'Mantenimiento';
   const shouldShowDescriptionInput = reportType === 'Novedades';
@@ -199,20 +211,34 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <MapPin size={24} />
-              <Label htmlFor="origin" className="text-lg">Origen (Proveedor)</Label>
+              <Label htmlFor="origin" className="text-lg">
+                {isMachineryTransportVehicle(selectedMachine) ? 'Origen (Punto de Recogida)' : 'Origen (Proveedor)'}
+              </Label>
             </div>
-            <Select onValueChange={setOrigin} value={origin}>
-              <SelectTrigger className="text-lg p-6">
-                <SelectValue placeholder="Selecciona el origen" />
-              </SelectTrigger>
-              <SelectContent>
-                {proveedores.map((prov) => (
-                  <SelectItem key={prov.id} value={prov.nombre}>
-                    {prov.nombre} - {prov.ciudad}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isMachineryTransportVehicle(selectedMachine) ? (
+              <Input 
+                id="origin"
+                type="text"
+                placeholder="Ej: Patio de máquinas, Obra anterior, etc."
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                className="text-lg p-6"
+                required
+              />
+            ) : (
+              <Select onValueChange={setOrigin} value={origin}>
+                <SelectTrigger className="text-lg p-6">
+                  <SelectValue placeholder="Selecciona el origen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {proveedores.map((prov) => (
+                    <SelectItem key={prov.id} value={prov.nombre}>
+                      {prov.nombre} - {prov.ciudad}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -229,6 +255,13 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
             />
           </div>
         </>
+      )}
+
+      {shouldShowMaquinariaSelector && (
+        <MaquinariaSelector
+          selectedMaquinaria={selectedMaquinaria}
+          onMaquinariaChange={setSelectedMaquinaria}
+        />
       )}
 
       {shouldShowInventoryMaterialSelect && (

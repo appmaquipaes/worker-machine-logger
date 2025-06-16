@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import ReportTypeSelector from '@/components/ReportTypeSelector';
@@ -25,6 +26,7 @@ const ReportForm = () => {
     proveedor, setProveedor,
     kilometraje, setKilometraje,
     tipoMateria, setTipoMateria,
+    selectedMaquinaria, setSelectedMaquinaria,
     isSubmitting,
     lastSubmitSuccess,
     proveedores,
@@ -100,6 +102,8 @@ const ReportForm = () => {
                 setKilometraje={setKilometraje}
                 tipoMateria={tipoMateria}
                 setTipoMateria={setTipoMateria}
+                selectedMaquinaria={selectedMaquinaria}
+                setSelectedMaquinaria={setSelectedMaquinaria}
                 proveedores={proveedores}
                 tiposMaterial={tiposMaterial}
                 inventarioAcopio={inventarioAcopio}

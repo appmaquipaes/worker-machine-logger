@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +32,7 @@ export const useReportForm = () => {
   const [proveedor, setProveedor] = useState<string>('');
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
   const [tipoMateria, setTipoMateria] = useState<string>('');
+  const [selectedMaquinaria, setSelectedMaquinaria] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitSuccess, setLastSubmitSuccess] = useState(false);
   
@@ -62,6 +62,7 @@ export const useReportForm = () => {
     }
   }, [user, selectedMachine, navigate]);
 
+  
   const handleClienteChangeForWorkSite = (cliente: string) => {
     setWorkSite(cliente);
   };
@@ -105,6 +106,7 @@ export const useReportForm = () => {
     setProveedor('');
     setKilometraje(undefined);
     setTipoMateria('');
+    setSelectedMaquinaria('');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,7 +134,8 @@ export const useReportForm = () => {
       proveedor,
       kilometraje,
       tipoMateria,
-      inventarioAcopio
+      inventarioAcopio,
+      selectedMaquinaria
     });
     
     if (validationError) {
@@ -208,6 +211,7 @@ export const useReportForm = () => {
     proveedor, setProveedor,
     kilometraje, setKilometraje,
     tipoMateria, setTipoMateria,
+    selectedMaquinaria, setSelectedMaquinaria,
     isSubmitting,
     lastSubmitSuccess,
     
