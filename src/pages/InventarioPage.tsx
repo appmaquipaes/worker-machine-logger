@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { toast } from "sonner";
-import { ArrowLeft, Package, History } from 'lucide-react';
+import { ArrowLeft, Package, History, AlertTriangle, Settings } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import DesgloseMaterialModal from '@/components/DesgloseMaterialModal';
 import MovimientosInventarioTable from '@/components/MovimientosInventarioTable';
@@ -13,6 +12,9 @@ import InventarioStats from '@/components/inventario/InventarioStats';
 import AgregarMaterialForm from '@/components/inventario/AgregarMaterialForm';
 import InventarioTable from '@/components/inventario/InventarioTable';
 import EditarMaterialDialog from '@/components/inventario/EditarMaterialDialog';
+import AlertasInventario from '@/components/inventario/AlertasInventario';
+import ConfiguracionUmbrales from '@/components/inventario/ConfiguracionUmbrales';
+import { useInventarioAlertas } from '@/hooks/useInventarioAlertas';
 
 const InventarioPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,9 +33,24 @@ const InventarioPage: React.FC = () => {
   const [columnaOrdenada, setColumnaOrdenada] = useState<string>('tipo_material');
   const [modalDesgloseOpen, setModalDesgloseOpen] = useState(false);
 
+  // Hook para alertas
+  const {
+    alertas,
+    umbrales,
+    verificarStock,
+    desactivarAlerta,
+    configurarUmbral,
+    cantidadAlertasActivas
+  } = useInventarioAlertas();
+
   useEffect(() => {
     cargarInventario();
   }, []);
+
+  // Verificar stock cuando cambie el inventario
+  useEffect(() => {
+    verificarStock();
+  }, [inventario, verificarStock]);
 
   const cargarInventario = () => {
     const inventarioCargado = loadInventarioAcopio();
@@ -176,20 +193,16 @@ const InventarioPage: React.FC = () => {
 
     const { cantidadRecebo, subproductos } = movimiento;
 
-    // Buscar Recebo
     const inventarioActual = [...inventario];
     const idxRecebo = inventarioActual.findIndex(i => i.tipo_material.toLowerCase().includes("recebo común"));
     if (idxRecebo === -1) return;
 
-    // Descontar Recebo Común
     inventarioActual[idxRecebo].cantidad_disponible -= cantidadRecebo;
 
-    // Agregar/sumar subproductos al inventario
     Object.entries(subproductos).forEach(([nombre, cantidad]) => {
       if (!cantidad || cantidad <= 0) return;
       const idxSub = inventarioActual.findIndex(i => i.tipo_material === nombre);
       if (idxSub === -1) {
-        // Crear nueva línea
         inventarioActual.push({
           id: Date.now().toString() + Math.random().toString().slice(2,7),
           tipo_material: nombre,
@@ -219,6 +232,14 @@ const InventarioPage: React.FC = () => {
             <p className="text-lg text-slate-600">
               Gestiona el inventario de materiales en acopio
             </p>
+            {cantidadAlertasActivas > 0 && (
+              <div className="flex items-center gap-2 text-orange-600">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  {cantidadAlertasActivas} alerta{cantidadAlertasActivas > 1 ? 's' : ''} activa{cantidadAlertasActivas > 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
           </div>
           <Button 
             variant="outline" 
@@ -231,12 +252,22 @@ const InventarioPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Alertas de inventario */}
+      {cantidadAlertasActivas > 0 && (
+        <div className="mb-6">
+          <AlertasInventario
+            alertas={alertas}
+            onDesactivarAlerta={desactivarAlerta}
+          />
+        </div>
+      )}
+
       {/* Estadísticas del inventario */}
       <InventarioStats stats={stats} />
 
       {/* Tabs para organizar el contenido */}
       <Tabs defaultValue="inventario" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-100 p-1 rounded-xl">
           <TabsTrigger 
             value="inventario" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
@@ -251,6 +282,25 @@ const InventarioPage: React.FC = () => {
             <History className="h-4 w-4" />
             Historial de Movimientos
           </TabsTrigger>
+          <TabsTrigger 
+            value="alertas"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Alertas
+            {cantidadAlertasActivas > 0 && (
+              <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">
+                {cantidadAlertasActivas}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="configuracion"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            <Settings className="h-4 w-4" />
+            Configuración
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="inventario" className="space-y-6">
@@ -264,7 +314,6 @@ const InventarioPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Agregar Material */}
           <AgregarMaterialForm
             nuevoMaterial={nuevoMaterial}
             onInputChange={handleInputChange}
@@ -272,7 +321,6 @@ const InventarioPage: React.FC = () => {
             onExportarReporte={exportarReporteStock}
           />
 
-          {/* Inventario Actual */}
           <InventarioTable
             inventario={inventario}
             editandoId={editandoId}
@@ -283,7 +331,6 @@ const InventarioPage: React.FC = () => {
             onEliminar={handleEliminar}
           />
 
-          {/* Modal de edición */}
           <EditarMaterialDialog
             open={!!editandoId}
             onOpenChange={(open) => !open && setEditandoId(null)}
@@ -295,6 +342,20 @@ const InventarioPage: React.FC = () => {
 
         <TabsContent value="movimientos">
           <MovimientosInventarioTable />
+        </TabsContent>
+
+        <TabsContent value="alertas">
+          <AlertasInventario
+            alertas={alertas}
+            onDesactivarAlerta={desactivarAlerta}
+          />
+        </TabsContent>
+
+        <TabsContent value="configuracion">
+          <ConfiguracionUmbrales
+            umbrales={umbrales}
+            onConfigurarUmbral={configurarUmbral}
+          />
         </TabsContent>
       </Tabs>
 
