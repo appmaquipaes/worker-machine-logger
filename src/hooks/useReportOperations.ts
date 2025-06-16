@@ -2,9 +2,11 @@
 import { Report, ReportType } from '@/types/report';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
+import { useReportesToVentas } from '@/hooks/useReportesToVentas';
 
 export const useReportOperations = () => {
   const { procesarReporteInventario } = useInventarioOperations();
+  const { procesarReporteParaVenta } = useReportesToVentas();
 
   const createReport = (
     reports: Report[],
@@ -81,7 +83,7 @@ export const useReportOperations = () => {
       tarifaEncontrada,
     };
     
-    // NUEVO: Procesar automáticamente el inventario usando el sistema mejorado
+    // PROCESAMIENTO AUTOMÁTICO DE INVENTARIO (existente)
     if (newReport.reportType === 'Viajes') {
       console.log('=== PROCESANDO INVENTARIO PARA NUEVO REPORTE ===');
       const resultado = procesarReporteInventario(newReport);
@@ -89,6 +91,18 @@ export const useReportOperations = () => {
         console.log('✓ Inventario actualizado automáticamente:', resultado.mensaje);
       } else {
         console.log('ℹ No se actualizó inventario:', resultado.mensaje);
+      }
+    }
+
+    // NUEVO: PROCESAMIENTO AUTOMÁTICO DE VENTAS
+    if (newReport.reportType === 'Viajes') {
+      console.log('=== PROCESANDO VENTA AUTOMÁTICA PARA NUEVO REPORTE ===');
+      const resultadoVenta = procesarReporteParaVenta(newReport);
+      if (resultadoVenta.exito) {
+        console.log('✓ Venta generada automáticamente:', resultadoVenta.mensaje);
+        console.log('✓ Total venta:', resultadoVenta.total);
+      } else {
+        console.log('ℹ No se generó venta automática:', resultadoVenta.mensaje);
       }
     }
 
