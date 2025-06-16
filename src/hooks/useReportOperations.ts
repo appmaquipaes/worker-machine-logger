@@ -23,7 +23,8 @@ export const useReportOperations = () => {
     destination?: string,
     cantidadM3?: number,
     proveedor?: string,
-    kilometraje?: number
+    kilometraje?: number,
+    tipoMateria?: string // NUEVO: Parámetro agregado
   ): Report => {
     let calculatedValue = value || 0;
     let detalleCalculo = '';
@@ -81,6 +82,7 @@ export const useReportOperations = () => {
       kilometraje,
       detalleCalculo,
       tarifaEncontrada,
+      tipoMateria // NUEVO: Incluir tipo de materia en el reporte
     };
     
     // PROCESAMIENTO AUTOMÁTICO DE INVENTARIO (existente)
@@ -94,9 +96,10 @@ export const useReportOperations = () => {
       }
     }
 
-    // NUEVO: PROCESAMIENTO AUTOMÁTICO DE VENTAS
+    // PROCESAMIENTO AUTOMÁTICO DE VENTAS (mejorado con tipo de materia)
     if (newReport.reportType === 'Viajes') {
       console.log('=== PROCESANDO VENTA AUTOMÁTICA PARA NUEVO REPORTE ===');
+      console.log('📦 Tipo de materia:', newReport.tipoMateria);
       const resultadoVenta = procesarReporteParaVenta(newReport);
       if (resultadoVenta.exito) {
         console.log('✓ Venta generada automáticamente:', resultadoVenta.mensaje);
@@ -111,7 +114,8 @@ export const useReportOperations = () => {
       tipo: reportType,
       valor: calculatedValue,
       detalleCalculo,
-      tarifaEncontrada
+      tarifaEncontrada,
+      tipoMateria: newReport.tipoMateria
     });
 
     return newReport;

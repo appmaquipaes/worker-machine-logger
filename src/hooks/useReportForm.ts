@@ -34,7 +34,8 @@ export const useReportForm = () => {
   const {
     proveedores,
     tiposMaterial,
-    inventarioAcopio
+    inventarioAcopio,
+    materiales
   } = useReportFormData();
   
   const {
@@ -98,6 +99,7 @@ export const useReportForm = () => {
     proveedores,
     tiposMaterial,
     inventarioAcopio,
+    materiales,
     
     handleClienteChangeForWorkSite,
     handleClienteChangeForDestination,

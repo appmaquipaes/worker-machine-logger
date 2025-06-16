@@ -19,7 +19,7 @@ export interface ReportFormData {
   tipoMateria: string;
   inventarioAcopio: any[];
   selectedMaquinaria: string;
-  machineType?: string; // Nuevo parámetro
+  machineType?: string;
 }
 
 export const validateReportForm = (data: ReportFormData): string | null => {
@@ -54,7 +54,7 @@ export const validateReportForm = (data: ReportFormData): string | null => {
     }
   }
 
-  // Validaciones para Viajes con reglas específicas por tipo de máquina
+  // Validaciones mejoradas para Viajes
   if (reportType === 'Viajes') {
     if (!trips || trips <= 0) {
       return 'Debe ingresar un número válido de viajes';
@@ -72,35 +72,32 @@ export const validateReportForm = (data: ReportFormData): string | null => {
     if (machineType === 'Cargador') {
       const config = MACHINE_INVENTORY_CONFIG.Cargador;
       
-      // Los Cargadores solo pueden tener origen "Acopio Maquipaes"
       if (config.forceOriginAcopio && !origin.toLowerCase().includes('acopio')) {
         return 'Las máquinas Cargador solo pueden realizar viajes desde Acopio Maquipaes';
       }
-      
-      // Los Cargadores no pueden realizar entradas al inventario
-      if (!config.canEnter && origin.toLowerCase().includes('acopio')) {
-        return 'Las máquinas Cargador no pueden realizar entradas al inventario de acopio';
-      }
     }
     
-    // Validación de cantidad de m³ para máquinas de transporte
+    // Validación mejorada para máquinas de transporte de material
     if (['Volqueta', 'Cargador', 'Camión'].includes(machineType || '')) {
       if (!cantidadM3 || cantidadM3 <= 0) {
         return 'Debe ingresar una cantidad válida de m³';
       }
       
+      // NUEVA VALIDACIÓN: Tipo de materia es obligatorio para máquinas de transporte
+      if (!tipoMateria.trim()) {
+        return 'Debe seleccionar el tipo de material transportado';
+      }
+      
       // Validación específica para salidas desde acopio
       if (origin.toLowerCase().includes('acopio')) {
-        if (!tipoMateria.trim()) {
-          return 'Debe seleccionar el tipo de material del inventario';
-        }
-        
         const materialInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
         if (materialInventario && cantidadM3 > materialInventario.cantidad_disponible) {
           return `No hay suficiente material disponible. Máximo: ${materialInventario.cantidad_disponible} m³`;
         }
-      } else if (!tipoMateria.trim()) {
-        return 'Debe seleccionar el tipo de material';
+        
+        if (!materialInventario) {
+          return 'El material seleccionado no está disponible en el inventario de acopio';
+        }
       }
     }
   }

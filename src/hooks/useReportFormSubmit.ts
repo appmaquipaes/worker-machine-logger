@@ -76,6 +76,27 @@ export const useReportFormSubmit = (props: UseReportFormSubmitProps) => {
         ? `${props.selectedCliente} - ${props.selectedFinca}`
         : props.selectedCliente || '';
       
+      // Crear el reporte con el tipo de materia incluido
+      const newReport = {
+        machineId: selectedMachine.id,
+        machineName: selectedMachine.name,
+        reportType: props.reportType,
+        description: reportDescription,
+        reportDate: props.reportDate,
+        trips: props.reportType === 'Viajes' ? props.trips : undefined,
+        hours: (props.reportType === 'Horas Trabajadas' || props.reportType === 'Horas Extras') ? props.hours : undefined,
+        value: props.reportType === 'Combustible' ? props.value : 
+               props.reportType === 'Mantenimiento' ? props.maintenanceValue : undefined,
+        workSite: props.reportType === 'Horas Trabajadas' ? props.workSite : undefined,
+        origin: props.reportType === 'Viajes' ? props.origin : undefined,
+        destination: props.reportType === 'Viajes' ? finalDestination : undefined,
+        cantidadM3: props.reportType === 'Viajes' ? props.cantidadM3 : undefined,
+        proveedor: props.reportType === 'Mantenimiento' ? props.proveedor : undefined,
+        kilometraje: props.reportType === 'Combustible' ? props.kilometraje : undefined,
+        tipoMateria: props.reportType === 'Viajes' ? props.tipoMateria : undefined
+      };
+
+      // Usar addReport del contexto que ya maneja la creación automática de ventas
       addReport(
         selectedMachine.id,
         selectedMachine.name,
@@ -104,6 +125,11 @@ export const useReportFormSubmit = (props: UseReportFormSubmitProps) => {
           color: 'white'
         }
       });
+      
+      // Log para debugging - mostrar que se incluye tipo de materia
+      if (props.reportType === 'Viajes' && props.tipoMateria) {
+        console.log('📦 Reporte con tipo de materia:', props.tipoMateria);
+      }
       
       props.clearForm();
       
