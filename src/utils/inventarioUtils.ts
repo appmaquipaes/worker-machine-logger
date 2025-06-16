@@ -2,6 +2,7 @@
 import { loadInventarioAcopio, updateInventarioAfterViaje, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { Report } from '@/types/report';
 import { isAcopio } from '@/constants/inventario';
+import { useInventarioOperations } from '@/hooks/useInventarioOperations';
 
 // Función para actualizar inventario cuando se registra un viaje desde acopio (MANTENER COMPATIBILIDAD)
 export const actualizarInventarioPorViaje = (report: Report): boolean => {
@@ -57,10 +58,15 @@ export const actualizarInventarioPorViaje = (report: Report): boolean => {
   }
 };
 
-// Nueva función que usa el sistema mejorado
+// Nueva función que usa el sistema mejorado de inventario
 export const procesarMovimientoInventario = async (report: Report): Promise<boolean> => {
   try {
-    // Esta función será implementada para usar useInventarioOperations
+    console.log('=== PROCESANDO MOVIMIENTO CON SISTEMA MEJORADO ===');
+    
+    // Importar dinámicamente el hook para usar fuera de componente React
+    const { useInventarioOperations } = await import('@/hooks/useInventarioOperations');
+    
+    // Nota: Esta función será llamada desde useReportOperations donde sí tenemos acceso a hooks
     // Por ahora, usar la función legacy para mantener compatibilidad
     return actualizarInventarioPorViaje(report);
   } catch (error) {

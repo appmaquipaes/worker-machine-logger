@@ -1,9 +1,11 @@
 
 import { Report, ReportType } from '@/types/report';
-import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
+import { useInventarioOperations } from '@/hooks/useInventarioOperations';
 
 export const useReportOperations = () => {
+  const { procesarReporteInventario } = useInventarioOperations();
+
   const createReport = (
     reports: Report[],
     machineId: string,
@@ -79,11 +81,14 @@ export const useReportOperations = () => {
       tarifaEncontrada,
     };
     
-    // Actualizar inventario si es un viaje desde acopio
+    // NUEVO: Procesar automáticamente el inventario usando el sistema mejorado
     if (newReport.reportType === 'Viajes') {
-      const inventarioActualizado = actualizarInventarioPorViaje(newReport);
-      if (inventarioActualizado) {
-        console.log('Inventario de acopio actualizado por nuevo viaje');
+      console.log('=== PROCESANDO INVENTARIO PARA NUEVO REPORTE ===');
+      const resultado = procesarReporteInventario(newReport);
+      if (resultado.exito) {
+        console.log('✓ Inventario actualizado automáticamente:', resultado.mensaje);
+      } else {
+        console.log('ℹ No se actualizó inventario:', resultado.mensaje);
       }
     }
 
