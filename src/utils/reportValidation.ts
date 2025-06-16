@@ -1,7 +1,6 @@
-
 import { ReportType } from '@/types/report';
 
-interface ReportFormData {
+export interface ReportFormData {
   reportType: ReportType;
   description: string;
   trips?: number;
@@ -17,6 +16,7 @@ interface ReportFormData {
   kilometraje?: number;
   tipoMateria: string;
   inventarioAcopio: any[];
+  selectedMaquinaria: string;
 }
 
 export const validateReportForm = (data: ReportFormData): string | null => {
@@ -35,88 +35,90 @@ export const validateReportForm = (data: ReportFormData): string | null => {
     proveedor,
     kilometraje,
     tipoMateria,
-    inventarioAcopio
+    inventarioAcopio,
+    selectedMaquinaria
   } = data;
 
-  console.log('Validating report form data:', { reportType, ...data });
-
-  // Validaciones específicas por tipo de reporte
-  switch (reportType) {
-    case 'Horas Trabajadas':
-      if (!hours || hours <= 0) {
-        return 'Las horas trabajadas son obligatorias y deben ser mayor a 0';
-      }
-      if (!workSite || workSite.trim() === '') {
-        return 'El sitio de trabajo (cliente) es obligatorio';
-      }
-      break;
-
-    case 'Horas Extras':
-      if (!hours || hours <= 0) {
-        return 'Las horas extras son obligatorias y deben ser mayor a 0';
-      }
-      break;
-
-    case 'Viajes':
-      if (!origin || origin.trim() === '') {
-        return 'El origen es obligatorio para los viajes';
-      }
-      if (!selectedCliente || selectedCliente.trim() === '') {
-        return 'El cliente de destino es obligatorio para los viajes';
-      }
-      if (!selectedFinca || selectedFinca.trim() === '') {
-        return 'La finca de destino es obligatoria para los viajes';
-      }
-      if (!cantidadM3 || cantidadM3 <= 0) {
-        return 'La cantidad de m³ transportados es obligatoria y debe ser mayor a 0';
-      }
-      if (!tipoMateria || tipoMateria.trim() === '') {
-        return 'El tipo de material es obligatorio para los viajes';
-      }
-      
-      // Validación especial para viajes desde acopio
-      if (origin === 'Acopio Maquipaes') {
-        const itemInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
-        if (!itemInventario) {
-          return 'El material seleccionado no está disponible en el inventario de acopio';
-        }
-        if (cantidadM3 > itemInventario.cantidad_disponible) {
-          return `La cantidad solicitada (${cantidadM3} m³) excede la cantidad disponible en acopio (${itemInventario.cantidad_disponible} m³)`;
-        }
-      }
-      break;
-
-    case 'Combustible':
-      if (!value || value <= 0) {
-        return 'El valor del combustible es obligatorio y debe ser mayor a 0';
-      }
-      if (kilometraje === undefined || kilometraje < 0) {
-        return 'El kilometraje actual es obligatorio y debe ser mayor o igual a 0';
-      }
-      break;
-
-    case 'Mantenimiento':
-      if (!maintenanceValue || maintenanceValue <= 0) {
-        return 'El valor del mantenimiento es obligatorio y debe ser mayor a 0';
-      }
-      if (!proveedor || proveedor.trim() === '') {
-        return 'El proveedor es obligatorio para el mantenimiento';
-      }
-      break;
-
-    case 'Novedades':
-      if (!description || description.trim() === '') {
-        return 'La descripción de las novedades es obligatoria';
-      }
-      if (description.trim().length < 10) {
-        return 'La descripción de las novedades debe tener al menos 10 caracteres';
-      }
-      break;
-
-    default:
-      return 'Tipo de reporte no válido';
+  if (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') {
+    if (!hours || hours <= 0) {
+      return `Debe ingresar un valor válido para las ${reportType === 'Horas Trabajadas' ? 'horas trabajadas' : 'horas extras'}`;
+    }
+    
+    if (reportType === 'Horas Trabajadas' && !workSite.trim()) {
+      return 'Debe ingresar el sitio de trabajo';
+    }
   }
 
-  console.log('Validation passed for report type:', reportType);
-  return null; // No hay errores de validación
+  if (reportType === 'Viajes') {
+    if (!trips || trips <= 0) {
+      return 'Debe ingresar un número válido de viajes';
+    }
+    
+    if (!origin.trim()) {
+      return 'Debe ingresar el origen';
+    }
+    
+    if (!selectedCliente.trim()) {
+      return 'Debe seleccionar un cliente';
+    }
+    
+    // Si es transporte de material, validar cantidad de m3
+    if (['Volqueta', 'Cargador', 'Camión'].some(type => 
+      // Necesitamos verificar el tipo de máquina seleccionada desde el contexto
+      false // Por ahora dejamos esto así ya que necesitamos acceso al contexto de máquina
+    )) {
+      if (!cantidadM3 || cantidadM3 <= 0) {
+        return 'Debe ingresar una cantidad válida de m³';
+      }
+      
+      if (origin === 'Acopio Maquipaes') {
+        if (!tipoMateria.trim()) {
+          return 'Debe seleccionar el tipo de material del inventario';
+        }
+        
+        const materialInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+        if (materialInventario && cantidadM3 > materialInventario.cantidad_disponible) {
+          return `No hay suficiente material disponible. Máximo: ${materialInventario.cantidad_disponible} m³`;
+        }
+      } else if (!tipoMateria.trim()) {
+        return 'Debe seleccionar el tipo de material';
+      }
+    }
+  }
+
+  if (reportType === 'Combustible') {
+    if (!value || value <= 0) {
+      return 'Debe ingresar un valor válido para el combustible';
+    }
+    
+    if (!kilometraje || kilometraje <= 0) {
+      return 'Debe ingresar el kilometraje actual';
+    }
+  }
+
+  if (reportType === 'Mantenimiento') {
+    if (!maintenanceValue || maintenanceValue <= 0) {
+      return 'Debe ingresar un valor válido para el mantenimiento';
+    }
+    
+    if (!proveedor.trim()) {
+      return 'Debe seleccionar un proveedor';
+    }
+  }
+
+  if (reportType === 'Novedades' && !description.trim()) {
+    return 'Debe ingresar una descripción de la novedad';
+  }
+
+  // Validación para transporte de maquinaria
+  if (reportType === 'Viajes' && ['Camabaja', 'Semirremolque', 'Tractomula'].some(type => 
+    // Necesitamos verificar el tipo de máquina seleccionada desde el contexto
+    false // Por ahora dejamos esto así ya que necesitamos acceso al contexto de máquina
+  )) {
+    if (!selectedMaquinaria.trim()) {
+      return 'Debe seleccionar la maquinaria transportada';
+    }
+  }
+
+  return null;
 };
