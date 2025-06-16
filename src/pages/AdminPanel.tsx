@@ -1,147 +1,245 @@
-
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, User, Building, Database, MapPin, Users, ShoppingCart, DollarSign } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { BarChart3, Settings, Users, Truck, Store, FileText, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
+import { loadUsers } from '@/models/Usuarios';
+import { loadClientes } from '@/models/Clientes';
+import { loadMaquinas } from '@/models/Maquinas';
+import { loadProveedores } from '@/models/Proveedores';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
+import { loadMateriales } from '@/models/Materiales';
+import UserManagementDialog from '@/components/admin/UserManagementDialog';
+import ClientManagementDialog from '@/components/admin/ClientManagementDialog';
+import MachineManagementDialog from '@/components/admin/MachineManagementDialog';
+import ProviderManagementDialog from '@/components/admin/ProviderManagementDialog';
+import InventoryManagementDialog from '@/components/admin/InventoryManagementDialog';
+import MaterialManagementDialog from '@/components/admin/MaterialManagementDialog';
+import ReconciliationDashboard from '@/components/reconciliation/ReconciliationDashboard';
 
 const AdminPanel = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
+
+  const [users, setUsers] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [machines, setMachines] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [materials, setMaterials] = useState([]);
+
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [isMachineDialogOpen, setIsMachineDialogOpen] = useState(false);
+  const [isProviderDialogOpen, setIsProviderDialogOpen] = useState(false);
+  const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+  const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-    
+
     if (user.role !== 'Administrador') {
+      toast.error('No tienes permisos para acceder a esta página');
       navigate('/dashboard');
     }
+
+    loadData();
   }, [user, navigate]);
 
-  const AdminOptions = [
-    {
-      title: 'Gestión de Usuarios',
-      description: 'Administrar operadores y sus permisos en el sistema',
-      icon: <User className="mobile-icon-large text-blue-600" />,
-      path: '/admin/users',
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      title: 'Gestión de Máquinas',
-      description: 'Administrar máquinas, volquetas y equipos',
-      icon: <Building className="mobile-icon-large text-orange-600" />,
-      path: '/admin/machines',
-      color: 'from-orange-500 to-orange-600'
-    },
-    {
-      title: 'Proveedores',
-      description: 'Administrar proveedores de material',
-      icon: <MapPin className="mobile-icon-large text-green-600" />,
-      path: '/admin/proveedores',
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      title: 'Clientes',
-      description: 'Gestionar clientes que reciben materiales',
-      icon: <Users className="mobile-icon-large text-purple-600" />,
-      path: '/admin/clientes',
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      title: 'Tarifas por Cliente',
-      description: 'Configurar tarifas de flete personalizadas por cliente y destino',
-      icon: <DollarSign className="mobile-icon-large text-amber-600" />,
-      path: '/admin/tarifas-cliente',
-      color: 'from-amber-500 to-yellow-500'
-    },
-    {
-      title: 'Gestión de Compras',
-      description: 'Registrar y gestionar compras de materiales y servicios',
-      icon: <Database className="mobile-icon-large text-indigo-600" />,
-      path: '/admin/compras',
-      color: 'from-indigo-500 to-indigo-600'
-    },
-    {
-      title: 'Ventas',
-      description: 'Gestionar ventas de material y servicios de transporte',
-      icon: <ShoppingCart className="mobile-icon-large text-teal-600" />,
-      path: '/admin/ventas',
-      color: 'from-teal-500 to-teal-600'
-    },
-    {
-      title: 'Inventario Acopio',
-      description: 'Ver y gestionar el inventario actual del acopio',
-      icon: <Database className="mobile-icon-large text-slate-600" />,
-      path: '/admin/inventario',
-      color: 'from-slate-500 to-slate-600'
-    },
-  ];
+  const loadData = async () => {
+    try {
+      const usersData = await loadUsers();
+      setUsers(usersData);
+
+      const clientsData = await loadClientes();
+      setClients(clientsData);
+
+      const machinesData = await loadMaquinas();
+      setMachines(machinesData);
+
+      const providersData = await loadProveedores();
+      setProviders(providersData);
+
+      const inventoryData = await loadInventarioAcopio();
+      setInventory(inventoryData);
+
+      const materialsData = await loadMateriales();
+      setMaterials(materialsData);
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      toast.error('Error al cargar datos. Por favor, intenta nuevamente.');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   if (!user || user.role !== 'Administrador') return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      {/* Header Corporativo */}
-      <div className="page-header">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-responsive-xl font-bold text-white mb-2">
-                Panel de Administración
-              </h1>
-              <p className="text-blue-100 text-responsive-base">
-                Bienvenido, {user?.name}. Gestiona todos los aspectos del sistema desde aquí.
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard')}
-              className="btn-outline-large bg-white/10 border-white/30 text-white hover:bg-white hover:text-blue-600"
-            >
-              <ArrowLeft className="mobile-icon" />
-              <span className="hidden sm:inline">Volver</span>
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Panel de Administración</h1>
+            <p className="text-muted-foreground">Gestiona usuarios, clientes, máquinas y más</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium">
+              {user.name} ({user.role})
+            </span>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              Cerrar Sesión
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Grid de opciones */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="action-grid gap-6">
-          {AdminOptions.map((option, index) => (
-            <Card key={index} className="corporate-card group hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className={`
-                  mx-auto mb-4 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl 
-                  bg-gradient-to-br ${option.color} 
-                  flex items-center justify-center shadow-lg
-                  group-hover:scale-110 transition-transform duration-300
-                `}>
-                  {option.icon}
-                </div>
-                <CardTitle className="text-responsive-lg font-bold text-slate-800">
-                  {option.title}
-                </CardTitle>
-                <CardDescription className="text-responsive-base text-slate-600 leading-relaxed">
-                  {option.description}
-                </CardDescription>
-              </CardHeader>
-              <CardFooter className="pt-0">
-                <Button
-                  variant="default"
-                  className="btn-primary-large w-full"
-                  onClick={() => navigate(option.path)}
-                >
-                  <span className="font-semibold">Acceder</span>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+      {/* Nuevo: Sección de Reconciliación */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Control de Consistencia de Datos
+          </CardTitle>
+          <CardDescription>
+            Verifica la integridad entre reportes, inventario y ventas automáticas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ReconciliationDashboard />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuarios
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona los usuarios del sistema
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsUserDialogOpen(true)}>
+              Administrar Usuarios
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Clientes
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clients.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona los clientes de la empresa
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsClientDialogOpen(true)}>
+              Administrar Clientes
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Máquinas
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{machines.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona las máquinas de la empresa
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsMachineDialogOpen(true)}>
+              Administrar Máquinas
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              Proveedores
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{providers.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona los proveedores de la empresa
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsProviderDialogOpen(true)}>
+              Administrar Proveedores
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Inventario Acopio
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inventory.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona el inventario de acopio
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsInventoryDialogOpen(true)}>
+              Administrar Inventario
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Materiales Volquetas
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{materials.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Gestiona los materiales de las volquetas
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => setIsMaterialDialogOpen(true)}>
+              Administrar Materiales
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
+      <UserManagementDialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen} onUsersUpdated={loadData} />
+      <ClientManagementDialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen} onClientsUpdated={loadData} />
+      <MachineManagementDialog open={isMachineDialogOpen} onOpenChange={setIsMachineDialogOpen} onMachinesUpdated={loadData} />
+      <ProviderManagementDialog open={isProviderDialogOpen} onOpenChange={setIsProviderDialogOpen} onProvidersUpdated={loadData} />
+      <InventoryManagementDialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen} onInventoryUpdated={loadData} />
+      <MaterialManagementDialog open={isMaterialDialogOpen} onOpenChange={setIsMaterialDialogOpen} onMaterialsUpdated={loadData} />
     </div>
   );
 };
