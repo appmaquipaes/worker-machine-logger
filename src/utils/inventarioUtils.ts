@@ -1,18 +1,20 @@
+
 import { loadInventarioAcopio, updateInventarioAfterViaje, saveInventarioAcopio } from '@/models/InventarioAcopio';
 import { Report } from '@/types/report';
+import { isAcopio } from '@/constants/inventario';
 
-// Función para actualizar inventario cuando se registra un viaje desde acopio
+// Función para actualizar inventario cuando se registra un viaje desde acopio (MANTENER COMPATIBILIDAD)
 export const actualizarInventarioPorViaje = (report: Report): boolean => {
   try {
-    console.log('=== VERIFICANDO VIAJE PARA INVENTARIO ===');
+    console.log('=== VERIFICANDO VIAJE PARA INVENTARIO (FUNCIÓN LEGACY) ===');
     console.log('Origen del viaje:', report.origin);
     console.log('Cantidad M3:', report.cantidadM3);
     console.log('Material (description):', report.description);
     console.log('Tipo de reporte:', report.reportType);
     
-    // Verificar si el origen es "Acopio Maquipaes" y tiene cantidad de material
-    if (report.origin === 'Acopio Maquipaes' && report.cantidadM3 && report.cantidadM3 > 0 && report.description) {
-      console.log('✓ Viaje desde Acopio Maquipaes detectado');
+    // Verificar si el origen es acopio y tiene cantidad de material
+    if (isAcopio(report.origin || '') && report.cantidadM3 && report.cantidadM3 > 0 && report.description) {
+      console.log('✓ Viaje desde Acopio detectado (función legacy)');
       
       const inventario = loadInventarioAcopio();
       console.log('Inventario actual antes del descuento:', inventario);
@@ -43,14 +45,26 @@ export const actualizarInventarioPorViaje = (report: Report): boolean => {
       console.log(`✓ Inventario actualizado: descontados ${report.cantidadM3} m³ de ${report.description}`);
       return true;
     } else {
-      console.log('✗ Viaje no aplica para descuento de inventario');
-      console.log('- Origen correcto?', report.origin === 'Acopio Maquipaes');
+      console.log('✗ Viaje no aplica para descuento de inventario (función legacy)');
+      console.log('- Origen correcto?', isAcopio(report.origin || ''));
       console.log('- Cantidad válida?', report.cantidadM3 && report.cantidadM3 > 0);
       console.log('- Material especificado?', !!report.description);
     }
     return false;
   } catch (error) {
-    console.error('Error actualizando inventario por viaje:', error);
+    console.error('Error actualizando inventario por viaje (función legacy):', error);
+    return false;
+  }
+};
+
+// Nueva función que usa el sistema mejorado
+export const procesarMovimientoInventario = async (report: Report): Promise<boolean> => {
+  try {
+    // Esta función será implementada para usar useInventarioOperations
+    // Por ahora, usar la función legacy para mantener compatibilidad
+    return actualizarInventarioPorViaje(report);
+  } catch (error) {
+    console.error('Error procesando movimiento de inventario:', error);
     return false;
   }
 };
