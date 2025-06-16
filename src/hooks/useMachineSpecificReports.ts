@@ -13,7 +13,7 @@ export const useMachineSpecificReports = () => {
     }
 
     // Solo vehículos de transporte específicos pueden registrar viajes
-    const transportVehicles = ['Volqueta', 'Cargador'];
+    const transportVehicles = ['Volqueta', 'Cargador', 'Camión', 'Camabaja', 'Semirremolque', 'Tractomula'];
     
     // Maquinaria pesada: pueden registrar todo excepto viajes
     const heavyMachinery = ['Retroexcavadora de Oruga', 'Retroexcavadora de Llanta', 'Bulldozer', 'Motoniveladora', 'Vibrocompactador', 'Paladraga'];
@@ -30,8 +30,8 @@ export const useMachineSpecificReports = () => {
     console.log('useMachineSpecificReports - is transport vehicle:', transportVehicles.includes(machine.type));
 
     if (transportVehicles.includes(machine.type)) {
-      // Solo volquetas y cargadores pueden usar viajes
-      const reportTypesWithTrips = [...allReportTypes, 'Viajes'];
+      // Solo vehículos de transporte pueden usar viajes
+      const reportTypesWithTrips: ReportType[] = [...allReportTypes, 'Viajes'];
       console.log('useMachineSpecificReports - returning types with Viajes:', reportTypesWithTrips);
       return reportTypesWithTrips;
     } else if (heavyMachinery.includes(machine.type)) {
@@ -39,7 +39,7 @@ export const useMachineSpecificReports = () => {
       console.log('useMachineSpecificReports - heavy machinery, no trips:', allReportTypes);
       return allReportTypes;
     } else {
-      // Para otros tipos de máquina (como camiones, etc.), no permitir viajes por ahora
+      // Para otros tipos de máquina, no permitir viajes por ahora
       console.log('useMachineSpecificReports - other machine type, no trips:', allReportTypes);
       return allReportTypes;
     }
