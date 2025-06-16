@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ReportType } from '@/types/report';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import {
 import { DatePicker } from '@/components/DatePicker';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 import MaquinariaSelector from '@/components/MaquinariaSelector';
+import MaterialSelector from '@/components/report-form/MaterialSelector';
 import { useMachine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { 
@@ -134,12 +136,11 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
   const shouldShowOriginDestination = reportType === 'Viajes';
   const shouldShowM3Input = reportType === 'Viajes' && isMaterialTransportVehicle(selectedMachine);
-  const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
-  const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
   const shouldShowMaquinariaSelector = reportType === 'Viajes' && isMachineryTransportVehicle(selectedMachine);
   const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowProveedorInput = reportType === 'Mantenimiento';
   const shouldShowDescriptionInput = reportType === 'Novedades';
+  const shouldShowMaterialSelector = reportType === 'Viajes' && isMaterialTransportVehicle(selectedMachine);
 
   return (
     <>
@@ -264,46 +265,14 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         />
       )}
 
-      {shouldShowInventoryMaterialSelect && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
-            <Label htmlFor="material-inventario" className="text-lg">Material del Inventario</Label>
-          </div>
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el material del inventario" />
-            </SelectTrigger>
-            <SelectContent>
-              {inventarioAcopio.map((item) => (
-                <SelectItem key={item.id} value={item.tipo_material}>
-                  {item.tipo_material} ({item.cantidad_disponible} m³ disponibles)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {shouldShowTipoMateriaInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
-            <Label htmlFor="tipo-materia" className="text-lg">Tipo de Materia</Label>
-          </div>
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el tipo de materia" />
-            </SelectTrigger>
-            <SelectContent>
-              {tiposMaterial.map((tipo) => (
-                <SelectItem key={tipo} value={tipo}>
-                  {tipo}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {shouldShowMaterialSelector && (
+        <MaterialSelector
+          origin={origin}
+          tipoMateria={tipoMateria}
+          setTipoMateria={setTipoMateria}
+          tiposMaterial={tiposMaterial}
+          inventarioAcopio={inventarioAcopio}
+        />
       )}
 
       {shouldShowM3Input && (
@@ -312,7 +281,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
             <Truck size={24} />
             <Label htmlFor="cantidad-m3" className="text-lg">
               Cantidad de m³ Transportados
-              {shouldShowInventoryMaterialSelect && tipoMateria && (
+              {origin === 'Acopio Maquipaes' && tipoMateria && (
                 <span className="text-sm text-muted-foreground ml-2">
                   (Disponibles: {inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible || 0} m³)
                 </span>
@@ -324,7 +293,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
             type="number"
             min="0.1"
             step="0.1"
-            max={shouldShowInventoryMaterialSelect && tipoMateria ? 
+            max={origin === 'Acopio Maquipaes' && tipoMateria ? 
               inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible : undefined}
             placeholder="Ej: 6"
             value={cantidadM3 === undefined ? '' : cantidadM3}

@@ -5,7 +5,8 @@ import { useMachine } from '@/context/MachineContext';
 import { useReport } from '@/context/ReportContext';
 import { ReportType } from '@/types/report';
 import { toast } from "sonner";
-import { validateReportForm } from '@/utils/reportValidation';
+import { useReportFormValidation } from './useReportFormValidation';
+import { createReportData } from '@/utils/reportFormUtils';
 
 interface UseReportFormSubmitProps {
   reportType: ReportType;
@@ -33,6 +34,7 @@ interface UseReportFormSubmitProps {
 export const useReportFormSubmit = (props: UseReportFormSubmitProps) => {
   const { selectedMachine } = useMachine();
   const { addReport } = useReport();
+  const { validateForm } = useReportFormValidation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +46,7 @@ export const useReportFormSubmit = (props: UseReportFormSubmitProps) => {
     
     props.setIsSubmitting(true);
     
-    const validationError = validateReportForm({
+    const validationError = validateForm({
       reportType: props.reportType,
       description: props.description,
       trips: props.trips,
@@ -71,48 +73,41 @@ export const useReportFormSubmit = (props: UseReportFormSubmitProps) => {
     }
     
     try {
-      const reportDescription = props.reportType === 'Novedades' ? props.description : '';
-      const finalDestination = props.reportType === 'Viajes' 
-        ? `${props.selectedCliente} - ${props.selectedFinca}`
-        : props.selectedCliente || '';
-      
-      // Crear el reporte con el tipo de materia incluido
-      const newReport = {
-        machineId: selectedMachine.id,
-        machineName: selectedMachine.name,
-        reportType: props.reportType,
-        description: reportDescription,
-        reportDate: props.reportDate,
-        trips: props.reportType === 'Viajes' ? props.trips : undefined,
-        hours: (props.reportType === 'Horas Trabajadas' || props.reportType === 'Horas Extras') ? props.hours : undefined,
-        value: props.reportType === 'Combustible' ? props.value : 
-               props.reportType === 'Mantenimiento' ? props.maintenanceValue : undefined,
-        workSite: props.reportType === 'Horas Trabajadas' ? props.workSite : undefined,
-        origin: props.reportType === 'Viajes' ? props.origin : undefined,
-        destination: props.reportType === 'Viajes' ? finalDestination : undefined,
-        cantidadM3: props.reportType === 'Viajes' ? props.cantidadM3 : undefined,
-        proveedor: props.reportType === 'Mantenimiento' ? props.proveedor : undefined,
-        kilometraje: props.reportType === 'Combustible' ? props.kilometraje : undefined,
-        tipoMateria: props.reportType === 'Viajes' ? props.tipoMateria : undefined
-      };
+      const reportData = createReportData(
+        props.reportType,
+        props.description,
+        props.reportDate,
+        props.trips,
+        props.hours,
+        props.value,
+        props.workSite,
+        props.origin,
+        props.selectedCliente,
+        props.selectedFinca,
+        props.maintenanceValue,
+        props.cantidadM3,
+        props.proveedor,
+        props.kilometraje,
+        props.tipoMateria,
+        props.selectedMaquinaria
+      );
 
       // Usar addReport del contexto que ya maneja la creación automática de ventas
       addReport(
         selectedMachine.id,
         selectedMachine.name,
-        props.reportType,
-        reportDescription,
-        props.reportDate,
-        props.reportType === 'Viajes' ? props.trips : undefined,
-        (props.reportType === 'Horas Trabajadas' || props.reportType === 'Horas Extras') ? props.hours : undefined,
-        props.reportType === 'Combustible' ? props.value : 
-        props.reportType === 'Mantenimiento' ? props.maintenanceValue : undefined,
-        props.reportType === 'Horas Trabajadas' ? props.workSite : undefined,
-        props.reportType === 'Viajes' ? props.origin : undefined,
-        props.reportType === 'Viajes' ? finalDestination : undefined,
-        props.reportType === 'Viajes' ? props.cantidadM3 : undefined,
-        props.reportType === 'Mantenimiento' ? props.proveedor : undefined,
-        props.reportType === 'Combustible' ? props.kilometraje : undefined
+        reportData.reportType,
+        reportData.description,
+        reportData.reportDate,
+        reportData.trips,
+        reportData.hours,
+        reportData.value,
+        reportData.workSite,
+        reportData.origin,
+        reportData.destination,
+        reportData.cantidadM3,
+        reportData.proveedor,
+        reportData.kilometraje
       );
       
       props.setLastSubmitSuccess(true);
