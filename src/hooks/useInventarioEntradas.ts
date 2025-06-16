@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { ResultadoOperacionInventario, MovimientoInventario } from '@/types/inventario';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
@@ -17,9 +16,10 @@ export const useInventarioEntradas = () => {
     reporteId?: string,
     maquinaId?: string,
     maquinaNombre?: string,
-    usuario?: string
+    usuario?: string,
+    maquinaTipo?: string
   ): ResultadoOperacionInventario => {
-    const validacion = validarOperacion(material, cantidad, 'entrada');
+    const validacion = validarOperacion(material, cantidad, 'entrada', maquinaTipo);
     
     if (!validacion.esValida) {
       return { exito: false, mensaje: validacion.mensaje || 'Error de validación' };
@@ -70,7 +70,7 @@ export const useInventarioEntradas = () => {
         maquinaId,
         maquinaNombre,
         usuario,
-        observaciones: `Entrada de material desde ${origen}`
+        observaciones: `Entrada de material desde ${origen}${maquinaTipo ? ` (${maquinaTipo})` : ''}`
       };
 
       saveMovimiento(movimiento);

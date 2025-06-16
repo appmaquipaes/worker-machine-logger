@@ -28,6 +28,11 @@ export const useInventarioReportes = () => {
     // Determinar el material a procesar
     const material = report.description || 'Material sin especificar';
 
+    // Obtener el tipo de máquina del nombre de la máquina (aproximación)
+    const maquinaTipo = report.machineName?.includes('Cargador') ? 'Cargador' :
+                      report.machineName?.includes('Volqueta') ? 'Volqueta' :
+                      report.machineName?.includes('Camión') ? 'Camión' : undefined;
+
     if (esDestinoAcopio && !esOrigenAcopio) {
       // ENTRADA: El destino es acopio
       console.log('→ Procesando ENTRADA al acopio');
@@ -38,7 +43,8 @@ export const useInventarioReportes = () => {
         report.id,
         report.machineId,
         report.machineName,
-        report.userName
+        report.userName,
+        maquinaTipo
       );
     } else if (esOrigenAcopio && !esDestinoAcopio) {
       // SALIDA: El origen es acopio
@@ -50,7 +56,8 @@ export const useInventarioReportes = () => {
         report.id,
         report.machineId,
         report.machineName,
-        report.userName
+        report.userName,
+        maquinaTipo
       );
     } else {
       console.log('→ No aplica para inventario (ni entrada ni salida válida)');

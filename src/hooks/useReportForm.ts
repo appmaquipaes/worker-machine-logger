@@ -62,7 +62,6 @@ export const useReportForm = () => {
     }
   }, [user, selectedMachine, navigate]);
 
-  
   const handleClienteChangeForWorkSite = (cliente: string) => {
     setWorkSite(cliente);
   };
@@ -135,7 +134,8 @@ export const useReportForm = () => {
       kilometraje,
       tipoMateria,
       inventarioAcopio,
-      selectedMaquinaria
+      selectedMaquinaria,
+      machineType: selectedMachine.type
     });
     
     if (validationError) {
@@ -194,7 +194,6 @@ export const useReportForm = () => {
   };
 
   return {
-    // State
     reportType, setReportType,
     description, setDescription,
     trips, setTrips,
@@ -215,18 +214,15 @@ export const useReportForm = () => {
     isSubmitting,
     lastSubmitSuccess,
     
-    // Data
     proveedores,
     tiposMaterial,
     inventarioAcopio,
     
-    // Handlers
     handleClienteChangeForWorkSite,
     handleClienteChangeForDestination,
     handleFincaChangeForDestination,
     handleSubmit,
     
-    // Computed
     user,
     selectedMachine
   };
