@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ReportType } from '@/types/report';
@@ -26,6 +25,8 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
   selectedMachine
 }) => {
   const { getAvailableReportTypes } = useMachineSpecificReports();
+
+  console.log('ReportTypeSelector - selectedMachine:', selectedMachine);
 
   const allReportTypes = [
     { 
@@ -98,9 +99,13 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
 
   // Obtener tipos de reporte disponibles según la máquina seleccionada
   const availableReportTypeStrings = getAvailableReportTypes(selectedMachine);
+  console.log('ReportTypeSelector - availableReportTypeStrings:', availableReportTypeStrings);
+  
   const availableReportTypes = allReportTypes.filter(reportTypeItem => 
     availableReportTypeStrings.includes(reportTypeItem.type)
   );
+  
+  console.log('ReportTypeSelector - filtered availableReportTypes:', availableReportTypes.map(rt => rt.type));
 
   return (
     <div className="space-y-8">
