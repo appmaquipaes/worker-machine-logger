@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Truck, Wrench, Building, Loader2, Trash2 } from 'lucide-react';
 
@@ -52,7 +53,7 @@ export const getMachineImage = (type: string) => {
     case 'Paladraga':
       return "/lovable-uploads/8db85654-d7b6-4c26-8b61-bb3258fe0971.png";
     case 'Escombrera':
-      return "/lovable-uploads/dda7d9f6-a79e-4af4-b641-83fb6994e590.png";
+      return "/lovable-uploads/e64fa6e2-04a0-40f6-8842-aeee86e1cb63.png";
     default:
       return "/lovable-uploads/976ad6e4-5509-4133-8fc5-949f8420ae1e.png";
   }
