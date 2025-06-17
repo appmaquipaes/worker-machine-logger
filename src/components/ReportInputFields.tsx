@@ -1,33 +1,20 @@
+
 import React from 'react';
 import { ReportType } from '@/types/report';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { DatePicker } from '@/components/DatePicker';
-import ClienteFincaSelector from '@/components/ClienteFincaSelector';
+import { Machine } from '@/context/MachineContext';
 import MaquinariaSelector from '@/components/MaquinariaSelector';
+import ReportDateInput from '@/components/report-input-fields/ReportDateInput';
+import WorkSiteInput from '@/components/report-input-fields/WorkSiteInput';
+import HoursInput from '@/components/report-input-fields/HoursInput';
+import TripsInput from '@/components/report-input-fields/TripsInput';
+import OriginDestinationInputs from '@/components/report-input-fields/OriginDestinationInputs';
+import MaterialInputs from '@/components/report-input-fields/MaterialInputs';
+import FuelInputs from '@/components/report-input-fields/FuelInputs';
+import MaintenanceInputs from '@/components/report-input-fields/MaintenanceInputs';
+import NovedadesInput from '@/components/report-input-fields/NovedadesInput';
+import EscombreraInputs from '@/components/report-input-fields/EscombreraInputs';
 import { useMachine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
-import { 
-  Clock, 
-  AlarmClock, 
-  Wrench as ToolIcon, 
-  Fuel, 
-  Info, 
-  Truck,
-  Calendar,
-  MapPin,
-  Gauge,
-  Users,
-  Hash
-} from 'lucide-react';
 
 interface ReportInputFieldsProps {
   reportType: ReportType;
@@ -109,383 +96,97 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   setSelectedMaquinaria = () => {}
 }) => {
   const { selectedMachine } = useMachine();
-  const { isMachineryTransportVehicle, isMaterialTransportVehicle, isEscombrera } = useMachineSpecificReports();
-
-  const getReportTypeIcon = (type: ReportType) => {
-    switch (type) {
-      case 'Horas Trabajadas':
-        return <Clock size={28} />;
-      case 'Horas Extras':
-        return <AlarmClock size={28} />;
-      case 'Mantenimiento':
-        return <ToolIcon size={28} />;
-      case 'Combustible':
-        return <Fuel size={28} />;
-      case 'Viajes':
-        return <Truck size={28} />;
-      case 'Novedades':
-        return <Info size={28} />;
-      default:
-        return <Info size={28} />;
-    }
-  };
-
-  const shouldShowHoursInput = (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras');
-  const shouldShowTripsInput = reportType === 'Viajes';
-  const shouldShowValueInput = reportType === 'Combustible';
-  const shouldShowWorkSiteInput = reportType === 'Horas Trabajadas';
-  const shouldShowOriginDestination = reportType === 'Viajes';
-  const shouldShowM3Input = reportType === 'Viajes' && isMaterialTransportVehicle(selectedMachine);
-  const shouldShowInventoryMaterialSelect = reportType === 'Viajes' && origin === 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
-  const shouldShowTipoMateriaInput = reportType === 'Viajes' && origin !== 'Acopio Maquipaes' && isMaterialTransportVehicle(selectedMachine);
-  const shouldShowMaquinariaSelector = reportType === 'Viajes' && isMachineryTransportVehicle(selectedMachine);
-  const shouldShowKilometrajeInput = reportType === 'Combustible';
-  const shouldShowProveedorInput = reportType === 'Mantenimiento';
-  const shouldShowDescriptionInput = reportType === 'Novedades';
-  const shouldShowEscombreraFields = reportType === 'Recepción Escombrera' && isEscombrera(selectedMachine);
+  const { isMachineryTransportVehicle } = useMachineSpecificReports();
 
   return (
     <>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Calendar size={24} />
-          <Label htmlFor="report-date" className="text-lg">Fecha del Reporte</Label>
-        </div>
-        <DatePicker date={reportDate} setDate={setReportDate} />
-      </div>
+      <ReportDateInput
+        reportDate={reportDate}
+        setReportDate={setReportDate}
+      />
 
-      {shouldShowWorkSiteInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin size={24} />
-            <Label className="text-lg">Cliente del Sitio de Trabajo</Label>
-          </div>
-          <ClienteFincaSelector
-            selectedCliente={workSite}
-            selectedFinca=""
-            onClienteChange={onClienteChangeForWorkSite}
-            onFincaChange={() => {}}
-          />
-        </div>
-      )}
+      <WorkSiteInput
+        reportType={reportType}
+        workSite={workSite}
+        onClienteChangeForWorkSite={onClienteChangeForWorkSite}
+      />
 
-      {shouldShowHoursInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            {reportType === 'Horas Trabajadas' ? <Clock size={24} /> : <AlarmClock size={24} />}
-            <Label htmlFor="hours" className="text-lg">
-              {reportType === 'Horas Trabajadas' ? 'Horas Trabajadas' : 'Horas Extras'}
-            </Label>
-          </div>
-          <Input 
-            id="hours"
-            type="number"
-            min="0.1"
-            step="0.1"
-            placeholder="Ej: 8.5"
-            value={hours === undefined ? '' : hours}
-            onChange={(e) => setHours(parseFloat(e.target.value) || undefined)}
-            className="text-lg p-6"
-            required
-          />
-        </div>
-      )}
+      <HoursInput
+        reportType={reportType}
+        hours={hours}
+        setHours={setHours}
+      />
 
-      {shouldShowTripsInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Truck size={24} />
-            <Label htmlFor="trips" className="text-lg">Número de Viajes</Label>
-          </div>
-          <Input 
-            id="trips"
-            type="number"
-            min="1"
-            placeholder="Ej: 5"
-            value={trips === undefined ? '' : trips}
-            onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
-            className="text-lg p-6"
-          />
-        </div>
-      )}
+      <TripsInput
+        reportType={reportType}
+        trips={trips}
+        setTrips={setTrips}
+      />
 
-      {shouldShowOriginDestination && (
-        <>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin size={24} />
-              <Label htmlFor="origin" className="text-lg">
-                {isMachineryTransportVehicle(selectedMachine) ? 'Origen (Punto de Recogida)' : 'Origen (Proveedor)'}
-              </Label>
-            </div>
-            {isMachineryTransportVehicle(selectedMachine) ? (
-              <Input 
-                id="origin"
-                type="text"
-                placeholder="Ej: Patio de máquinas, Obra anterior, etc."
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                className="text-lg p-6"
-                required
-              />
-            ) : (
-              <Select onValueChange={setOrigin} value={origin}>
-                <SelectTrigger className="text-lg p-6">
-                  <SelectValue placeholder="Selecciona el origen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {proveedores.map((prov) => (
-                    <SelectItem key={prov.id} value={prov.nombre}>
-                      {prov.nombre} - {prov.ciudad}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin size={24} />
-              <Label className="text-lg">Destino (Cliente y Finca)</Label>
-            </div>
-            <ClienteFincaSelector
-              selectedCliente={selectedCliente}
-              selectedFinca={selectedFinca}
-              onClienteChange={onClienteChangeForDestination}
-              onFincaChange={onFincaChangeForDestination}
-              autoSetDestination={true}
-            />
-          </div>
-        </>
-      )}
+      <OriginDestinationInputs
+        reportType={reportType}
+        origin={origin}
+        setOrigin={setOrigin}
+        selectedCliente={selectedCliente}
+        selectedFinca={selectedFinca}
+        onClienteChangeForDestination={onClienteChangeForDestination}
+        onFincaChangeForDestination={onFincaChangeForDestination}
+        proveedores={proveedores}
+        selectedMachine={selectedMachine}
+      />
 
-      {shouldShowMaquinariaSelector && (
+      {reportType === 'Viajes' && isMachineryTransportVehicle(selectedMachine) && (
         <MaquinariaSelector
           selectedMaquinaria={selectedMaquinaria}
           onMaquinariaChange={setSelectedMaquinaria}
         />
       )}
 
-      {shouldShowInventoryMaterialSelect && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
-            <Label htmlFor="material-inventario" className="text-lg">Material del Inventario</Label>
-          </div>
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el material del inventario" />
-            </SelectTrigger>
-            <SelectContent>
-              {inventarioAcopio.map((item) => (
-                <SelectItem key={item.id} value={item.tipo_material}>
-                  {item.tipo_material} ({item.cantidad_disponible} m³ disponibles)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <MaterialInputs
+        reportType={reportType}
+        origin={origin}
+        tipoMateria={tipoMateria}
+        setTipoMateria={setTipoMateria}
+        cantidadM3={cantidadM3}
+        setCantidadM3={setCantidadM3}
+        tiposMaterial={tiposMaterial}
+        inventarioAcopio={inventarioAcopio}
+        selectedMachine={selectedMachine}
+      />
 
-      {shouldShowTipoMateriaInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
-            <Label htmlFor="tipo-materia" className="text-lg">Tipo de Materia</Label>
-          </div>
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el tipo de materia" />
-            </SelectTrigger>
-            <SelectContent>
-              {tiposMaterial.map((tipo) => (
-                <SelectItem key={tipo} value={tipo}>
-                  {tipo}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <FuelInputs
+        reportType={reportType}
+        value={value}
+        setValue={setValue}
+        kilometraje={kilometraje}
+        setKilometraje={setKilometraje}
+      />
 
-      {shouldShowM3Input && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Truck size={24} />
-            <Label htmlFor="cantidad-m3" className="text-lg">
-              Cantidad de m³ Transportados
-              {shouldShowInventoryMaterialSelect && tipoMateria && (
-                <span className="text-sm text-muted-foreground ml-2">
-                  (Disponibles: {inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible || 0} m³)
-                </span>
-              )}
-            </Label>
-          </div>
-          <Input 
-            id="cantidad-m3"
-            type="number"
-            min="0.1"
-            step="0.1"
-            max={shouldShowInventoryMaterialSelect && tipoMateria ? 
-              inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible : undefined}
-            placeholder="Ej: 6"
-            value={cantidadM3 === undefined ? '' : cantidadM3}
-            onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
-            className="text-lg p-6"
-            required
-          />
-        </div>
-      )}
+      <MaintenanceInputs
+        reportType={reportType}
+        maintenanceValue={maintenanceValue}
+        setMaintenanceValue={setMaintenanceValue}
+        proveedor={proveedor}
+        setProveedor={setProveedor}
+        proveedores={proveedores}
+      />
 
-      {shouldShowKilometrajeInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Gauge size={24} />
-            <Label htmlFor="kilometraje" className="text-lg">Kilometraje Actual</Label>
-          </div>
-          <Input 
-            id="kilometraje"
-            type="number"
-            min="0"
-            placeholder="Ej: 150000"
-            value={kilometraje === undefined ? '' : kilometraje}
-            onChange={(e) => setKilometraje(parseFloat(e.target.value) || undefined)}
-            className="text-lg p-6"
-            required
-          />
-        </div>
-      )}
+      <NovedadesInput
+        reportType={reportType}
+        description={description}
+        setDescription={setDescription}
+      />
 
-      {shouldShowValueInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Fuel size={24} />
-            <Label htmlFor="value" className="text-lg">Valor del Combustible</Label>
-          </div>
-          <Input 
-            id="value"
-            type="number"
-            min="1"
-            placeholder="Ej: 50000"
-            value={value === undefined ? '' : value}
-            onChange={(e) => setValue(parseFloat(e.target.value) || undefined)}
-            className="text-lg p-6"
-            required
-          />
-        </div>
-      )}
-
-      {reportType === 'Mantenimiento' && (
-        <>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <ToolIcon size={24} />
-              <Label htmlFor="maintenance-value" className="text-lg">Valor del Mantenimiento</Label>
-            </div>
-            <Input 
-              id="maintenance-value"
-              type="number"
-              min="1"
-              placeholder="Ej: 100000"
-              value={maintenanceValue === undefined ? '' : maintenanceValue}
-              onChange={(e) => setMaintenanceValue(parseFloat(e.target.value) || undefined)}
-              className="text-lg p-6"
-              required
-            />
-          </div>
-
-          {shouldShowProveedorInput && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <ToolIcon size={24} />
-                <Label htmlFor="proveedor" className="text-lg">Proveedor</Label>
-              </div>
-              <Select onValueChange={setProveedor} value={proveedor}>
-                <SelectTrigger className="text-lg p-6">
-                  <SelectValue placeholder="Selecciona un proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {proveedores.map((prov) => (
-                    <SelectItem key={prov.id} value={prov.nombre}>
-                      {prov.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {shouldShowDescriptionInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            {getReportTypeIcon(reportType)}
-            <Label htmlFor="description" className="text-lg">Novedades</Label>
-          </div>
-          
-          <Textarea
-            id="description"
-            placeholder="Describe las novedades encontradas"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="text-lg p-4"
-            required
-          />
-        </div>
-      )}
-
-      {shouldShowEscombreraFields && (
-        <>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Users size={24} />
-              <Label className="text-lg">Cliente</Label>
-            </div>
-            <ClienteFincaSelector
-              selectedCliente={selectedCliente}
-              selectedFinca=""
-              onClienteChange={onClienteChangeForDestination}
-              onFincaChange={() => {}}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Truck size={24} />
-              <Label htmlFor="tipo-volqueta" className="text-lg">Tipo de Volqueta</Label>
-            </div>
-            <Select onValueChange={(value) => setTipoMateria(value)} value={tipoMateria}>
-              <SelectTrigger className="text-lg p-6">
-                <SelectValue placeholder="Selecciona el tipo de volqueta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sencilla">Volqueta Sencilla</SelectItem>
-                <SelectItem value="Doble Troque">Volqueta Doble Troque</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Hash size={24} />
-              <Label htmlFor="cantidad-volquetas" className="text-lg">Cantidad de Volquetas</Label>
-            </div>
-            <Input 
-              id="cantidad-volquetas"
-              type="number"
-              min="1"
-              placeholder="Ej: 5"
-              value={trips === undefined ? '' : trips}
-              onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
-              className="text-lg p-6"
-              required
-            />
-          </div>
-        </>
-      )}
+      <EscombreraInputs
+        reportType={reportType}
+        selectedCliente={selectedCliente}
+        onClienteChangeForDestination={onClienteChangeForDestination}
+        tipoMateria={tipoMateria}
+        setTipoMateria={setTipoMateria}
+        trips={trips}
+        setTrips={setTrips}
+        selectedMachine={selectedMachine}
+      />
     </>
   );
 };
