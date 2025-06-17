@@ -10,6 +10,7 @@ export interface Venta {
   forma_pago: string;
   observaciones?: string;
   total: number;
+  total_venta: number;
   detalles: DetalleVenta[];
   fechaRegistro: string;
 }
@@ -65,6 +66,7 @@ export const createVenta = (
     forma_pago,
     observaciones,
     total: 0,
+    total_venta: 0,
     detalles: [],
     fechaRegistro: new Date().toISOString()
   };
@@ -88,7 +90,7 @@ export const createDetalleVenta = (
 
 export const updateVentaTotal = (venta: Venta): Venta => {
   const total = venta.detalles.reduce((sum, detalle) => sum + detalle.subtotal, 0);
-  return { ...venta, total };
+  return { ...venta, total, total_venta: total };
 };
 
 export const loadVentas = (): Venta[] => {
