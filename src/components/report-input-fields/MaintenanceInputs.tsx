@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ToolIcon } from 'lucide-react';
+import { Tool } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,7 +31,7 @@ const MaintenanceInputs: React.FC<MaintenanceInputsProps> = ({
     <>
       <div className="space-y-2">
         <div className="flex items-center gap-2 mb-2">
-          <ToolIcon size={24} />
+          <Tool size={24} />
           <Label htmlFor="maintenance-value" className="text-lg">Valor del Mantenimiento</Label>
         </div>
         <Input 
@@ -48,7 +48,7 @@ const MaintenanceInputs: React.FC<MaintenanceInputsProps> = ({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2 mb-2">
-          <ToolIcon size={24} />
+          <Tool size={24} />
           <Label htmlFor="proveedor" className="text-lg">Proveedor</Label>
         </div>
         <Select onValueChange={setProveedor} value={proveedor}>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Truck, ToolIcon } from 'lucide-react';
+import { Truck, Tool } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -45,7 +45,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
       {shouldShowInventoryMaterialSelect && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
+            <Tool size={24} />
             <Label htmlFor="material-inventario" className="text-lg">Material del Inventario</Label>
           </div>
           <Select onValueChange={setTipoMateria} value={tipoMateria}>
@@ -66,7 +66,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
       {shouldShowTipoMateriaInput && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
-            <ToolIcon size={24} />
+            <Tool size={24} />
             <Label htmlFor="tipo-materia" className="text-lg">Tipo de Materia</Label>
           </div>
           <Select onValueChange={setTipoMateria} value={tipoMateria}>
