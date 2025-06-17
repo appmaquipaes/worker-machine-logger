@@ -30,6 +30,7 @@ const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
     'Camabaja',
     'Volqueta',
     'Motoniveladora',
+    'Escombrera',
     'Otro',
   ];
 

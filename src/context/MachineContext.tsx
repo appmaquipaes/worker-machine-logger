@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export type Machine = {
   id: string;
   name: string;
-  type: 'Retroexcavadora de Oruga' | 'Retroexcavadora de Llanta' | 'Cargador' | 'Vibrocompactador' | 'Paladraga' | 'Bulldozer' | 'Camabaja' | 'Volqueta' | 'Camión' | 'Semirremolque' | 'Tractomula' | 'Motoniveladora' | 'Otro';
+  type: 'Retroexcavadora de Oruga' | 'Retroexcavadora de Llanta' | 'Cargador' | 'Vibrocompactador' | 'Paladraga' | 'Bulldozer' | 'Camabaja' | 'Volqueta' | 'Camión' | 'Semirremolque' | 'Tractomula' | 'Motoniveladora' | 'Escombrera' | 'Otro';
   plate?: string;
   imageUrl?: string;
   status: 'Disponible' | 'En Uso' | 'Mantenimiento';

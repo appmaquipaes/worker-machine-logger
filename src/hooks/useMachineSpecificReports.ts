@@ -1,4 +1,3 @@
-
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
 
@@ -17,7 +16,8 @@ export const useMachineSpecificReports = () => {
 
   const isEscombrera = (machine?: Machine): boolean => {
     if (!machine) return false;
-    return machine.name.toLowerCase().includes('escombrera') || machine.type.toLowerCase().includes('escombrera');
+    // Ahora detecta por tipo específico o por nombre que contenga 'escombrera'
+    return machine.type === 'Escombrera' || machine.name.toLowerCase().includes('escombrera');
   };
 
   const getAvailableReportTypes = (machine?: Machine): ReportType[] => {
