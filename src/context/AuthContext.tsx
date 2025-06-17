@@ -20,25 +20,37 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  
+  // Siempre llamar useAuthOperations en el mismo orden
   const authOperations = useAuthOperations();
 
   // Cargar usuario del almacenamiento local al iniciar
   useEffect(() => {
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
+    try {
+      const storedUser = getStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+    } catch (error) {
+      console.error('Error loading stored user:', error);
+    } finally {
+      setIsInitialLoading(false);
     }
-    setIsInitialLoading(false);
   }, []);
 
   // Wrapper optimizado para login que actualiza el estado del usuario
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const success = await authOperations.login(email, password);
-    if (success) {
-      const updatedUser = getStoredUser();
-      setUser(updatedUser);
+    try {
+      const success = await authOperations.login(email, password);
+      if (success) {
+        const updatedUser = getStoredUser();
+        setUser(updatedUser);
+      }
+      return success;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return success;
   }, [authOperations]);
 
   // Wrapper optimizado para register
@@ -49,29 +61,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role: 'Trabajador' | 'Administrador' | 'Operador',
     assignedMachines?: string[]
   ): Promise<boolean> => {
-    const success = await authOperations.register(name, email, password, role, assignedMachines);
-    if (success && !user) {
-      // Si no hay usuario autenticado, iniciar sesión automáticamente
-      return await login(email, password);
+    try {
+      const success = await authOperations.register(name, email, password, role, assignedMachines);
+      if (success && !user) {
+        // Si no hay usuario autenticado, iniciar sesión automáticamente
+        return await login(email, password);
+      }
+      return success;
+    } catch (error) {
+      console.error('Register error:', error);
+      return false;
     }
-    return success;
   }, [authOperations, user, login]);
 
   // Wrapper optimizado para updateUserMachines
   const updateUserMachines = useCallback(async (userId: string, machineIds: string[]): Promise<boolean> => {
-    const success = await authOperations.updateUserMachines(userId, machineIds);
-    if (success && user && user.id === userId) {
-      const updatedUser = { ...user, assignedMachines: machineIds };
-      setUser(updatedUser);
-      setStoredUser(updatedUser);
+    try {
+      const success = await authOperations.updateUserMachines(userId, machineIds);
+      if (success && user && user.id === userId) {
+        const updatedUser = { ...user, assignedMachines: machineIds };
+        setUser(updatedUser);
+        setStoredUser(updatedUser);
+      }
+      return success;
+    } catch (error) {
+      console.error('Update user machines error:', error);
+      return false;
     }
-    return success;
   }, [authOperations, user]);
 
   // Wrapper optimizado para logout
   const logout = useCallback(() => {
-    authOperations.logout();
-    setUser(null);
+    try {
+      authOperations.logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }, [authOperations]);
 
   // Memoizar el valor del contexto para evitar re-renders innecesarios
