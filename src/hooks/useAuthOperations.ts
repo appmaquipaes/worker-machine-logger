@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from "sonner";
 import { User, StoredUser } from '@/types/auth';
 import { 
@@ -17,15 +17,34 @@ import {
   generateResetCode 
 } from '@/utils/authValidation';
 
-export const useAuthOperations = () => {
-  const [isLoading, setIsLoading] = useState(false);
+interface AuthOperationsState {
+  isLoading: boolean;
+  error: string | null;
+}
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
+export const useAuthOperations = () => {
+  const [state, setState] = useState<AuthOperationsState>({
+    isLoading: false,
+    error: null
+  });
+
+  const setLoading = useCallback((loading: boolean) => {
+    setState(prev => ({ ...prev, isLoading: loading }));
+  }, []);
+
+  const setError = useCallback((error: string | null) => {
+    setState(prev => ({ ...prev, error }));
+  }, []);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
     try {
       const foundUser = validateUserCredentials(email, password);
       
       if (!foundUser) {
+        setError("Credenciales incorrectas");
         toast.error("Credenciales incorrectas");
         return false;
       }
@@ -35,25 +54,31 @@ export const useAuthOperations = () => {
       toast.success("Inicio de sesión exitoso");
       return true;
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      toast.error("Error al iniciar sesión");
+      const errorMessage = "Error al iniciar sesión";
+      console.error(errorMessage, error);
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
-  const register = async (
+  const register = useCallback(async (
     name: string, 
     email: string, 
     password: string, 
     role: 'Trabajador' | 'Administrador' | 'Operador',
     assignedMachines: string[] = []
   ): Promise<boolean> => {
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
+    
     try {
       if (checkEmailExists(email)) {
-        toast.error("El correo electrónico ya está registrado");
+        const errorMessage = "El correo electrónico ya está registrado";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -73,22 +98,28 @@ export const useAuthOperations = () => {
       toast.success("Registro exitoso");
       return true;
     } catch (error) {
-      console.error("Error al registrar:", error);
-      toast.error("Error al registrar usuario");
+      const errorMessage = "Error al registrar usuario";
+      console.error(errorMessage, error);
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
-  const updateUserMachines = async (userId: string, machineIds: string[]): Promise<boolean> => {
-    setIsLoading(true);
+  const updateUserMachines = useCallback(async (userId: string, machineIds: string[]): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
     try {
       const users = getStoredUsers();
       const userIndex = users.findIndex((u) => u.id === userId);
       
       if (userIndex === -1) {
-        toast.error("Usuario no encontrado");
+        const errorMessage = "Usuario no encontrado";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -98,19 +129,25 @@ export const useAuthOperations = () => {
       toast.success("Máquinas asignadas actualizadas");
       return true;
     } catch (error) {
-      console.error("Error al actualizar máquinas:", error);
-      toast.error("Error al actualizar las máquinas asignadas");
+      const errorMessage = "Error al actualizar las máquinas asignadas";
+      console.error(errorMessage, error);
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
-  const resetPassword = async (email: string): Promise<boolean> => {
-    setIsLoading(true);
+  const resetPassword = useCallback(async (email: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
     try {
       if (!checkEmailExists(email)) {
-        toast.error("No existe una cuenta con ese correo electrónico");
+        const errorMessage = "No existe una cuenta con ese correo electrónico";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -125,19 +162,25 @@ export const useAuthOperations = () => {
       toast.success(`Código de restablecimiento: ${resetCode} (En producción se enviaría por email)`);
       return true;
     } catch (error) {
-      console.error("Error al solicitar restablecimiento:", error);
-      toast.error("Error al procesar la solicitud");
+      const errorMessage = "Error al procesar la solicitud";
+      console.error(errorMessage, error);
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
-  const updatePassword = async (email: string, resetCode: string, newPassword: string): Promise<boolean> => {
-    setIsLoading(true);
+  const updatePassword = useCallback(async (email: string, resetCode: string, newPassword: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
     try {
       if (!validateResetCode(email, resetCode)) {
-        toast.error("El código es incorrecto o ha expirado");
+        const errorMessage = "El código es incorrecto o ha expirado";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -145,7 +188,9 @@ export const useAuthOperations = () => {
       const userIndex = users.findIndex((u) => u.email === email);
       
       if (userIndex === -1) {
-        toast.error("Usuario no encontrado");
+        const errorMessage = "Usuario no encontrado";
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -159,18 +204,20 @@ export const useAuthOperations = () => {
       toast.success("Contraseña actualizada correctamente");
       return true;
     } catch (error) {
-      console.error("Error al actualizar contraseña:", error);
-      toast.error("Error al actualizar la contraseña");
+      const errorMessage = "Error al actualizar la contraseña";
+      console.error(errorMessage, error);
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     removeStoredUser();
     toast.success("Sesión cerrada");
-  };
+  }, []);
 
   return {
     login,
@@ -179,6 +226,7 @@ export const useAuthOperations = () => {
     resetPassword,
     updatePassword,
     logout,
-    isLoading
+    isLoading: state.isLoading,
+    error: state.error
   };
 };

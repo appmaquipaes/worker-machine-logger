@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { User, AuthContextType } from '@/types/auth';
 import { getStoredUser, setStoredUser } from '@/utils/authStorage';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
@@ -31,18 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsInitialLoading(false);
   }, []);
 
-  // Wrapper para login que actualiza el estado del usuario
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Wrapper optimizado para login que actualiza el estado del usuario
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     const success = await authOperations.login(email, password);
     if (success) {
       const updatedUser = getStoredUser();
       setUser(updatedUser);
     }
     return success;
-  };
+  }, [authOperations]);
 
-  // Wrapper para register que puede iniciar sesión automáticamente
-  const register = async (
+  // Wrapper optimizado para register
+  const register = useCallback(async (
     name: string, 
     email: string, 
     password: string, 
@@ -55,10 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return await login(email, password);
     }
     return success;
-  };
+  }, [authOperations, user, login]);
 
-  // Wrapper para updateUserMachines que actualiza el estado si es el usuario actual
-  const updateUserMachines = async (userId: string, machineIds: string[]): Promise<boolean> => {
+  // Wrapper optimizado para updateUserMachines
+  const updateUserMachines = useCallback(async (userId: string, machineIds: string[]): Promise<boolean> => {
     const success = await authOperations.updateUserMachines(userId, machineIds);
     if (success && user && user.id === userId) {
       const updatedUser = { ...user, assignedMachines: machineIds };
@@ -66,15 +66,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStoredUser(updatedUser);
     }
     return success;
-  };
+  }, [authOperations, user]);
 
-  // Wrapper para logout que limpia el estado del usuario
-  const logout = () => {
+  // Wrapper optimizado para logout
+  const logout = useCallback(() => {
     authOperations.logout();
     setUser(null);
-  };
+  }, [authOperations]);
 
-  const value = {
+  // Memoizar el valor del contexto para evitar re-renders innecesarios
+  const contextValue = useMemo<AuthContextType>(() => ({
     user,
     login,
     register,
@@ -83,7 +84,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword: authOperations.resetPassword,
     updatePassword: authOperations.updatePassword,
     updateUserMachines
-  };
+  }), [
+    user,
+    login,
+    register,
+    logout,
+    authOperations.isLoading,
+    authOperations.resetPassword,
+    authOperations.updatePassword,
+    updateUserMachines,
+    isInitialLoading
+  ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
