@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { BarChart3, Download, Users, MapPin } from 'lucide-react';
-import { DatePicker } from '@/components/DatePicker';
+import { BarChart3, Users, MapPin } from 'lucide-react';
+import FilterSection from './filters/FilterSection';
+import DateRangeFilters from './filters/DateRangeFilters';
+import ActionButtons from './filters/ActionButtons';
 
 interface ReportFiltersProps {
   operators: any[];
@@ -53,6 +53,56 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
   exportToExcel,
   reportDataLength
 }) => {
+  const operatorOptions = [
+    { value: 'all', label: 'Todos los operadores' },
+    ...operators.map(operator => ({
+      value: operator.id,
+      label: operator.name
+    }))
+  ];
+
+  const machineOptions = [
+    { value: 'all', label: 'Todas las máquinas' },
+    ...machines.map(machine => ({
+      value: machine.id,
+      label: `${machine.name} (${machine.type})`
+    }))
+  ];
+
+  const reportTypeOptions = [
+    { value: 'all', label: 'Todos los tipos' },
+    { value: 'Horas Trabajadas', label: 'Horas Trabajadas' },
+    { value: 'Horas Extras', label: 'Horas Extras' },
+    { value: 'Viajes', label: 'Viajes' },
+    { value: 'Mantenimiento', label: 'Mantenimiento' },
+    { value: 'Combustible', label: 'Combustible' },
+    { value: 'Novedades', label: 'Novedades' }
+  ];
+
+  const clienteOptions = [
+    { value: 'all', label: 'Todos los clientes' },
+    ...clientes.map(cliente => ({
+      value: cliente.nombre_cliente,
+      label: cliente.nombre_cliente
+    }))
+  ];
+
+  const fincaOptions = [
+    { 
+      value: 'all', 
+      label: selectedCliente === 'all' 
+        ? "Primero seleccione un cliente" 
+        : fincas.length === 0 
+          ? "El cliente no tiene fincas"
+          : "Todas las fincas",
+      disabled: selectedCliente === 'all' || fincas.length === 0
+    },
+    ...fincas.map(finca => ({
+      value: finca.nombre_finca,
+      label: `${finca.nombre_finca} - ${finca.ciudad}`
+    }))
+  ];
+
   return (
     <Card className="corporate-card">
       <CardHeader>
@@ -68,135 +118,62 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Operador</label>
-            <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <SelectValue placeholder="Todos los operadores" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los operadores</SelectItem>
-                {operators.map((operator) => (
-                  <SelectItem key={operator.id} value={operator.id}>
-                    {operator.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterSection
+            label="Operador"
+            value={selectedOperator}
+            onValueChange={setSelectedOperator}
+            placeholder="Todos los operadores"
+            options={operatorOptions}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Máquina</label>
-            <Select value={selectedMachine} onValueChange={setSelectedMachine}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <SelectValue placeholder="Todas las máquinas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las máquinas</SelectItem>
-                {machines.map((machine) => (
-                  <SelectItem key={machine.id} value={machine.id}>
-                    {machine.name} ({machine.type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterSection
+            label="Máquina"
+            value={selectedMachine}
+            onValueChange={setSelectedMachine}
+            placeholder="Todas las máquinas"
+            options={machineOptions}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Tipo de Reporte</label>
-            <Select value={selectedReportType} onValueChange={setSelectedReportType}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <SelectValue placeholder="Todos los tipos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="Horas Trabajadas">Horas Trabajadas</SelectItem>
-                <SelectItem value="Horas Extras">Horas Extras</SelectItem>
-                <SelectItem value="Viajes">Viajes</SelectItem>
-                <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-                <SelectItem value="Combustible">Combustible</SelectItem>
-                <SelectItem value="Novedades">Novedades</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterSection
+            label="Tipo de Reporte"
+            value={selectedReportType}
+            onValueChange={setSelectedReportType}
+            placeholder="Todos los tipos"
+            options={reportTypeOptions}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
-              <Users size={16} />
-              Cliente
-            </label>
-            <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <SelectValue placeholder="Todos los clientes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los clientes</SelectItem>
-                {clientes.map((cliente) => (
-                  <SelectItem key={cliente.id} value={cliente.nombre_cliente}>
-                    {cliente.nombre_cliente}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterSection
+            label="Cliente"
+            value={selectedCliente}
+            onValueChange={setSelectedCliente}
+            placeholder="Todos los clientes"
+            options={clienteOptions}
+            icon={<Users size={16} />}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
-              <MapPin size={16} />
-              Finca
-            </label>
-            <Select 
-              value={selectedFinca} 
-              onValueChange={setSelectedFinca}
-              disabled={selectedCliente === 'all' || fincas.length === 0}
-            >
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <SelectValue placeholder={
-                  selectedCliente === 'all' 
-                    ? "Primero seleccione un cliente" 
-                    : fincas.length === 0 
-                      ? "El cliente no tiene fincas"
-                      : "Todas las fincas"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las fincas</SelectItem>
-                {fincas.map((finca) => (
-                  <SelectItem key={finca.id} value={finca.nombre_finca}>
-                    {finca.nombre_finca} - {finca.ciudad}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterSection
+            label="Finca"
+            value={selectedFinca}
+            onValueChange={setSelectedFinca}
+            placeholder={fincaOptions[0].label}
+            options={fincaOptions}
+            icon={<MapPin size={16} />}
+            disabled={selectedCliente === 'all' || fincas.length === 0}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Fecha Inicio</label>
-            <div className="h-12">
-              <DatePicker date={startDate} setDate={setStartDate} />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Fecha Fin</label>
-            <div className="h-12">
-              <DatePicker date={endDate} setDate={setEndDate} />
-            </div>
-          </div>
+          <DateRangeFilters
+            startDate={startDate}
+            endDate={endDate}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
         </div>
 
-        <div className="action-grid-2 gap-4">
-          <Button onClick={generateReport} className="btn-primary-large">
-            <BarChart3 className="mobile-icon" />
-            Generar Reporte
-          </Button>
-          {reportDataLength > 0 && (
-            <Button onClick={exportToExcel} className="btn-secondary-large">
-              <Download className="mobile-icon" />
-              Exportar Excel
-            </Button>
-          )}
-        </div>
+        <ActionButtons
+          generateReport={generateReport}
+          exportToExcel={exportToExcel}
+          reportDataLength={reportDataLength}
+        />
       </CardContent>
     </Card>
   );
