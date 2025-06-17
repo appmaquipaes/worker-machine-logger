@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
+import { useAutoVentas } from '@/hooks/useAutoVentas';
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
@@ -23,6 +24,7 @@ interface ReportProviderProps {
 export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const [reports, setReports] = useState<Report[]>([]);
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
+  const { procesarReporteParaVenta } = useAutoVentas();
 
   useEffect(() => {
     const storedReports = localStorage.getItem('reports');
@@ -73,6 +75,15 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
+
+    // Procesar para ventas automáticas si es un viaje a cliente
+    if (newReport.reportType === 'Viajes' && newReport.destination) {
+      try {
+        procesarReporteParaVenta(newReport);
+      } catch (error) {
+        console.error('Error procesando reporte para venta automática:', error);
+      }
+    }
   };
 
   const updateReport = (id: string, updatedReport: Partial<Report>) => {
