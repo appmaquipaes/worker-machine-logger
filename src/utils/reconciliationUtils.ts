@@ -110,8 +110,9 @@ export const generateReconciliationReport = (
   const orphanedSales = findOrphanedSales(reports, sales);
   const missingSales = findMissingSales(reports, sales);
   
+  // Corregir: remover la verificación de umbral_minimo que no existe
   const inventoryIssues = inventory.filter(item => 
-    item.cantidad_disponible < 0 || item.cantidad_disponible < item.umbral_minimo
+    item.cantidad_disponible < 0
   );
   
   const totalIssues = orphanedSales.length + missingSales.length + inventoryIssues.length;
@@ -150,7 +151,7 @@ const generateRecommendations = (
   }
   
   if (inventoryIssues.length > 0) {
-    recommendations.push(`Corregir ${inventoryIssues.length} problema(s) de inventario (stock negativo o bajo mínimo)`);
+    recommendations.push(`Corregir ${inventoryIssues.length} problema(s) de inventario con stock negativo`);
   }
   
   if (recommendations.length === 0) {
