@@ -22,7 +22,6 @@ export interface Report {
   kilometraje?: number;
   detalleCalculo?: string;
   tarifaEncontrada?: boolean;
-  tipoMateria?: string; // NUEVO: Agregado para mejorar la trazabilidad en ventas
 }
 
 export interface ReportContextType {

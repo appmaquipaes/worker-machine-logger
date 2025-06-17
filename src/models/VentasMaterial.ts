@@ -1,7 +1,8 @@
 
-export interface VentaMaterial {
+// Define el tipo para las ventas de material
+export type VentaMaterial = {
   id: string;
-  fecha: string;
+  fecha: Date;
   tipo_material: string;
   cantidad_m3: number;
   costo_base_m3: number;
@@ -10,9 +11,9 @@ export interface VentaMaterial {
   precio_venta_m3: number;
   total_venta: number;
   cliente: string;
-  fechaRegistro: string;
-}
+};
 
+// Función para crear una nueva venta
 export const createVentaMaterial = (
   fecha: Date,
   tipo_material: string,
@@ -24,10 +25,10 @@ export const createVentaMaterial = (
 ): VentaMaterial => {
   const precio_venta_m3 = costo_base_m3 + flete_aplicado_m3 + margen_ganancia_m3;
   const total_venta = precio_venta_m3 * cantidad_m3;
-
+  
   return {
     id: Date.now().toString(),
-    fecha: fecha.toISOString(),
+    fecha,
     tipo_material,
     cantidad_m3,
     costo_base_m3,
@@ -35,25 +36,22 @@ export const createVentaMaterial = (
     margen_ganancia_m3,
     precio_venta_m3,
     total_venta,
-    cliente,
-    fechaRegistro: new Date().toISOString()
+    cliente
   };
 };
 
-export const loadVentasMaterial = (): VentaMaterial[] => {
-  try {
-    const stored = localStorage.getItem('ventas_material');
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error loading ventas material:', error);
-    return [];
-  }
+// Función para guardar ventas en localStorage
+export const saveVentasMaterial = (ventas: VentaMaterial[]): void => {
+  localStorage.setItem('ventas_material', JSON.stringify(ventas));
 };
 
-export const saveVentasMaterial = (ventas: VentaMaterial[]): void => {
-  try {
-    localStorage.setItem('ventas_material', JSON.stringify(ventas));
-  } catch (error) {
-    console.error('Error saving ventas material:', error);
-  }
+// Función para cargar ventas desde localStorage
+export const loadVentasMaterial = (): VentaMaterial[] => {
+  const storedVentas = localStorage.getItem('ventas_material');
+  if (!storedVentas) return [];
+  
+  return JSON.parse(storedVentas).map((venta: any) => ({
+    ...venta,
+    fecha: new Date(venta.fecha)
+  }));
 };

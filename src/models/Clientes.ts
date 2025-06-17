@@ -1,29 +1,27 @@
 
+// Model for clients
+
 export interface Cliente {
   id: string;
-  nombre: string;
   nombre_cliente: string;
-  telefono?: string;
-  telefono_contacto?: string;
-  email?: string;
+  tipo_persona: 'Natural' | 'Empresa';
+  nit_cedula: string;
   correo_electronico?: string;
-  direccion?: string;
-  ciudad?: string;
-  tipo_cliente?: string;
-  tipo_persona?: 'Natural' | 'Empresa';
-  nit?: string;
-  nit_cedula?: string;
-  contacto?: string;
-  persona_contacto?: string;
+  telefono_contacto: string;
+  persona_contacto: string;
+  tipo_cliente: string;
+  ciudad: string;
+  fecha_registro: Date;
   observaciones?: string;
-  fechaRegistro: string;
 }
 
 export const tiposCliente = [
-  'Particular',
-  'Empresa',
-  'Constructor',
-  'Gobierno'
+  'Floristeria',
+  'Particular', 
+  'Finca',
+  'Constructora',
+  'Firma Ingenieria',
+  'Acopio de Material'
 ];
 
 export const tiposPersona = [
@@ -31,28 +29,34 @@ export const tiposPersona = [
   'Empresa'
 ];
 
+// Load clients from localStorage
 export const loadClientes = (): Cliente[] => {
+  const clientesString = localStorage.getItem('clientes');
+  if (!clientesString) return [];
+
   try {
-    const stored = localStorage.getItem('clientes');
-    const clientes = stored ? JSON.parse(stored) : [];
-    return clientes.map((cliente: any) => ({
+    return JSON.parse(clientesString).map((cliente: any) => ({
       ...cliente,
-      nombre_cliente: cliente.nombre_cliente || cliente.nombre
+      fecha_registro: new Date(cliente.fecha_registro),
+      // Migrar datos antiguos si es necesario
+      tipo_persona: cliente.tipo_persona || 'Natural',
+      nit_cedula: cliente.nit_cedula || '',
+      correo_electronico: cliente.correo_electronico || '',
+      telefono_contacto: cliente.telefono_contacto || cliente.contacto_telefono || '',
+      persona_contacto: cliente.persona_contacto || cliente.contacto_nombre || ''
     }));
   } catch (error) {
-    console.error('Error loading clientes:', error);
+    console.error('Error loading clients:', error);
     return [];
   }
 };
 
+// Save clients to localStorage
 export const saveClientes = (clientes: Cliente[]): void => {
-  try {
-    localStorage.setItem('clientes', JSON.stringify(clientes));
-  } catch (error) {
-    console.error('Error saving clientes:', error);
-  }
+  localStorage.setItem('clientes', JSON.stringify(clientes));
 };
 
+// Create a new client
 export const createCliente = (
   nombre_cliente: string,
   tipo_persona: 'Natural' | 'Empresa',
@@ -64,31 +68,27 @@ export const createCliente = (
   correo_electronico?: string,
   observaciones?: string
 ): Cliente => {
-  const nuevoCliente: Cliente = {
+  return {
     id: Date.now().toString(),
-    nombre: nombre_cliente,
     nombre_cliente,
     tipo_persona,
     nit_cedula,
+    correo_electronico,
     telefono_contacto,
     persona_contacto,
+    tipo_cliente: tipo_cliente || '',
     ciudad,
-    tipo_cliente,
-    correo_electronico,
-    observaciones,
-    fechaRegistro: new Date().toISOString()
+    fecha_registro: new Date(),
+    observaciones
   };
-  
-  const clientes = loadClientes();
-  const clientesActualizados = [...clientes, nuevoCliente];
-  saveClientes(clientesActualizados);
-  
-  return nuevoCliente;
 };
 
+// Get client names for dropdown
+export const getClientesNames = (): string[] => {
+  return loadClientes().map(cliente => cliente.nombre_cliente);
+};
+
+// Get client by name
 export const getClienteByName = (nombre: string): Cliente | undefined => {
-  const clientes = loadClientes();
-  return clientes.find(cliente => 
-    cliente.nombre === nombre || cliente.nombre_cliente === nombre
-  );
+  return loadClientes().find(cliente => cliente.nombre_cliente === nombre);
 };

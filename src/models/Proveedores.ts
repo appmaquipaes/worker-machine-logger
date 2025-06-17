@@ -1,55 +1,78 @@
 
+// Model for material providers and their associated products
+
 export interface Proveedor {
   id: string;
   nombre: string;
-  ciudad?: string;
-  contacto?: string;
-  correo_electronico?: string;
-  nit?: string;
-  tipo_proveedor?: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros';
-  forma_pago?: string;
+  ciudad: string;
+  contacto: string;
+  correo_electronico: string;
+  nit: string;
+  tipo_proveedor: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros';
+  forma_pago: string;
+  fecha_registro: Date;
   observaciones?: string;
-  fechaRegistro: string;
 }
 
 export interface ProductoProveedor {
   id: string;
   proveedor_id: string;
-  nombre_producto: string;
   tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
+  nombre_producto: string;
   unidad: string;
   precio_unitario: number;
   observaciones?: string;
-  fechaRegistro: string;
 }
 
+// Load providers from localStorage
 export const loadProveedores = (): Proveedor[] => {
+  const proveedoresString = localStorage.getItem('proveedores');
+  if (!proveedoresString) return [];
+
   try {
-    const stored = localStorage.getItem('proveedores');
-    return stored ? JSON.parse(stored) : [];
+    return JSON.parse(proveedoresString).map((proveedor: any) => ({
+      ...proveedor,
+      fecha_registro: new Date(proveedor.fecha_registro)
+    }));
   } catch (error) {
-    console.error('Error loading proveedores:', error);
+    console.error('Error loading providers:', error);
     return [];
   }
 };
 
+// Save providers to localStorage
 export const saveProveedores = (proveedores: Proveedor[]): void => {
+  localStorage.setItem('proveedores', JSON.stringify(proveedores));
+};
+
+// Load products from localStorage
+export const loadProductosProveedores = (): ProductoProveedor[] => {
+  const productosString = localStorage.getItem('productos_proveedores');
+  if (!productosString) return [];
+
   try {
-    localStorage.setItem('proveedores', JSON.stringify(proveedores));
+    return JSON.parse(productosString);
   } catch (error) {
-    console.error('Error saving proveedores:', error);
+    console.error('Error loading provider products:', error);
+    return [];
   }
 };
 
+// Save products to localStorage
+export const saveProductosProveedores = (productos: ProductoProveedor[]): void => {
+  localStorage.setItem('productos_proveedores', JSON.stringify(productos));
+};
+
+// Create a new provider
 export const createProveedor = (
   nombre: string,
   ciudad: string,
   contacto: string,
   correo_electronico: string,
   nit: string,
-  tipo_proveedor: string,
+  tipo_proveedor: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros',
   forma_pago: string,
-  observaciones: string
+  observaciones?: string
 ): Proveedor => {
   return {
     id: Date.now().toString(),
@@ -58,53 +81,48 @@ export const createProveedor = (
     contacto,
     correo_electronico,
     nit,
-    tipo_proveedor: tipo_proveedor as 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros',
+    tipo_proveedor,
     forma_pago,
-    observaciones,
-    fechaRegistro: new Date().toISOString()
+    fecha_registro: new Date(),
+    observaciones
   };
 };
 
-export const loadProductosProveedores = (): ProductoProveedor[] => {
-  try {
-    const stored = localStorage.getItem('productos_proveedores');
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error loading productos proveedores:', error);
-    return [];
-  }
-};
-
-export const saveProductosProveedores = (productos: ProductoProveedor[]): void => {
-  try {
-    localStorage.setItem('productos_proveedores', JSON.stringify(productos));
-  } catch (error) {
-    console.error('Error saving productos proveedores:', error);
-  }
-};
-
+// Create a new product for a provider
 export const createProductoProveedor = (
   proveedor_id: string,
-  tipo_insumo: string,
+  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio',
   nombre_producto: string,
   unidad: string,
   precio_unitario: number,
-  observaciones: string
+  observaciones?: string
 ): ProductoProveedor => {
   return {
     id: Date.now().toString(),
     proveedor_id,
+    tipo_insumo,
     nombre_producto,
-    tipo_insumo: tipo_insumo as 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio',
     unidad,
     precio_unitario,
-    observaciones,
-    fechaRegistro: new Date().toISOString()
+    observaciones
   };
 };
 
+// Get provider names for dropdown
+export const getProveedoresNames = (): string[] => {
+  return loadProveedores().map(proveedor => proveedor.nombre);
+};
+
+// Get products by provider ID
+export const getProductosByProveedorId = (proveedorId: string): ProductoProveedor[] => {
+  return loadProductosProveedores().filter(producto => producto.proveedor_id === proveedorId);
+};
+
+// Get unique material types from provider products
 export const getUniqueProviderMaterialTypes = (): string[] => {
   const productos = loadProductosProveedores();
-  const tipos = [...new Set(productos.map(p => p.tipo_insumo))];
-  return tipos.filter(tipo => tipo && tipo.trim() !== '');
+  const materialTypes = productos
+    .filter(producto => producto.tipo_insumo === 'Material')
+    .map(producto => producto.nombre_producto);
+  return [...new Set(materialTypes)];
 };

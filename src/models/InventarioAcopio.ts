@@ -1,41 +1,23 @@
-
-export interface InventarioAcopio {
+// Define el tipo para el inventario de acopio
+export type InventarioAcopio = {
   id: string;
-  nombre: string;
   tipo_material: string;
-  categoria: string;
-  cantidad: number;
   cantidad_disponible: number;
-  unidadMedida: string;
-  precioUnitario: number;
-  costo_promedio_m3?: number;
-  stockMinimo: number;
-  fechaRegistro: string;
-}
-
-export const loadInventarioAcopio = (): InventarioAcopio[] => {
-  try {
-    const stored = localStorage.getItem('inventario_acopio');
-    const inventario = stored ? JSON.parse(stored) : [];
-    return inventario.map((item: any) => ({
-      ...item,
-      tipo_material: item.tipo_material || item.nombre,
-      cantidad_disponible: item.cantidad_disponible !== undefined ? item.cantidad_disponible : item.cantidad
-    }));
-  } catch (error) {
-    console.error('Error loading inventory:', error);
-    return [];
-  }
+  costo_promedio_m3: number;
 };
 
+// Función para guardar inventario en localStorage
 export const saveInventarioAcopio = (inventario: InventarioAcopio[]): void => {
-  try {
-    localStorage.setItem('inventario_acopio', JSON.stringify(inventario));
-  } catch (error) {
-    console.error('Error saving inventory:', error);
-  }
+  localStorage.setItem('inventario_acopio', JSON.stringify(inventario));
 };
 
+// Función para cargar inventario desde localStorage
+export const loadInventarioAcopio = (): InventarioAcopio[] => {
+  const storedInventario = localStorage.getItem('inventario_acopio');
+  return storedInventario ? JSON.parse(storedInventario) : [];
+};
+
+// Función para actualizar el inventario después de una compra
 export const updateInventarioAfterCompra = (
   inventario: InventarioAcopio[],
   compra: {
@@ -44,43 +26,43 @@ export const updateInventarioAfterCompra = (
     costo_unitario_total: number;
   }
 ): InventarioAcopio[] => {
-  const inventarioActualizado = [...inventario];
-  const materialIndex = inventarioActualizado.findIndex(item => item.tipo_material === compra.tipo_material);
-  
-  if (materialIndex >= 0) {
-    const item = inventarioActualizado[materialIndex];
-    const cantidadAnterior = item.cantidad_disponible;
-    const costoAnterior = item.costo_promedio_m3 || 0;
+  // Buscar si ya existe el material en el inventario
+  const existingItemIndex = inventario.findIndex(
+    item => item.tipo_material === compra.tipo_material
+  );
+
+  if (existingItemIndex >= 0) {
+    // Si el material ya existe, actualizar cantidad y costo promedio
+    const existingItem = inventario[existingItemIndex];
+    const totalCantidadAnterior = existingItem.cantidad_disponible;
+    const totalCostoAnterior = totalCantidadAnterior * existingItem.costo_promedio_m3;
     
-    const nuevaCantidad = cantidadAnterior + compra.cantidad_m3;
-    const nuevoCostoPromedio = ((cantidadAnterior * costoAnterior) + (compra.cantidad_m3 * compra.costo_unitario_total)) / nuevaCantidad;
-    
-    inventarioActualizado[materialIndex] = {
-      ...item,
+    const nuevaCantidad = totalCantidadAnterior + compra.cantidad_m3;
+    const nuevoCostoTotal = totalCostoAnterior + (compra.cantidad_m3 * compra.costo_unitario_total);
+    const nuevoCostoPromedio = nuevoCostoTotal / nuevaCantidad;
+
+    const updatedInventario = [...inventario];
+    updatedInventario[existingItemIndex] = {
+      ...existingItem,
       cantidad_disponible: nuevaCantidad,
-      cantidad: nuevaCantidad,
       costo_promedio_m3: nuevoCostoPromedio
     };
+
+    return updatedInventario;
   } else {
-    const nuevoItem: InventarioAcopio = {
+    // Si el material no existe, agregar como nuevo
+    const newItem: InventarioAcopio = {
       id: Date.now().toString(),
-      nombre: compra.tipo_material,
       tipo_material: compra.tipo_material,
-      categoria: 'Material',
-      cantidad: compra.cantidad_m3,
       cantidad_disponible: compra.cantidad_m3,
-      unidadMedida: 'm³',
-      precioUnitario: compra.costo_unitario_total,
-      costo_promedio_m3: compra.costo_unitario_total,
-      stockMinimo: 0,
-      fechaRegistro: new Date().toISOString()
+      costo_promedio_m3: compra.costo_unitario_total
     };
-    inventarioActualizado.push(nuevoItem);
+
+    return [...inventario, newItem];
   }
-  
-  return inventarioActualizado;
 };
 
+// Función para actualizar el inventario después de una venta
 export const updateInventarioAfterVenta = (
   inventario: InventarioAcopio[],
   venta: {
@@ -88,19 +70,45 @@ export const updateInventarioAfterVenta = (
     cantidad_m3: number;
   }
 ): InventarioAcopio[] => {
-  const inventarioActualizado = [...inventario];
-  const materialIndex = inventarioActualizado.findIndex(item => item.tipo_material === venta.tipo_material);
-  
-  if (materialIndex >= 0) {
-    const item = inventarioActualizado[materialIndex];
-    const nuevaCantidad = Math.max(0, item.cantidad_disponible - venta.cantidad_m3);
-    
-    inventarioActualizado[materialIndex] = {
-      ...item,
-      cantidad_disponible: nuevaCantidad,
-      cantidad: nuevaCantidad
-    };
+  return inventario.map(item => {
+    if (item.tipo_material === venta.tipo_material) {
+      return {
+        ...item,
+        cantidad_disponible: Math.max(0, item.cantidad_disponible - venta.cantidad_m3)
+      };
+    }
+    return item;
+  });
+};
+
+// Función para actualizar el inventario después de un viaje desde acopio
+export const updateInventarioAfterViaje = (
+  inventario: InventarioAcopio[],
+  viaje: {
+    material: string;
+    cantidad_m3: number;
   }
-  
-  return inventarioActualizado;
+): InventarioAcopio[] => {
+  return inventario.map(item => {
+    if (item.tipo_material === viaje.material) {
+      return {
+        ...item,
+        cantidad_disponible: Math.max(0, item.cantidad_disponible - viaje.cantidad_m3)
+      };
+    }
+    return item;
+  });
+};
+
+// Nueva función utilitaria para registrar movimientos de desglose (opcional, para llevar historial después)
+export type MovimientoDesglose = {
+  fecha: string;
+  cantidadRecebo: number;
+  subproductos: { [key: string]: number };
+  usuario?: string;
+};
+export const saveMovimientoDesglose = (movimiento: MovimientoDesglose) => {
+  const historial = JSON.parse(localStorage.getItem('historial_desgloses') || '[]');
+  historial.push(movimiento);
+  localStorage.setItem('historial_desgloses', JSON.stringify(historial));
 };

@@ -165,13 +165,13 @@ const ServiciosTransportePage = () => {
       'Tipo Material': servicio.tipo_material,
       'Cantidad (m³)': servicio.cantidad_m3,
       'Valor Flete/m³': servicio.valor_flete_m3,
-      'Total Flete': servicio.cantidad_m3 * servicio.valor_flete_m3,
+      'Total Flete': servicio.total_flete,
       'Valor Material/m³': servicio.valor_material_m3 || '',
-      'Total Material Ref.': servicio.valor_material_m3 ? servicio.cantidad_m3 * servicio.valor_material_m3 : '',
+      'Total Material Ref.': servicio.total_material_referencia || '',
       'Vehículo': servicio.vehiculo || '',
       'Conductor': servicio.conductor || '',
       'Número Viajes': servicio.numero_viajes,
-      'Observaciones': servicio.observacion || ''
+      'Observaciones': servicio.observaciones || ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -419,7 +419,7 @@ const ServiciosTransportePage = () => {
                   <TableCell>{servicio.cantidad_m3}</TableCell>
                   <TableCell>{servicio.numero_viajes}</TableCell>
                   <TableCell>${servicio.valor_flete_m3.toLocaleString()}</TableCell>
-                  <TableCell className="font-semibold">${(servicio.cantidad_m3 * servicio.valor_flete_m3).toLocaleString()}</TableCell>
+                  <TableCell className="font-semibold">${servicio.total_flete.toLocaleString()}</TableCell>
                   <TableCell>{servicio.vehiculo || '-'}</TableCell>
                 </TableRow>
               ))}

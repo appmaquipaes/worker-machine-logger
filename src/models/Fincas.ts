@@ -1,98 +1,68 @@
 
+// Model for client farms/delivery points
+
 export interface Finca {
   id: string;
-  nombre: string;
-  nombre_finca: string;
   cliente_id: string;
-  ubicacion?: string;
+  nombre_finca: string;
   direccion: string;
   ciudad: string;
-  area?: number;
-  tipo_cultivo?: string;
-  observaciones?: string;
   contacto_nombre: string;
   contacto_telefono: string;
   notas?: string;
-  activa: boolean;
-  fechaRegistro: string;
+  fecha_registro: Date;
 }
 
+// Load fincas from localStorage
 export const loadFincas = (): Finca[] => {
+  const fincasString = localStorage.getItem('fincas');
+  if (!fincasString) return [];
+
   try {
-    const stored = localStorage.getItem('fincas');
-    return stored ? JSON.parse(stored) : [];
+    return JSON.parse(fincasString).map((finca: any) => ({
+      ...finca,
+      fecha_registro: new Date(finca.fecha_registro)
+    }));
   } catch (error) {
     console.error('Error loading fincas:', error);
     return [];
   }
 };
 
+// Save fincas to localStorage
 export const saveFincas = (fincas: Finca[]): void => {
-  try {
-    localStorage.setItem('fincas', JSON.stringify(fincas));
-  } catch (error) {
-    console.error('Error saving fincas:', error);
-  }
+  localStorage.setItem('fincas', JSON.stringify(fincas));
 };
 
-export const getFincasByCliente = (clienteId: string): Finca[] => {
-  const fincas = loadFincas();
-  return fincas.filter(finca => finca.cliente_id === clienteId && finca.activa);
-};
-
+// Create a new finca
 export const createFinca = (
-  clienteId: string,
-  nombreFinca: string,
+  cliente_id: string,
+  nombre_finca: string,
   direccion: string,
   ciudad: string,
-  contactoNombre: string,
-  contactoTelefono: string,
+  contacto_nombre: string,
+  contacto_telefono: string,
   notas?: string
 ): Finca => {
   return {
     id: Date.now().toString(),
-    nombre: nombreFinca,
-    nombre_finca: nombreFinca,
-    cliente_id: clienteId,
+    cliente_id,
+    nombre_finca,
     direccion,
     ciudad,
-    contacto_nombre: contactoNombre,
-    contacto_telefono: contactoTelefono,
+    contacto_nombre,
+    contacto_telefono,
     notas,
-    activa: true,
-    fechaRegistro: new Date().toISOString()
+    fecha_registro: new Date()
   };
 };
 
-export const getFincaById = (id: string): Finca | undefined => {
-  const fincas = loadFincas();
-  return fincas.find(finca => finca.id === id);
+// Get fincas by client ID
+export const getFincasByCliente = (cliente_id: string): Finca[] => {
+  return loadFincas().filter(finca => finca.cliente_id === cliente_id);
 };
 
-export const updateFinca = (id: string, updates: Partial<Finca>): boolean => {
-  try {
-    const fincas = loadFincas();
-    const index = fincas.findIndex(finca => finca.id === id);
-    
-    if (index === -1) return false;
-    
-    fincas[index] = { ...fincas[index], ...updates };
-    saveFincas(fincas);
-    return true;
-  } catch (error) {
-    console.error('Error updating finca:', error);
-    return false;
-  }
-};
-
-export const deleteFinca = (id: string): boolean => {
-  try {
-    const fincas = loadFincas();
-    const fincasFiltradas = fincas.filter(finca => finca.id !== id);
-    saveFincas(fincasFiltradas);
-    return true;
-  } catch (error) {
-    console.error('Error deleting finca:', error);
-    return false;
-  }
+// Get finca names for dropdown (by client)
+export const getFincasNamesByCliente = (cliente_id: string): string[] => {
+  return getFincasByCliente(cliente_id).map(finca => finca.nombre_finca);
 };

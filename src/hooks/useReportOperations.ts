@@ -1,13 +1,9 @@
 
 import { Report, ReportType } from '@/types/report';
+import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
-import { useInventarioOperations } from '@/hooks/useInventarioOperations';
-import { useReportesToVentas } from '@/hooks/useReportesToVentas';
 
 export const useReportOperations = () => {
-  const { procesarReporteInventario } = useInventarioOperations();
-  const { procesarReporteParaVenta } = useReportesToVentas();
-
   const createReport = (
     reports: Report[],
     machineId: string,
@@ -23,8 +19,7 @@ export const useReportOperations = () => {
     destination?: string,
     cantidadM3?: number,
     proveedor?: string,
-    kilometraje?: number,
-    tipoMateria?: string // NUEVO: Parámetro agregado
+    kilometraje?: number
   ): Report => {
     let calculatedValue = value || 0;
     let detalleCalculo = '';
@@ -82,30 +77,13 @@ export const useReportOperations = () => {
       kilometraje,
       detalleCalculo,
       tarifaEncontrada,
-      tipoMateria // NUEVO: Incluir tipo de materia en el reporte
     };
     
-    // PROCESAMIENTO AUTOMÁTICO DE INVENTARIO (existente)
+    // Actualizar inventario si es un viaje desde acopio
     if (newReport.reportType === 'Viajes') {
-      console.log('=== PROCESANDO INVENTARIO PARA NUEVO REPORTE ===');
-      const resultado = procesarReporteInventario(newReport);
-      if (resultado.exito) {
-        console.log('✓ Inventario actualizado automáticamente:', resultado.mensaje);
-      } else {
-        console.log('ℹ No se actualizó inventario:', resultado.mensaje);
-      }
-    }
-
-    // PROCESAMIENTO AUTOMÁTICO DE VENTAS (mejorado con tipo de materia)
-    if (newReport.reportType === 'Viajes') {
-      console.log('=== PROCESANDO VENTA AUTOMÁTICA PARA NUEVO REPORTE ===');
-      console.log('📦 Tipo de materia:', newReport.tipoMateria);
-      const resultadoVenta = procesarReporteParaVenta(newReport);
-      if (resultadoVenta.exito) {
-        console.log('✓ Venta generada automáticamente:', resultadoVenta.mensaje);
-        console.log('✓ Total venta:', resultadoVenta.total);
-      } else {
-        console.log('ℹ No se generó venta automática:', resultadoVenta.mensaje);
+      const inventarioActualizado = actualizarInventarioPorViaje(newReport);
+      if (inventarioActualizado) {
+        console.log('Inventario de acopio actualizado por nuevo viaje');
       }
     }
 
@@ -114,8 +92,7 @@ export const useReportOperations = () => {
       tipo: reportType,
       valor: calculatedValue,
       detalleCalculo,
-      tarifaEncontrada,
-      tipoMateria: newReport.tipoMateria
+      tarifaEncontrada
     });
 
     return newReport;

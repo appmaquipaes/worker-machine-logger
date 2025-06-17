@@ -1,103 +1,176 @@
 
-import { useState, useCallback } from 'react';
-import { useLoginOperation } from './auth/useLoginOperation';
-import { useRegisterOperation } from './auth/useRegisterOperation';
-import { usePasswordOperations } from './auth/usePasswordOperations';
-import { useUserManagementOperations } from './auth/useUserManagementOperations';
-
-interface AuthOperationsState {
-  isLoading: boolean;
-  error: string | null;
-}
+import { useState } from 'react';
+import { toast } from "sonner";
+import { User, StoredUser } from '@/types/auth';
+import { 
+  getStoredUsers, 
+  setStoredUsers, 
+  setStoredUser, 
+  removeStoredUser,
+  getResetRequests,
+  setResetRequests 
+} from '@/utils/authStorage';
+import { 
+  validateUserCredentials, 
+  checkEmailExists, 
+  validateResetCode, 
+  generateResetCode 
+} from '@/utils/authValidation';
 
 export const useAuthOperations = () => {
-  const [state, setState] = useState<AuthOperationsState>({
-    isLoading: false,
-    error: null
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const setLoading = useCallback((loading: boolean) => {
-    setState(prev => ({ ...prev, isLoading: loading }));
-  }, []);
-
-  const setError = useCallback((error: string | null) => {
-    setState(prev => ({ ...prev, error }));
-  }, []);
-
-  // Import operations from smaller hooks
-  const { login: loginOperation } = useLoginOperation();
-  const { register: registerOperation } = useRegisterOperation();
-  const { resetPassword: resetPasswordOperation, updatePassword: updatePasswordOperation } = usePasswordOperations();
-  const { updateUserMachines: updateUserMachinesOperation, logout: logoutOperation } = useUserManagementOperations();
-
-  // Wrap operations with loading states
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  const login = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      const result = await loginOperation(email, password);
-      if (!result) {
-        setError("Credenciales incorrectas");
+      const foundUser = validateUserCredentials(email, password);
+      
+      if (!foundUser) {
+        toast.error("Credenciales incorrectas");
+        return false;
       }
-      return result;
+      
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setStoredUser(userWithoutPassword);
+      toast.success("Inicio de sesión exitoso");
+      return true;
     } catch (error) {
-      const errorMessage = "Error al iniciar sesión";
-      setError(errorMessage);
+      console.error("Error al iniciar sesión:", error);
+      toast.error("Error al iniciar sesión");
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [loginOperation, setLoading, setError]);
+  };
 
-  const register = useCallback(async (
+  const register = async (
     name: string, 
     email: string, 
     password: string, 
     role: 'Trabajador' | 'Administrador' | 'Operador',
-    assignedMachines?: string[]
+    assignedMachines: string[] = []
   ): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+    setIsLoading(true);
     try {
-      return await registerOperation(name, email, password, role, assignedMachines);
+      if (checkEmailExists(email)) {
+        toast.error("El correo electrónico ya está registrado");
+        return false;
+      }
+      
+      const users = getStoredUsers();
+      const newUser: StoredUser = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password,
+        role,
+        ...(role === 'Operador' && { assignedMachines: assignedMachines || [] }),
+      };
+      
+      users.push(newUser);
+      setStoredUsers(users);
+      
+      toast.success("Registro exitoso");
+      return true;
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      toast.error("Error al registrar usuario");
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [registerOperation, setLoading, setError]);
+  };
 
-  const resetPassword = useCallback(async (email: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  const updateUserMachines = async (userId: string, machineIds: string[]): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      return await resetPasswordOperation(email);
+      const users = getStoredUsers();
+      const userIndex = users.findIndex((u) => u.id === userId);
+      
+      if (userIndex === -1) {
+        toast.error("Usuario no encontrado");
+        return false;
+      }
+      
+      users[userIndex].assignedMachines = machineIds;
+      setStoredUsers(users);
+      
+      toast.success("Máquinas asignadas actualizadas");
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar máquinas:", error);
+      toast.error("Error al actualizar las máquinas asignadas");
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [resetPasswordOperation, setLoading, setError]);
+  };
 
-  const updatePassword = useCallback(async (email: string, resetCode: string, newPassword: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  const resetPassword = async (email: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      return await updatePasswordOperation(email, resetCode, newPassword);
+      if (!checkEmailExists(email)) {
+        toast.error("No existe una cuenta con ese correo electrónico");
+        return false;
+      }
+      
+      const resetCode = generateResetCode();
+      const resetRequests = getResetRequests();
+      resetRequests[email] = {
+        code: resetCode,
+        expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutos
+      };
+      setResetRequests(resetRequests);
+      
+      toast.success(`Código de restablecimiento: ${resetCode} (En producción se enviaría por email)`);
+      return true;
+    } catch (error) {
+      console.error("Error al solicitar restablecimiento:", error);
+      toast.error("Error al procesar la solicitud");
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [updatePasswordOperation, setLoading, setError]);
+  };
 
-  const updateUserMachines = useCallback(async (userId: string, machineIds: string[]): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  const updatePassword = async (email: string, resetCode: string, newPassword: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      return await updateUserMachinesOperation(userId, machineIds);
+      if (!validateResetCode(email, resetCode)) {
+        toast.error("El código es incorrecto o ha expirado");
+        return false;
+      }
+      
+      const users = getStoredUsers();
+      const userIndex = users.findIndex((u) => u.email === email);
+      
+      if (userIndex === -1) {
+        toast.error("Usuario no encontrado");
+        return false;
+      }
+      
+      users[userIndex].password = newPassword;
+      setStoredUsers(users);
+      
+      const resetRequests = getResetRequests();
+      delete resetRequests[email];
+      setResetRequests(resetRequests);
+      
+      toast.success("Contraseña actualizada correctamente");
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar contraseña:", error);
+      toast.error("Error al actualizar la contraseña");
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [updateUserMachinesOperation, setLoading, setError]);
+  };
 
-  const logout = useCallback(() => {
-    logoutOperation();
-  }, [logoutOperation]);
+  const logout = () => {
+    removeStoredUser();
+    toast.success("Sesión cerrada");
+  };
 
   return {
     login,
@@ -106,7 +179,6 @@ export const useAuthOperations = () => {
     resetPassword,
     updatePassword,
     logout,
-    isLoading: state.isLoading,
-    error: state.error
+    isLoading
   };
 };
