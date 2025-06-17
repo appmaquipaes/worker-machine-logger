@@ -13,13 +13,18 @@ export type TarifaCliente = {
   tipo_material?: string; // ID del tipo de material
   
   // Campos para alquiler de maquinaria
-  tipo_servicio: 'transporte' | 'alquiler_maquina';
+  tipo_servicio: 'transporte' | 'alquiler_maquina' | 'recepcion_escombrera';
   maquina_id?: string; // ID de la máquina cuando es alquiler
   tipo_maquina?: string; // Tipo de máquina para mostrar en la tabla
   modalidad_cobro?: 'por_hora' | 'por_dia' | 'por_mes';
   valor_por_hora?: number;
   valor_por_dia?: number;
   valor_por_mes?: number;
+  
+  // Campos específicos para recepción de escombrera
+  escombrera_id?: string; // ID de la escombrera
+  valor_volqueta_sencilla?: number;
+  valor_volqueta_doble_troque?: number;
   
   activa: boolean;
   fecha_creacion: Date;
@@ -82,6 +87,29 @@ export const createTarifaAlquiler = (
   };
 };
 
+// Función para crear una nueva tarifa de recepción de escombrera
+export const createTarifaEscombrera = (
+  cliente: string,
+  finca: string | undefined,
+  escombrera_id: string,
+  valor_volqueta_sencilla: number,
+  valor_volqueta_doble_troque: number,
+  observaciones?: string
+): TarifaCliente => {
+  return {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    cliente,
+    finca,
+    escombrera_id,
+    tipo_servicio: 'recepcion_escombrera',
+    valor_volqueta_sencilla,
+    valor_volqueta_doble_troque,
+    activa: true,
+    fecha_creacion: new Date(),
+    observaciones
+  };
+};
+
 // Función legacy para mantener compatibilidad
 export const createTarifaCliente = createTarifaTransporte;
 
@@ -137,4 +165,35 @@ export const findTarifaCliente = (
 export const getTarifasByCliente = (cliente: string): TarifaCliente[] => {
   const tarifas = loadTarifasCliente();
   return tarifas.filter(t => t.cliente === cliente && t.activa);
+};
+
+// Función para buscar tarifa específica de escombrera
+export const findTarifaEscombrera = (
+  cliente: string,
+  escombrera_id: string,
+  finca?: string
+): TarifaCliente | null => {
+  const tarifas = loadTarifasCliente();
+  
+  // Buscar coincidencia exacta con finca
+  let tarifa = tarifas.find(t => 
+    t.activa && 
+    t.tipo_servicio === 'recepcion_escombrera' &&
+    t.cliente === cliente && 
+    t.finca === finca &&
+    t.escombrera_id === escombrera_id
+  );
+  
+  // Si no encuentra con finca específica, buscar solo por cliente
+  if (!tarifa) {
+    tarifa = tarifas.find(t => 
+      t.activa && 
+      t.tipo_servicio === 'recepcion_escombrera' &&
+      t.cliente === cliente && 
+      !t.finca &&
+      t.escombrera_id === escombrera_id
+    );
+  }
+  
+  return tarifa || null;
 };

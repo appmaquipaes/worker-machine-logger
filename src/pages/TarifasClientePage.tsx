@@ -1,27 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Edit, Trash2, DollarSign, Search, Users, AlertTriangle, Truck, Settings } from 'lucide-react';
+import { ArrowLeft, Plus, Search, DollarSign, Truck, Settings, MapPin } from 'lucide-react';
 import {
   TarifaCliente,
   loadTarifasCliente,
   saveTarifasCliente,
-  createTarifaTransporte,
-  createTarifaAlquiler
 } from '@/models/TarifasCliente';
-import { loadClientes, getClienteByName } from '@/models/Clientes';
+import { loadClientes } from '@/models/Clientes';
 import { useMachine } from '@/context/MachineContext';
 import { loadMateriales } from '@/models/Materiales';
 import { loadProveedores } from '@/models/Proveedores';
-import ClienteFincaSelector from '@/components/ClienteFincaSelector';
-import TarifaTransporteForm from '@/components/TarifaTransporteForm';
-import TarifaAlquilerForm from '@/components/TarifaAlquilerForm';
 
 import TarifasClienteStats from "@/components/tarifas/TarifasClienteStats";
 import TarifasClienteTable from "@/components/tarifas/TarifasClienteTable";
@@ -42,31 +37,13 @@ const TarifasClientePage: React.FC = () => {
   const [editingTarifa, setEditingTarifa] = useState<TarifaCliente | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Formulario compartido
-  const [tipoServicio, setTipoServicio] = useState<'transporte' | 'alquiler_maquina'>('transporte');
-  const [cliente, setCliente] = useState('');
-  const [finca, setFinca] = useState('');
-  // Transporte
-  const [origen, setOrigen] = useState('');
-  const [destino, setDestino] = useState('');
-  const [valorFlete, setValorFlete] = useState<number>(0);
-  const [tipoMaterial, setTipoMaterial] = useState('');
-  const [valorMaterial, setValorMaterial] = useState<number>(0);
-  const [valorMaterialCliente, setValorMaterialCliente] = useState<number>(0);
-  // Alquiler
-  const [maquinaId, setMaquinaId] = useState('');
-  const [valorPorHora, setValorPorHora] = useState<number>(0);
-  const [valorPorDia, setValorPorDia] = useState<number>(0);
-  const [valorPorMes, setValorPorMes] = useState<number>(0);
-  // Observaciones
-  const [observaciones, setObservaciones] = useState('');
-
   // Para filtrar búsqueda
   const tarifasFiltradas = tarifas.filter(t => {
     const clienteObj = clientes.find(c => c.id === t.cliente || c.nombre_cliente === t.cliente);
     const clienteNombre = clienteObj?.nombre_cliente || t.cliente || '';
     const maquina = machines.find(m => m.id === t.maquina_id);
-    const maquinaNombre = maquina?.name || t.tipo_maquina || '';
+    const escombrera = machines.find(m => m.id === t.escombrera_id);
+    const maquinaNombre = maquina?.name || escombrera?.name || t.tipo_maquina || '';
     const destinoText = t.destino || '';
     return (
       clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,160 +68,27 @@ const TarifasClientePage: React.FC = () => {
     setMateriales(loadMateriales());
   }, [user, navigate]);
 
-  // Resetear formulario
-  const resetForm = () => {
-    setTipoServicio('transporte');
-    setCliente('');
-    setFinca('');
-    setOrigen('');
-    setDestino('');
-    setValorFlete(0);
-    setTipoMaterial('');
-    setValorMaterial(0);
-    setValorMaterialCliente(0);
-    setMaquinaId('');
-    setValorPorHora(0);
-    setValorPorDia(0);
-    setValorPorMes(0);
-    setObservaciones('');
-  };
-
-  // Selección de cliente y finca
-  const handleClienteChange = (nuevoCliente: string) => {
-    setCliente(nuevoCliente);
-    setFinca('');
-    // para transporte, destino default según cliente o finca
-    if (tipoServicio === 'transporte' && nuevoCliente) {
-      const clienteData = getClienteByName(nuevoCliente) || clientes.find(c => c.id === nuevoCliente);
-      if (clienteData) {
-        const fincas = (clienteData.fincas || []);
-        if (fincas.length === 0) {
-          setDestino(clienteData.nombre_cliente || nuevoCliente);
-        } else {
-          setDestino('');
-        }
-      }
-    } else {
-      setDestino('');
-    }
-  };
-  const handleFincaChange = (nuevaFinca: string) => {
-    setFinca(nuevaFinca);
-    if (tipoServicio === 'transporte') {
-      if (nuevaFinca) setDestino(nuevaFinca);
-      else if (cliente) {
-        const clienteData = getClienteByName(cliente) || clientes.find(c => c.id === cliente);
-        if (clienteData) {
-          const fincas = (clienteData.fincas || []);
-          if (fincas.length === 0) setDestino(clienteData.nombre_cliente || cliente);
-          else setDestino('');
-        }
-      }
-    }
-  };
-  // Material
-  const handleMaterialChange = (materialId: string) => {
-    setTipoMaterial(materialId);
-    if (materialId) {
-      const material = materiales.find(m => m.id === materialId);
-      if (material) {
-        setValorMaterial(material.valor_por_m3);
-        setValorMaterialCliente(material.valor_por_m3);
-      }
-    } else {
-      setValorMaterial(0);
-      setValorMaterialCliente(0);
-    }
-  };
-
-  // Crear o actualizar tarifa según tipo
-  const handleSubmit = () => {
-    if (!cliente) {
-      toast.error('Debe seleccionar un cliente');
-      return;
-    }
-    let nuevaTarifa: TarifaCliente;
-    if (tipoServicio === 'transporte') {
-      if (!origen || !destino || valorFlete <= 0) {
-        toast.error('Complete todos los campos obligatorios para Transporte');
-        return;
-      }
-      nuevaTarifa = createTarifaTransporte(
-        cliente,
-        finca || undefined,
-        origen,
-        destino,
-        valorFlete,
-        valorMaterial > 0 ? valorMaterial : undefined,
-        valorMaterialCliente > 0 ? valorMaterialCliente : undefined,
-        observaciones || undefined,
-        tipoMaterial || undefined
-      );
-    } else {
-      if (!maquinaId || (valorPorHora <= 0 && valorPorDia <= 0 && valorPorMes <= 0)) {
-        toast.error('Debe seleccionar una máquina y definir al menos un valor de alquiler');
-        return;
-      }
-      const maquina = machines.find(m => m.id === maquinaId);
-      nuevaTarifa = createTarifaAlquiler(
-        cliente,
-        finca || undefined,
-        maquinaId,
-        maquina?.type || 'Desconocido',
-        valorPorHora > 0 ? valorPorHora : undefined,
-        valorPorDia > 0 ? valorPorDia : undefined,
-        valorPorMes > 0 ? valorPorMes : undefined,
-        observaciones || undefined
-      );
-    }
+  const handleTarifaCreated = (nuevaTarifa: TarifaCliente) => {
     let tarifasActualizadas: TarifaCliente[];
     if (editingTarifa) {
       tarifasActualizadas = tarifas.map(t => t.id === editingTarifa.id
         ? { ...nuevaTarifa, id: editingTarifa.id, fecha_creacion: editingTarifa.fecha_creacion, activa: t.activa }
         : t
       );
-      toast.success('Tarifa actualizada');
+      toast.success('Tarifa actualizada exitosamente');
     } else {
       tarifasActualizadas = [...tarifas, nuevaTarifa];
-      toast.success('Tarifa agregada');
+      toast.success('Tarifa agregada exitosamente');
     }
     saveTarifasCliente(tarifasActualizadas);
     setTarifas(tarifasActualizadas);
     setShowDialog(false);
     setEditingTarifa(null);
-    resetForm();
   };
 
   const handleEdit = (tarifa: TarifaCliente) => {
     setEditingTarifa(tarifa);
     setShowDialog(true);
-    setTipoServicio(tarifa.tipo_servicio);
-    setCliente(tarifa.cliente);
-    setFinca(tarifa.finca || '');
-    setObservaciones(tarifa.observaciones || '');
-    if (tarifa.tipo_servicio === 'transporte') {
-      setOrigen(tarifa.origen || '');
-      setDestino(tarifa.destino || '');
-      setValorFlete(tarifa.valor_flete_m3 || 0);
-      setTipoMaterial(tarifa.tipo_material || '');
-      setValorMaterial(tarifa.valor_material_m3 || 0);
-      setValorMaterialCliente(tarifa.valor_material_cliente_m3 || 0);
-      setMaquinaId('');
-      setValorPorHora(0);
-      setValorPorDia(0);
-      setValorPorMes(0);
-    } else {
-      setOrigen('');
-      setDestino('');
-      setValorFlete(0);
-      setTipoMaterial('');
-      setValorMaterial(0);
-      setValorMaterialCliente(0);
-      setMaquinaId(tarifa.maquina_id || '');
-      setValorPorHora(tarifa.valor_por_hora || 0);
-      setValorPorDia(tarifa.valor_por_dia || 0);
-      setValorPorMes(tarifa.valor_por_mes || 0);
-    }
   };
 
   const handleDeleteTarifa = (id: string) => {
@@ -262,6 +106,11 @@ const TarifasClientePage: React.FC = () => {
     setTarifas(tarifasActualizadas);
   };
 
+  const handleCancel = () => {
+    setShowDialog(false);
+    setEditingTarifa(null);
+  };
+
   // Utilidades visuales
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('es-CO', {
@@ -270,11 +119,13 @@ const TarifasClientePage: React.FC = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
+  
   const getMaterialName = (id?: string) => {
     if (!id) return '-';
     const m = materiales.find(mat => mat.id === id);
     return m ? m.nombre_material : id;
   };
+  
   const getMachineName = (id?: string) => {
     if (!id) return '-';
     const machine = machines.find(m => m.id === id);
@@ -289,6 +140,11 @@ const TarifasClientePage: React.FC = () => {
     return { margen, porcentaje };
   };
 
+  // Estadísticas actualizadas para incluir escombrera
+  const totalTransporte = tarifas.filter(t => t.tipo_servicio === 'transporte').length;
+  const totalAlquiler = tarifas.filter(t => t.tipo_servicio === 'alquiler_maquina').length;
+  const totalEscombrera = tarifas.filter(t => t.tipo_servicio === 'recepcion_escombrera').length;
+
   if (!user || user.role !== 'Administrador') return null;
 
   return (
@@ -301,7 +157,7 @@ const TarifasClientePage: React.FC = () => {
               Tarifas por Cliente
             </h1>
             <p className="text-lg text-slate-600">
-              Gestiona las tarifas especiales de transporte y alquiler con una interfaz renovada.
+              Gestiona las tarifas especiales de transporte, alquiler y escombrera para cada cliente.
             </p>
           </div>
           <Button 
@@ -315,19 +171,56 @@ const TarifasClientePage: React.FC = () => {
         </div>
       </div>
       
-      {/* Estadísticas */}
-      <TarifasClienteStats
-        totalTarifas={tarifas.length}
-        totalClientes={new Set(tarifas.map(t => t.cliente)).size}
-        promedioAlquilerHora={
-          (() => {
-            const alquileres = tarifas.filter(t => t.tipo_servicio === 'alquiler_maquina' && t.valor_por_hora);
-            return alquileres.length > 0
-              ? formatCurrency(alquileres.reduce((sum, t) => sum + (t.valor_por_hora || 0), 0) / alquileres.length)
-              : '$0';
-          })()
-        }
-      />
+      {/* Estadísticas actualizadas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide">Total Tarifas</p>
+                <p className="text-3xl font-bold text-blue-800">{tarifas.length}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-green-100">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 text-sm font-semibold uppercase tracking-wide">Transporte</p>
+                <p className="text-3xl font-bold text-green-800">{totalTransporte}</p>
+              </div>
+              <Truck className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-600 text-sm font-semibold uppercase tracking-wide">Alquiler</p>
+                <p className="text-3xl font-bold text-purple-800">{totalAlquiler}</p>
+              </div>
+              <Settings className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-50 to-orange-100">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide">Escombrera</p>
+                <p className="text-3xl font-bold text-orange-800">{totalEscombrera}</p>
+              </div>
+              <MapPin className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Card principal */}
       <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur">
@@ -336,14 +229,13 @@ const TarifasClientePage: React.FC = () => {
             <div className="space-y-2">
               <CardTitle className="text-2xl font-bold text-slate-800">Gestión de Tarifas</CardTitle>
               <CardDescription className="text-base text-slate-600">
-                Administra tarifas personalizadas para ambos servicios con más claridad visual.
+                Administra tarifas personalizadas para transporte, alquiler y recepción de escombrera.
               </CardDescription>
             </div>
             <Dialog open={showDialog} onOpenChange={(open) => {
               setShowDialog(open);
               if (!open) {
                 setEditingTarifa(null);
-                resetForm();
               }
             }}>
               <DialogTrigger asChild>
@@ -355,104 +247,23 @@ const TarifasClientePage: React.FC = () => {
               <DialogContent className="sm:max-w-[700px] bg-white shadow-2xl border-0 animate-fade-in">
                 <DialogHeader className="text-center space-y-4 pb-6">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    {tipoServicio === 'transporte'
-                      ? <Truck className="h-8 w-8 text-white" />
-                      : <Settings className="h-8 w-8 text-white" />}
+                    <DollarSign className="h-8 w-8 text-white" />
                   </div>
                   <div className="space-y-2">
                     <DialogTitle className="text-2xl font-bold text-slate-800">
                       {editingTarifa ? 'Editar Tarifa' : 'Agregar Nueva Tarifa'}
                     </DialogTitle>
                     <DialogDescription className="text-base text-slate-600">
-                      {tipoServicio === 'transporte'
-                        ? 'Define una tarifa especial para flete y material, ahora más claro.'
-                        : 'Define una tarifa especial para alquiler de maquinaria.'}
+                      Define tarifas especiales para servicios de transporte, alquiler de maquinaria o recepción de escombrera.
                     </DialogDescription>
                   </div>
                 </DialogHeader>
 
-                {/* Selector tipo de servicio */}
-                <div className="mb-4">
-                  <label className="font-semibold text-slate-700">Tipo de Servicio *</label>
-                  <select
-                    value={tipoServicio}
-                    onChange={e => setTipoServicio(e.target.value as any)}
-                    className="w-full p-2 border rounded-md focus:border-blue-500 focus:ring focus:ring-blue-100 transition"
-                    disabled={!!editingTarifa}
-                  >
-                    <option value="transporte">Transporte (flete y material)</option>
-                    <option value="alquiler_maquina">Alquiler de Maquinaria</option>
-                  </select>
-                </div>
-
-                <ClienteFincaSelector
-                  selectedCliente={cliente}
-                  selectedFinca={finca}
-                  onClienteChange={handleClienteChange}
-                  onFincaChange={handleFincaChange}
+                <TarifaClienteForm
+                  initialData={editingTarifa}
+                  onTarifaCreated={handleTarifaCreated}
+                  onCancel={handleCancel}
                 />
-                <div className="mt-2">
-                  {tipoServicio === 'transporte' ? (
-                    <TarifaTransporteForm
-                      origen={origen}
-                      destino={destino}
-                      valorFlete={valorFlete}
-                      tipoMaterial={tipoMaterial}
-                      valorMaterial={valorMaterial}
-                      valorMaterialCliente={valorMaterialCliente}
-                      proveedores={proveedores}
-                      materiales={materiales}
-                      cliente={cliente}
-                      clienteTieneFincas={!!finca}
-                      onOrigenChange={setOrigen}
-                      onDestinoChange={setDestino}
-                      onValorFleteChange={setValorFlete}
-                      onMaterialChange={handleMaterialChange}
-                      onValorMaterialClienteChange={setValorMaterialCliente}
-                    />
-                  ) : (
-                    <TarifaAlquilerForm
-                      maquinaId={maquinaId}
-                      valorPorHora={valorPorHora}
-                      valorPorDia={valorPorDia}
-                      valorPorMes={valorPorMes}
-                      machines={machines}
-                      onMaquinaChange={setMaquinaId}
-                      onValorPorHoraChange={setValorPorHora}
-                      onValorPorDiaChange={setValorPorDia}
-                      onValorPorMesChange={setValorPorMes}
-                    />
-                  )}
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700">Observaciones</label>
-                  <Input
-                    value={observaciones}
-                    onChange={e => setObservaciones(e.target.value)}
-                    placeholder="Observaciones adicionales"
-                    className="border rounded-md mt-1"
-                  />
-                </div>
-                <div className="flex gap-3 pt-6 border-t border-slate-200 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEditingTarifa(null);
-                      resetForm();
-                      setShowDialog(false);
-                    }}
-                    className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg animate-scale-in"
-                  >
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    {editingTarifa ? 'Actualizar Tarifa' : 'Guardar Tarifa'}
-                  </Button>
-                </div>
               </DialogContent>
             </Dialog>
           </div>

@@ -1,7 +1,8 @@
+
 import { Report, ReportType } from '@/types/report';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
-import { findTarifaEscombrera } from '@/models/TarifasEscombrera';
+import { findTarifaEscombrera } from '@/models/TarifasCliente';
 
 export const useReportOperations = () => {
   const createReport = (
@@ -51,15 +52,15 @@ export const useReportOperations = () => {
       tarifaEncontrada = calculo.tarifaEncontrada;
     }
 
-    // Calcular valor para recepción de escombrera
+    // Calcular valor para recepción de escombrera usando las nuevas tarifas
     if (reportType === 'Recepción Escombrera' && destination && trips) {
-      const tarifaEscombrera = findTarifaEscombrera(destination);
-      if (tarifaEscombrera) {
+      const tarifa = findTarifaEscombrera(destination, machineId);
+      if (tarifa) {
         // Determinar tipo de volqueta desde la descripción
         const tipoVolqueta = description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla';
         const valorPorVolqueta = tipoVolqueta === 'Doble Troque' 
-          ? tarifaEscombrera.valor_volqueta_doble_troque 
-          : tarifaEscombrera.valor_volqueta_sencilla;
+          ? tarifa.valor_volqueta_doble_troque || 0
+          : tarifa.valor_volqueta_sencilla || 0;
         
         calculatedValue = valorPorVolqueta * trips;
         detalleCalculo = `${trips} volquetas ${tipoVolqueta} × $${valorPorVolqueta.toLocaleString()} = $${calculatedValue.toLocaleString()}`;

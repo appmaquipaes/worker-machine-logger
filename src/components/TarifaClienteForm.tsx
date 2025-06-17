@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,6 +7,7 @@ import { toast } from 'sonner';
 import { 
   createTarifaTransporte,
   createTarifaAlquiler,
+  createTarifaEscombrera,
   TarifaCliente 
 } from '@/models/TarifasCliente';
 import { loadProveedores } from '@/models/Proveedores';
@@ -16,6 +18,7 @@ import { useMachine } from '@/context/MachineContext';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 import TarifaTransporteForm from '@/components/TarifaTransporteForm';
 import TarifaAlquilerForm from '@/components/TarifaAlquilerForm';
+import TarifaEscombreraForm from '@/components/TarifaEscombreraForm';
 
 interface TarifaClienteFormProps {
   initialData?: TarifaCliente | null;
@@ -33,7 +36,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   const [materiales, setMateriales] = useState<any[]>([]);
   
   // Estados del formulario
-  const [tipoServicio, setTipoServicio] = useState<'transporte' | 'alquiler_maquina'>('transporte');
+  const [tipoServicio, setTipoServicio] = useState<'transporte' | 'alquiler_maquina' | 'recepcion_escombrera'>('transporte');
   const [cliente, setCliente] = useState('');
   const [finca, setFinca] = useState('');
   
@@ -50,6 +53,11 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   const [valorPorHora, setValorPorHora] = useState<number>(0);
   const [valorPorDia, setValorPorDia] = useState<number>(0);
   const [valorPorMes, setValorPorMes] = useState<number>(0);
+  
+  // Estados para escombrera
+  const [escombreraId, setEscombreraId] = useState('');
+  const [valorVolquetaSencilla, setValorVolquetaSencilla] = useState<number>(0);
+  const [valorVolquetaDobletroque, setValorVolquetaDobletroque] = useState<number>(0);
   
   const [observaciones, setObservaciones] = useState('');
 
@@ -72,11 +80,15 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         setTipoMaterial(initialData.tipo_material || '');
         setValorMaterial(initialData.valor_material_m3 || 0);
         setValorMaterialCliente(initialData.valor_material_cliente_m3 || 0);
-      } else {
+      } else if (initialData.tipo_servicio === 'alquiler_maquina') {
         setMaquinaId(initialData.maquina_id || '');
         setValorPorHora(initialData.valor_por_hora || 0);
         setValorPorDia(initialData.valor_por_dia || 0);
         setValorPorMes(initialData.valor_por_mes || 0);
+      } else if (initialData.tipo_servicio === 'recepcion_escombrera') {
+        setEscombreraId(initialData.escombrera_id || '');
+        setValorVolquetaSencilla(initialData.valor_volqueta_sencilla || 0);
+        setValorVolquetaDobletroque(initialData.valor_volqueta_doble_troque || 0);
       }
     } else {
       resetForm();
@@ -97,6 +109,9 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     setValorPorHora(0);
     setValorPorDia(0);
     setValorPorMes(0);
+    setEscombreraId('');
+    setValorVolquetaSencilla(0);
+    setValorVolquetaDobletroque(0);
     setObservaciones('');
   };
 
@@ -178,7 +193,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         observaciones || undefined,
         tipoMaterial || undefined
       );
-    } else {
+    } else if (tipoServicio === 'alquiler_maquina') {
       if (!maquinaId || (valorPorHora <= 0 && valorPorDia <= 0 && valorPorMes <= 0)) {
         toast.error('Debe seleccionar una máquina y definir al menos un valor de alquiler');
         return;
@@ -193,6 +208,21 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         valorPorHora > 0 ? valorPorHora : undefined,
         valorPorDia > 0 ? valorPorDia : undefined,
         valorPorMes > 0 ? valorPorMes : undefined,
+        observaciones || undefined
+      );
+    } else {
+      // recepcion_escombrera
+      if (!escombreraId || valorVolquetaSencilla <= 0 || valorVolquetaDobletroque <= 0) {
+        toast.error('Debe seleccionar una escombrera y definir los valores para ambos tipos de volqueta');
+        return;
+      }
+
+      nuevaTarifa = createTarifaEscombrera(
+        cliente,
+        finca || undefined,
+        escombreraId,
+        valorVolquetaSencilla,
+        valorVolquetaDobletroque,
         observaciones || undefined
       );
     }
@@ -215,11 +245,12 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         <select
           id="tipo-servicio"
           value={tipoServicio}
-          onChange={(e) => setTipoServicio(e.target.value as 'transporte' | 'alquiler_maquina')}
+          onChange={(e) => setTipoServicio(e.target.value as 'transporte' | 'alquiler_maquina' | 'recepcion_escombrera')}
           className="w-full p-2 border rounded-md"
         >
           <option value="transporte">Servicio de Transporte</option>
           <option value="alquiler_maquina">Alquiler de Maquinaria</option>
+          <option value="recepcion_escombrera">Recepción Escombrera</option>
         </select>
       </div>
 
@@ -248,7 +279,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
           onMaterialChange={handleMaterialChange}
           onValorMaterialClienteChange={setValorMaterialCliente}
         />
-      ) : (
+      ) : tipoServicio === 'alquiler_maquina' ? (
         <TarifaAlquilerForm
           maquinaId={maquinaId}
           valorPorHora={valorPorHora}
@@ -259,6 +290,15 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
           onValorPorHoraChange={setValorPorHora}
           onValorPorDiaChange={setValorPorDia}
           onValorPorMesChange={setValorPorMes}
+        />
+      ) : (
+        <TarifaEscombreraForm
+          escombreraId={escombreraId}
+          valorVolquetaSencilla={valorVolquetaSencilla}
+          valorVolquetaDobletroque={valorVolquetaDobletroque}
+          onEscombreraChange={setEscombreraId}
+          onValorSencillaChange={setValorVolquetaSencilla}
+          onValorDobletroqueChange={setValorVolquetaDobletroque}
         />
       )}
       
