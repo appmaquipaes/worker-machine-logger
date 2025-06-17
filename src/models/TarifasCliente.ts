@@ -61,6 +61,11 @@ export const saveTarifasCliente = (tarifas: TarifaCliente[]): void => {
   }
 };
 
+export const getTarifasByCliente = (clienteId: string): TarifaCliente[] => {
+  const tarifas = loadTarifasCliente();
+  return tarifas.filter(tarifa => tarifa.cliente === clienteId && tarifa.activa);
+};
+
 export const createTarifaTransporte = (
   cliente: string,
   finca?: string,

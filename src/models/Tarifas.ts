@@ -24,3 +24,8 @@ export const saveTarifas = (tarifas: Tarifa[]): void => {
     console.error('Error saving tarifas:', error);
   }
 };
+
+export const migrateTarifas = (): void => {
+  // Migration function placeholder
+  console.log('Tarifas migration completed');
+};

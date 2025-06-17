@@ -53,11 +53,29 @@ export const saveClientes = (clientes: Cliente[]): void => {
   }
 };
 
-export const createCliente = (clienteData: Omit<Cliente, 'id' | 'fechaRegistro'>): Cliente => {
+export const createCliente = (
+  nombre_cliente: string,
+  tipo_persona: 'Natural' | 'Empresa',
+  nit_cedula: string,
+  telefono_contacto: string,
+  persona_contacto: string,
+  ciudad: string,
+  tipo_cliente?: string,
+  correo_electronico?: string,
+  observaciones?: string
+): Cliente => {
   const nuevoCliente: Cliente = {
-    ...clienteData,
     id: Date.now().toString(),
-    nombre_cliente: clienteData.nombre_cliente || clienteData.nombre,
+    nombre: nombre_cliente,
+    nombre_cliente,
+    tipo_persona,
+    nit_cedula,
+    telefono_contacto,
+    persona_contacto,
+    ciudad,
+    tipo_cliente,
+    correo_electronico,
+    observaciones,
     fechaRegistro: new Date().toISOString()
   };
   

@@ -2,11 +2,17 @@
 export interface Finca {
   id: string;
   nombre: string;
+  nombre_finca: string;
   cliente_id: string;
   ubicacion?: string;
+  direccion: string;
+  ciudad: string;
   area?: number;
   tipo_cultivo?: string;
   observaciones?: string;
+  contacto_nombre: string;
+  contacto_telefono: string;
+  notas?: string;
   activa: boolean;
   fechaRegistro: string;
 }
@@ -35,21 +41,24 @@ export const getFincasByCliente = (clienteId: string): Finca[] => {
 };
 
 export const createFinca = (
-  nombre: string,
-  cliente_id: string,
-  ubicacion?: string,
-  area?: number,
-  tipo_cultivo?: string,
-  observaciones?: string
+  clienteId: string,
+  nombreFinca: string,
+  direccion: string,
+  ciudad: string,
+  contactoNombre: string,
+  contactoTelefono: string,
+  notas?: string
 ): Finca => {
   return {
     id: Date.now().toString(),
-    nombre,
-    cliente_id,
-    ubicacion,
-    area,
-    tipo_cultivo,
-    observaciones,
+    nombre: nombreFinca,
+    nombre_finca: nombreFinca,
+    cliente_id: clienteId,
+    direccion,
+    ciudad,
+    contacto_nombre: contactoNombre,
+    contacto_telefono: contactoTelefono,
+    notas,
     activa: true,
     fechaRegistro: new Date().toISOString()
   };

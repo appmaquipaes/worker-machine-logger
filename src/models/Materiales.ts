@@ -30,9 +30,9 @@ export const saveMateriales = (materiales: Material[]): void => {
 
 export const createMaterial = (
   nombre_material: string,
-  categoria: string,
-  unidad_medida: string,
   valor_por_m3: number,
+  categoria: string = 'Material',
+  unidad_medida: string = 'm³',
   descripcion?: string
 ): Material => {
   return {

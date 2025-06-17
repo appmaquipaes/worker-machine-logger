@@ -1,25 +1,40 @@
 
-// Define el tipo para servicios de transporte (solo flete)
-export type ServicioTransporte = {
+export interface ServicioTransporte {
   id: string;
   fecha: Date;
   cliente: string;
-  finca: string;
+  finca?: string;
   origen: string;
   destino: string;
   tipo_material: string;
   cantidad_m3: number;
   valor_flete_m3: number;
-  total_flete: number;
-  valor_material_m3?: number; // Para control cuando cliente compra directo
-  total_material_referencia?: number; // Para reportes de control
+  valor_material_m3?: number;
   vehiculo?: string;
   conductor?: string;
-  observaciones?: string;
+  observacion?: string;
   numero_viajes: number;
+  fechaRegistro: string;
+}
+
+export const loadServiciosTransporte = (): ServicioTransporte[] => {
+  try {
+    const stored = localStorage.getItem('servicios_transporte');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error loading servicios transporte:', error);
+    return [];
+  }
 };
 
-// Función para crear un nuevo servicio de transporte
+export const saveServiciosTransporte = (servicios: ServicioTransporte[]): void => {
+  try {
+    localStorage.setItem('servicios_transporte', JSON.stringify(servicios));
+  } catch (error) {
+    console.error('Error saving servicios transporte:', error);
+  }
+};
+
 export const createServicioTransporte = (
   fecha: Date,
   cliente: string,
@@ -32,14 +47,11 @@ export const createServicioTransporte = (
   valor_material_m3?: number,
   vehiculo?: string,
   conductor?: string,
-  observaciones?: string,
+  observacion?: string,
   numero_viajes: number = 1
 ): ServicioTransporte => {
-  const total_flete = cantidad_m3 * valor_flete_m3;
-  const total_material_referencia = valor_material_m3 ? cantidad_m3 * valor_material_m3 : undefined;
-  
   return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    id: Date.now().toString(),
     fecha,
     cliente,
     finca,
@@ -48,28 +60,11 @@ export const createServicioTransporte = (
     tipo_material,
     cantidad_m3,
     valor_flete_m3,
-    total_flete,
     valor_material_m3,
-    total_material_referencia,
     vehiculo,
     conductor,
-    observaciones,
-    numero_viajes
+    observacion,
+    numero_viajes,
+    fechaRegistro: new Date().toISOString()
   };
-};
-
-// Función para guardar servicios de transporte en localStorage
-export const saveServiciosTransporte = (servicios: ServicioTransporte[]): void => {
-  localStorage.setItem('servicios_transporte', JSON.stringify(servicios));
-};
-
-// Función para cargar servicios de transporte desde localStorage
-export const loadServiciosTransporte = (): ServicioTransporte[] => {
-  const storedServicios = localStorage.getItem('servicios_transporte');
-  if (!storedServicios) return [];
-  
-  return JSON.parse(storedServicios).map((servicio: any) => ({
-    ...servicio,
-    fecha: new Date(servicio.fecha)
-  }));
 };
