@@ -9,7 +9,8 @@ import {
   Fuel, 
   Info, 
   Truck,
-  CheckCircle
+  CheckCircle,
+  Recycle
 } from 'lucide-react';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 
@@ -94,6 +95,17 @@ const ReportTypeSelector: React.FC<ReportTypeSelectorProps> = ({
       borderColor: 'border-amber-200',
       textColor: 'text-amber-700',
       description: 'Transporte de materiales'
+    },
+    { 
+      type: 'Recepción Escombrera' as ReportType, 
+      icon: Recycle, 
+      label: 'Recepción Escombrera', 
+      gradient: 'from-teal-500 via-teal-600 to-teal-700',
+      hoverGradient: 'hover:from-teal-600 hover:via-teal-700 hover:to-teal-800',
+      bgColor: 'bg-teal-50/80', 
+      borderColor: 'border-teal-200',
+      textColor: 'text-teal-700',
+      description: 'Recepción de material en escombrera'
     }
   ];
 

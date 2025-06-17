@@ -1,5 +1,4 @@
-
-export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes';
+export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes' | 'Recepción Escombrera';
 
 export interface Report {
   id: string;
@@ -22,6 +21,10 @@ export interface Report {
   kilometraje?: number;
   detalleCalculo?: string;
   tarifaEncontrada?: boolean;
+  // Nuevos campos para escombrera
+  clienteEscombrera?: string;
+  tipoVolqueta?: 'Sencilla' | 'Doble Troque';
+  cantidadVolquetas?: number;
 }
 
 export interface ReportContextType {

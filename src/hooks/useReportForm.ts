@@ -40,6 +40,8 @@ export const useReportForm = () => {
   const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
   const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
   
+  const [tipoVolqueta, setTipoVolqueta] = useState<'Sencilla' | 'Doble Troque'>('Sencilla');
+  
   useEffect(() => {
     setProveedores(loadProveedores());
     setTiposMaterial(getUniqueProviderMaterialTypes());
@@ -107,6 +109,7 @@ export const useReportForm = () => {
     setKilometraje(undefined);
     setTipoMateria('');
     setSelectedMaquinaria('');
+    setTipoVolqueta('Sencilla');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,28 +148,49 @@ export const useReportForm = () => {
     }
     
     try {
-      const reportDescription = reportType === 'Novedades' ? description : '';
+      const reportDescription = reportType === 'Novedades' ? description : 
+                              reportType === 'Recepción Escombrera' ? `Recepción ${tipoMateria} - ${trips} volquetas` : '';
+      
       const finalDestination = reportType === 'Viajes' 
         ? `${selectedCliente} - ${selectedFinca}`
         : destination;
       
-      addReport(
-        selectedMachine.id,
-        selectedMachine.name,
-        reportType,
-        reportDescription,
-        reportDate,
-        reportType === 'Viajes' ? trips : undefined,
-        (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
-        reportType === 'Combustible' ? value : 
-        reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-        reportType === 'Horas Trabajadas' ? workSite : undefined,
-        reportType === 'Viajes' ? origin : undefined,
-        reportType === 'Viajes' ? finalDestination : undefined,
-        reportType === 'Viajes' ? cantidadM3 : undefined,
-        reportType === 'Mantenimiento' ? proveedor : undefined,
-        reportType === 'Combustible' ? kilometraje : undefined
-      );
+      if (reportType === 'Recepción Escombrera') {
+        addReport(
+          selectedMachine.id,
+          selectedMachine.name,
+          reportType,
+          reportDescription,
+          reportDate,
+          trips, // cantidad de volquetas
+          undefined, // hours
+          undefined, // value se calculará automáticamente
+          undefined, // workSite
+          'Escombrera MAQUIPAES', // origin
+          selectedCliente, // destination (cliente)
+          undefined, // cantidadM3
+          undefined, // proveedor
+          undefined // kilometraje
+        );
+      } else {
+        addReport(
+          selectedMachine.id,
+          selectedMachine.name,
+          reportType,
+          reportDescription,
+          reportDate,
+          reportType === 'Viajes' ? trips : undefined,
+          (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
+          reportType === 'Combustible' ? value : 
+          reportType === 'Mantenimiento' ? maintenanceValue : undefined,
+          reportType === 'Horas Trabajadas' ? workSite : undefined,
+          reportType === 'Viajes' ? origin : undefined,
+          reportType === 'Viajes' ? finalDestination : undefined,
+          reportType === 'Viajes' ? cantidadM3 : undefined,
+          reportType === 'Mantenimiento' ? proveedor : undefined,
+          reportType === 'Combustible' ? kilometraje : undefined
+        );
+      }
       
       setLastSubmitSuccess(true);
       toast.success('¡REPORTE REGISTRADO CON ÉXITO!', {
@@ -228,6 +252,7 @@ export const useReportForm = () => {
     
     // Computed
     user,
-    selectedMachine
+    selectedMachine,
+    tipoVolqueta, setTipoVolqueta,
   };
 };

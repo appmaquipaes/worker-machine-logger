@@ -24,7 +24,9 @@ import {
   Truck,
   Calendar,
   MapPin,
-  Gauge
+  Gauge,
+  Users,
+  Hash
 } from 'lucide-react';
 
 interface ReportInputFieldsProps {
@@ -107,7 +109,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   setSelectedMaquinaria = () => {}
 }) => {
   const { selectedMachine } = useMachine();
-  const { isMachineryTransportVehicle, isMaterialTransportVehicle } = useMachineSpecificReports();
+  const { isMachineryTransportVehicle, isMaterialTransportVehicle, isEscombrera } = useMachineSpecificReports();
 
   const getReportTypeIcon = (type: ReportType) => {
     switch (type) {
@@ -140,6 +142,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   const shouldShowKilometrajeInput = reportType === 'Combustible';
   const shouldShowProveedorInput = reportType === 'Mantenimiento';
   const shouldShowDescriptionInput = reportType === 'Novedades';
+  const shouldShowEscombreraFields = reportType === 'Recepción Escombrera' && isEscombrera(selectedMachine);
 
   return (
     <>
@@ -432,6 +435,57 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
             required
           />
         </div>
+      )}
+
+      {shouldShowEscombreraFields && (
+        <>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Users size={24} />
+              <Label className="text-lg">Cliente</Label>
+            </div>
+            <ClienteFincaSelector
+              selectedCliente={selectedCliente}
+              selectedFinca=""
+              onClienteChange={onClienteChangeForDestination}
+              onFincaChange={() => {}}
+              hideFieldLabels={true}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Truck size={24} />
+              <Label htmlFor="tipo-volqueta" className="text-lg">Tipo de Volqueta</Label>
+            </div>
+            <Select onValueChange={(value) => setTipoMateria(value)} value={tipoMateria}>
+              <SelectTrigger className="text-lg p-6">
+                <SelectValue placeholder="Selecciona el tipo de volqueta" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Sencilla">Volqueta Sencilla</SelectItem>
+                <SelectItem value="Doble Troque">Volqueta Doble Troque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Hash size={24} />
+              <Label htmlFor="cantidad-volquetas" className="text-lg">Cantidad de Volquetas</Label>
+            </div>
+            <Input 
+              id="cantidad-volquetas"
+              type="number"
+              min="1"
+              placeholder="Ej: 5"
+              value={trips === undefined ? '' : trips}
+              onChange={(e) => setTrips(parseInt(e.target.value) || undefined)}
+              className="text-lg p-6"
+              required
+            />
+          </div>
+        </>
       )}
     </>
   );

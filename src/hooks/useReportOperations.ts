@@ -1,7 +1,7 @@
-
 import { Report, ReportType } from '@/types/report';
 import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
+import { findTarifaEscombrera } from '@/models/TarifasEscombrera';
 
 export const useReportOperations = () => {
   const createReport = (
@@ -51,6 +51,22 @@ export const useReportOperations = () => {
       tarifaEncontrada = calculo.tarifaEncontrada;
     }
 
+    // Calcular valor para recepción de escombrera
+    if (reportType === 'Recepción Escombrera' && destination && trips) {
+      const tarifaEscombrera = findTarifaEscombrera(destination);
+      if (tarifaEscombrera) {
+        // Determinar tipo de volqueta desde la descripción
+        const tipoVolqueta = description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla';
+        const valorPorVolqueta = tipoVolqueta === 'Doble Troque' 
+          ? tarifaEscombrera.valor_volqueta_doble_troque 
+          : tarifaEscombrera.valor_volqueta_sencilla;
+        
+        calculatedValue = valorPorVolqueta * trips;
+        detalleCalculo = `${trips} volquetas ${tipoVolqueta} × $${valorPorVolqueta.toLocaleString()} = $${calculatedValue.toLocaleString()}`;
+        tarifaEncontrada = true;
+      }
+    }
+
     // Si no se pudo calcular automáticamente, usar valor manual si se proporcionó
     if (!tarifaEncontrada && value !== undefined) {
       calculatedValue = value;
@@ -61,7 +77,7 @@ export const useReportOperations = () => {
       id: Date.now().toString(),
       machineId,
       machineName,
-      userName: 'Current User', // This should come from auth context
+      userName: 'Current User',
       reportType,
       description,
       reportDate,
@@ -77,6 +93,10 @@ export const useReportOperations = () => {
       kilometraje,
       detalleCalculo,
       tarifaEncontrada,
+      // Campos específicos para escombrera
+      clienteEscombrera: reportType === 'Recepción Escombrera' ? destination : undefined,
+      tipoVolqueta: reportType === 'Recepción Escombrera' && description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla',
+      cantidadVolquetas: reportType === 'Recepción Escombrera' ? trips : undefined,
     };
     
     // Actualizar inventario si es un viaje desde acopio

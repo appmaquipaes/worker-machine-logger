@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Report } from '@/types/report';
 import { Venta, createVenta, createDetalleVenta, updateVentaTotal, saveVentas, loadVentas } from '@/models/Ventas';
@@ -19,6 +18,11 @@ export const useAutoVentas = () => {
   };
 
   const determinarTipoVenta = (report: Report): 'Solo material' | 'Solo transporte' | 'Material + transporte' => {
+    // Si es recepción de escombrera, es "Solo transporte" (servicio de recepción)
+    if (report.reportType === 'Recepción Escombrera') {
+      return 'Solo transporte';
+    }
+    
     // Cargador siempre es "Solo material" desde Acopio
     if (report.machineName.toLowerCase().includes('cargador')) {
       return 'Solo material';
@@ -60,17 +64,24 @@ export const useAutoVentas = () => {
 
   const crearVentaAutomatica = (report: Report): Venta | null => {
     try {
-      // Solo procesar reportes de tipo "Viajes"
-      if (report.reportType !== 'Viajes') {
+      // Procesar reportes de tipo "Viajes" y "Recepción Escombrera"
+      if (report.reportType !== 'Viajes' && report.reportType !== 'Recepción Escombrera') {
         return null;
       }
 
-      // Extraer información del reporte
-      const cliente = extractClienteFromDestination(report.destination || '');
-      const finca = extractFincaFromDestination(report.destination || '');
+      let cliente = '';
+      let destino = '';
+      
+      if (report.reportType === 'Recepción Escombrera') {
+        cliente = report.clienteEscombrera || report.destination || '';
+        destino = 'Escombrera MAQUIPAES';
+      } else {
+        cliente = extractClienteFromDestination(report.destination || '');
+        destino = report.destination || '';
+      }
       
       if (!cliente) {
-        console.log('No se pudo extraer cliente del destino:', report.destination);
+        console.log('No se pudo extraer cliente del reporte');
         return null;
       }
 
@@ -83,7 +94,11 @@ export const useAutoVentas = () => {
 
       const tipoVenta = determinarTipoVenta(report);
       const fechaVenta = report.reportDate;
-      const cantidadM3 = report.cantidadM3 || 0;
+      
+      // Para escombrera, usar cantidad de volquetas como cantidad
+      const cantidad = report.reportType === 'Recepción Escombrera' 
+        ? (report.cantidadVolquetas || 0) 
+        : (report.cantidadM3 || 0);
 
       // Crear la venta base
       let nuevaVenta = createVenta(
@@ -92,54 +107,71 @@ export const useAutoVentas = () => {
         clienteData.ciudad,
         tipoVenta,
         report.origin || '',
-        report.destination || '',
-        'Efectivo', // Forma de pago por defecto
+        destino,
+        'Efectivo',
         `Venta automática generada desde reporte de ${report.machineName}`
       );
 
-      // Agregar detalles según el tipo de venta
       const detalles = [];
 
-      // Si incluye material, agregar detalle de material
-      if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
-        const tipoMaterial = extraerTipoMaterial(report);
-        const precioMaterial = getPrecioVentaMaterial(tipoMaterial);
+      // Para escombrera, solo agregar servicio de recepción
+      if (report.reportType === 'Recepción Escombrera') {
+        const tipoVolqueta = report.tipoVolqueta || 'Sencilla';
+        const cantidadVolquetas = report.cantidadVolquetas || 0;
+        const valorTotal = report.value || 0;
+        const valorUnitario = cantidadVolquetas > 0 ? valorTotal / cantidadVolquetas : 0;
         
-        if (precioMaterial > 0 && cantidadM3 > 0) {
-          const detalleMaterial = createDetalleVenta(
-            'Material',
-            tipoMaterial,
-            cantidadM3,
-            precioMaterial
-          );
-          detalles.push(detalleMaterial);
-        }
-      }
-
-      // Si incluye transporte, agregar detalle de flete
-      if (tipoVenta === 'Solo transporte' || tipoVenta === 'Material + transporte') {
-        const tarifas = loadTarifas();
-        const tarifaFlete = tarifas.find(t => 
-          t.origen.toLowerCase() === (report.origin || '').toLowerCase() &&
-          t.destino.toLowerCase() === (report.destination || '').toLowerCase()
-        );
-
-        let precioFlete = 0;
-        if (tarifaFlete) {
-          precioFlete = tarifaFlete.valor_por_m3;
-        } else if (report.value) {
-          // Si no hay tarifa pero el reporte tiene valor, usar ese valor
-          precioFlete = cantidadM3 > 0 ? report.value / cantidadM3 : 0;
-        }
-
-        if (precioFlete > 0 && cantidadM3 > 0) {
-          const detalleFlete = createDetalleVenta(
+        if (valorUnitario > 0 && cantidadVolquetas > 0) {
+          const detalleRecepcion = createDetalleVenta(
             'Flete',
-            `Transporte ${report.origin} → ${report.destination}`,
-            cantidadM3,
-            precioFlete
+            `Recepción Escombrera - Volqueta ${tipoVolqueta}`,
+            cantidadVolquetas,
+            valorUnitario
           );
-          detalles.push(detalleFlete);
+          detalles.push(detalleRecepcion);
+        }
+      } else {
+        // Si incluye material, agregar detalle de material
+        if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
+          const tipoMaterial = extraerTipoMaterial(report);
+          const precioMaterial = getPrecioVentaMaterial(tipoMaterial);
+          
+          if (precioMaterial > 0 && cantidad > 0) {
+            const detalleMaterial = createDetalleVenta(
+              'Material',
+              tipoMaterial,
+              cantidad,
+              precioMaterial
+            );
+            detalles.push(detalleMaterial);
+          }
+        }
+
+        // Si incluye transporte, agregar detalle de flete
+        if (tipoVenta === 'Solo transporte' || tipoVenta === 'Material + transporte') {
+          const tarifas = loadTarifas();
+          const tarifaFlete = tarifas.find(t => 
+            t.origen.toLowerCase() === (report.origin || '').toLowerCase() &&
+            t.destino.toLowerCase() === (report.destination || '').toLowerCase()
+          );
+
+          let precioFlete = 0;
+          if (tarifaFlete) {
+            precioFlete = tarifaFlete.valor_por_m3;
+          } else if (report.value) {
+            // Si no hay tarifa pero el reporte tiene valor, usar ese valor
+            precioFlete = cantidad > 0 ? report.value / cantidad : 0;
+          }
+
+          if (precioFlete > 0 && cantidad > 0) {
+            const detalleFlete = createDetalleVenta(
+              'Flete',
+              `Transporte ${report.origin} → ${report.destination}`,
+              cantidad,
+              precioFlete
+            );
+            detalles.push(detalleFlete);
+          }
         }
       }
 
