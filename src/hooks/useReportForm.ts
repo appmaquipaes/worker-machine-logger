@@ -1,56 +1,31 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMachine } from '@/context/MachineContext';
-import { useReport } from '@/context/ReportContext';
-import { ReportType } from '@/types/report';
 import { toast } from "sonner";
-import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
-import { getClienteByName } from '@/models/Clientes';
-import { getFincasByCliente } from '@/models/Fincas';
-import { validateReportForm } from '@/utils/reportValidation';
+import { useReportFormState } from './useReportFormState';
+import { useReportFormHandlers } from './useReportFormHandlers';
+import { useReportFormValidation } from './useReportFormValidation';
+import { useReportFormSubmission } from './useReportFormSubmission';
 
 export const useReportForm = () => {
   const { user } = useAuth();
   const { selectedMachine } = useMachine();
-  const { addReport } = useReport();
   const navigate = useNavigate();
   
-  const [reportType, setReportType] = useState<ReportType>('Horas Trabajadas');
-  const [description, setDescription] = useState('');
-  const [trips, setTrips] = useState<number | undefined>(undefined);
-  const [hours, setHours] = useState<number | undefined>(undefined);
-  const [value, setValue] = useState<number | undefined>(undefined);
-  const [reportDate, setReportDate] = useState<Date>(new Date());
-  const [workSite, setWorkSite] = useState<string>('');
-  const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
-  const [selectedCliente, setSelectedCliente] = useState<string>('');
-  const [selectedFinca, setSelectedFinca] = useState<string>('');
-  const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
-  const [cantidadM3, setCantidadM3] = useState<number | undefined>(15);
-  const [proveedor, setProveedor] = useState<string>('');
-  const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
-  const [tipoMateria, setTipoMateria] = useState<string>('');
-  const [selectedMaquinaria, setSelectedMaquinaria] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastSubmitSuccess, setLastSubmitSuccess] = useState(false);
   
-  const [proveedores, setProveedores] = useState<any[]>([]);
-  const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
-  const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
+  const formState = useReportFormState();
+  const { validateForm } = useReportFormValidation();
+  const { submitReport } = useReportFormSubmission();
   
-  const [tipoVolqueta, setTipoVolqueta] = useState<'Sencilla' | 'Doble Troque'>('Sencilla');
-  
-  useEffect(() => {
-    setProveedores(loadProveedores());
-    setTiposMaterial(getUniqueProviderMaterialTypes());
-    
-    const inventario = localStorage.getItem('inventario_acopio');
-    if (inventario) {
-      setInventarioAcopio(JSON.parse(inventario));
-    }
-  }, []);
+  const handlers = useReportFormHandlers(
+    formState.setWorkSite,
+    formState.setSelectedCliente,
+    formState.setSelectedFinca,
+    setDestination
+  );
   
   useEffect(() => {
     if (!user) {
@@ -64,54 +39,6 @@ export const useReportForm = () => {
     }
   }, [user, selectedMachine, navigate]);
 
-  
-  const handleClienteChangeForWorkSite = (cliente: string) => {
-    setWorkSite(cliente);
-  };
-
-  const handleClienteChangeForDestination = (cliente: string) => {
-    setSelectedCliente(cliente);
-    setSelectedFinca('');
-    
-    if (cliente) {
-      const clienteData = getClienteByName(cliente);
-      if (clienteData) {
-        const fincas = getFincasByCliente(clienteData.id);
-        if (fincas.length === 0) {
-          setDestination(cliente);
-        } else {
-          setDestination('');
-        }
-      }
-    } else {
-      setDestination('');
-    }
-  };
-
-  const handleFincaChangeForDestination = (finca: string) => {
-    setSelectedFinca(finca);
-    setDestination(finca);
-  };
-
-  const clearForm = () => {
-    setDescription('');
-    setTrips(undefined);
-    setHours(undefined);
-    setValue(undefined);
-    setWorkSite('');
-    setOrigin('');
-    setSelectedCliente('');
-    setSelectedFinca('');
-    setDestination('');
-    setMaintenanceValue(undefined);
-    setCantidadM3(15);
-    setProveedor('');
-    setKilometraje(undefined);
-    setTipoMateria('');
-    setSelectedMaquinaria('');
-    setTipoVolqueta('Sencilla');
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -120,139 +47,80 @@ export const useReportForm = () => {
       return;
     }
     
-    setIsSubmitting(true);
+    formState.setIsSubmitting(true);
     
-    const validationError = validateReportForm({
-      reportType,
-      description,
-      trips,
-      hours,
-      value,
-      origin,
-      selectedCliente,
-      selectedFinca,
-      workSite,
-      maintenanceValue,
-      cantidadM3,
-      proveedor,
-      kilometraje,
-      tipoMateria,
-      inventarioAcopio,
-      selectedMaquinaria
+    const validationError = validateForm({
+      reportType: formState.reportType,
+      description: formState.description,
+      trips: formState.trips,
+      hours: formState.hours,
+      value: formState.value,
+      origin: formState.origin,
+      selectedCliente: formState.selectedCliente,
+      selectedFinca: formState.selectedFinca,
+      workSite: formState.workSite,
+      maintenanceValue: formState.maintenanceValue,
+      cantidadM3: formState.cantidadM3,
+      proveedor: formState.proveedor,
+      kilometraje: formState.kilometraje,
+      tipoMateria: formState.tipoMateria,
+      inventarioAcopio: formState.inventarioAcopio,
+      selectedMaquinaria: formState.selectedMaquinaria
     });
     
     if (validationError) {
       toast.error(validationError);
-      setIsSubmitting(false);
+      formState.setIsSubmitting(false);
       return;
     }
     
     try {
-      const reportDescription = reportType === 'Novedades' ? description : 
-                              reportType === 'Recepción Escombrera' ? `Recepción ${tipoMateria} - ${trips} volquetas` : '';
-      
-      const finalDestination = reportType === 'Viajes' 
-        ? `${selectedCliente} - ${selectedFinca}`
-        : destination;
-      
-      if (reportType === 'Recepción Escombrera') {
-        addReport(
-          selectedMachine.id,
-          selectedMachine.name,
-          reportType,
-          reportDescription,
-          reportDate,
-          trips, // cantidad de volquetas
-          undefined, // hours
-          undefined, // value se calculará automáticamente
-          undefined, // workSite
-          'Escombrera MAQUIPAES', // origin
-          selectedCliente, // destination (cliente)
-          undefined, // cantidadM3
-          undefined, // proveedor
-          undefined // kilometraje
-        );
-      } else {
-        addReport(
-          selectedMachine.id,
-          selectedMachine.name,
-          reportType,
-          reportDescription,
-          reportDate,
-          reportType === 'Viajes' ? trips : undefined,
-          (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
-          reportType === 'Combustible' ? value : 
-          reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-          reportType === 'Horas Trabajadas' ? workSite : undefined,
-          reportType === 'Viajes' ? origin : undefined,
-          reportType === 'Viajes' ? finalDestination : undefined,
-          reportType === 'Viajes' ? cantidadM3 : undefined,
-          reportType === 'Mantenimiento' ? proveedor : undefined,
-          reportType === 'Combustible' ? kilometraje : undefined
-        );
-      }
-      
-      setLastSubmitSuccess(true);
-      toast.success('¡REPORTE REGISTRADO CON ÉXITO!', {
-        duration: 5000,
-        style: {
-          fontSize: '18px',
-          fontWeight: 'bold',
-          backgroundColor: '#22c55e',
-          color: 'white'
-        }
+      submitReport(selectedMachine, {
+        reportType: formState.reportType,
+        description: formState.description,
+        reportDate: formState.reportDate,
+        trips: formState.trips,
+        hours: formState.hours,
+        value: formState.value,
+        workSite: formState.workSite,
+        origin: formState.origin,
+        selectedCliente: formState.selectedCliente,
+        selectedFinca: formState.selectedFinca,
+        maintenanceValue: formState.maintenanceValue,
+        cantidadM3: formState.cantidadM3,
+        proveedor: formState.proveedor,
+        kilometraje: formState.kilometraje,
+        tipoMateria: formState.tipoMateria
       });
       
-      clearForm();
+      formState.setLastSubmitSuccess(true);
+      formState.clearForm();
       
       setTimeout(() => {
-        setLastSubmitSuccess(false);
+        formState.setLastSubmitSuccess(false);
       }, 8000);
       
     } catch (error) {
       console.error('Error al enviar reporte:', error);
       toast.error('Error al enviar el reporte. Intente nuevamente.');
     } finally {
-      setIsSubmitting(false);
+      formState.setIsSubmitting(false);
     }
   };
 
   return {
-    // State
-    reportType, setReportType,
-    description, setDescription,
-    trips, setTrips,
-    hours, setHours,
-    value, setValue,
-    reportDate, setReportDate,
-    workSite, setWorkSite,
-    origin, setOrigin,
-    destination,
-    selectedCliente, setSelectedCliente,
-    selectedFinca, setSelectedFinca,
-    maintenanceValue, setMaintenanceValue,
-    cantidadM3, setCantidadM3,
-    proveedor, setProveedor,
-    kilometraje, setKilometraje,
-    tipoMateria, setTipoMateria,
-    selectedMaquinaria, setSelectedMaquinaria,
-    isSubmitting,
-    lastSubmitSuccess,
+    // All state from formState
+    ...formState,
     
-    // Data
-    proveedores,
-    tiposMaterial,
-    inventarioAcopio,
+    // Additional state
+    destination,
     
     // Handlers
-    handleClienteChangeForWorkSite,
-    handleClienteChangeForDestination,
-    handleFincaChangeForDestination,
+    ...handlers,
     handleSubmit,
     
     // Computed
     user,
     selectedMachine,
-    tipoVolqueta, setTipoVolqueta,
   };
 };
