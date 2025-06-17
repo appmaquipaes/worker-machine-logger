@@ -59,9 +59,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isUserDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <UserManagementDialog
-            isOpen={isUserDialogOpen}
-            onClose={() => setIsUserDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isUserDialogOpen}
+            onOpenChange={setIsUserDialogOpen}
+            onUsersUpdated={onDataUpdated}
           />
         </Suspense>
       )}
@@ -69,9 +69,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isClientDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <ClientManagementDialog
-            isOpen={isClientDialogOpen}
-            onClose={() => setIsClientDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isClientDialogOpen}
+            onOpenChange={setIsClientDialogOpen}
+            onClientsUpdated={onDataUpdated}
           />
         </Suspense>
       )}
@@ -79,9 +79,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isMachineDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <MachineManagementDialog
-            isOpen={isMachineDialogOpen}
-            onClose={() => setIsMachineDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isMachineDialogOpen}
+            onOpenChange={setIsMachineDialogOpen}
+            onMachinesUpdated={onDataUpdated}
           />
         </Suspense>
       )}
@@ -89,9 +89,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isProviderDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <ProviderManagementDialog
-            isOpen={isProviderDialogOpen}
-            onClose={() => setIsProviderDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isProviderDialogOpen}
+            onOpenChange={setIsProviderDialogOpen}
+            onProvidersUpdated={onDataUpdated}
           />
         </Suspense>
       )}
@@ -99,9 +99,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isInventoryDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <InventoryManagementDialog
-            isOpen={isInventoryDialogOpen}
-            onClose={() => setIsInventoryDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isInventoryDialogOpen}
+            onOpenChange={setIsInventoryDialogOpen}
+            onInventoryUpdated={onDataUpdated}
           />
         </Suspense>
       )}
@@ -109,9 +109,9 @@ const LazyAdminDialogs: React.FC<LazyAdminDialogsProps> = ({
       {isMaterialDialogOpen && (
         <Suspense fallback={<LoadingSpinner />}>
           <MaterialManagementDialog
-            isOpen={isMaterialDialogOpen}
-            onClose={() => setIsMaterialDialogOpen(false)}
-            onDataUpdated={onDataUpdated}
+            open={isMaterialDialogOpen}
+            onOpenChange={setIsMaterialDialogOpen}
+            onMaterialsUpdated={onDataUpdated}
           />
         </Suspense>
       )}
