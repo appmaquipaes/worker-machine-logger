@@ -1,37 +1,35 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart3, Settings, Users, Truck, Store, FileText, AlertTriangle, LogOut } from 'lucide-react';
+import { BarChart3, Settings, Users, Truck, Store, FileText, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
-import { loadUsers } from '@/models/Usuarios';
-import { loadClientes } from '@/models/Clientes';
-import { loadMaquinas } from '@/models/Maquinas';
-import { loadProveedores } from '@/models/Proveedores';
-import { loadInventarioAcopio } from '@/models/InventarioAcopio';
-import { loadMateriales } from '@/models/Materiales';
-import UserManagementDialog from '@/components/admin/UserManagementDialog';
-import ClientManagementDialog from '@/components/admin/ClientManagementDialog';
-import MachineManagementDialog from '@/components/admin/MachineManagementDialog';
-import ProviderManagementDialog from '@/components/admin/ProviderManagementDialog';
-import InventoryManagementDialog from '@/components/admin/InventoryManagementDialog';
-import MaterialManagementDialog from '@/components/admin/MaterialManagementDialog';
 import ReconciliationDashboard from '@/components/reconciliation/ReconciliationDashboard';
-import AdminStatsCard from '@/components/admin/AdminStatsCard';
+import OptimizedAdminStatsCard from '@/components/admin/OptimizedAdminStatsCard';
+import LazyAdminDialogs from '@/components/admin/LazyAdminDialogs';
+import AdminSkeletonLoader from '@/components/admin/AdminSkeletonLoader';
+import { useAdminData } from '@/hooks/useAdminData';
 
 const AdminPanel = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  
+  // Usar el hook optimizado para datos
+  const { 
+    users, 
+    clients, 
+    machines, 
+    providers, 
+    inventory, 
+    materials, 
+    stats,
+    loading, 
+    error, 
+    refreshData 
+  } = useAdminData();
 
-  const [users, setUsers] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [machines, setMachines] = useState([]);
-  const [providers, setProviders] = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [materials, setMaterials] = useState([]);
-
+  // Estado de diálogos
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
   const [isMachineDialogOpen, setIsMachineDialogOpen] = useState(false);
@@ -49,41 +47,51 @@ const AdminPanel = () => {
       toast.error('No tienes permisos para acceder a esta página');
       navigate('/dashboard');
     }
-
-    loadData();
   }, [user, navigate]);
 
-  const loadData = async () => {
-    try {
-      const usersData = await loadUsers();
-      setUsers(usersData);
-
-      const clientsData = await loadClientes();
-      setClients(clientsData);
-
-      const machinesData = await loadMaquinas();
-      setMachines(machinesData);
-
-      const providersData = await loadProveedores();
-      setProviders(providersData);
-
-      const inventoryData = await loadInventarioAcopio();
-      setInventory(inventoryData);
-
-      const materialsData = await loadMateriales();
-      setMaterials(materialsData);
-    } catch (error) {
-      console.error('Error al cargar datos:', error);
-      toast.error('Error al cargar datos. Por favor, intenta nuevamente.');
-    }
-  };
-
-  const handleLogout = () => {
+  // Memoizar handlers de los botones
+  const handleLogout = useCallback(() => {
     logout();
     navigate('/login');
-  };
+  }, [logout, navigate]);
+
+  const handleOpenUserDialog = useCallback(() => setIsUserDialogOpen(true), []);
+  const handleOpenClientDialog = useCallback(() => setIsClientDialogOpen(true), []);
+  const handleOpenMachineDialog = useCallback(() => setIsMachineDialogOpen(true), []);
+  const handleOpenProviderDialog = useCallback(() => setIsProviderDialogOpen(true), []);
+  const handleOpenInventoryDialog = useCallback(() => setIsInventoryDialogOpen(true), []);
+  const handleOpenMaterialDialog = useCallback(() => setIsMaterialDialogOpen(true), []);
 
   if (!user || user.role !== 'Administrador') return null;
+
+  // Mostrar skeleton mientras carga
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto py-8 px-4">
+          <AdminSkeletonLoader type="dashboard" count={6} />
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si hay alguno
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto py-8 px-4">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6 text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={refreshData} variant="outline">
+                Reintentar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -116,6 +124,7 @@ const AdminPanel = () => {
               </div>
             </div>
 
+            {/* Keep existing header content */}
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-4">
                 <Settings className="w-10 h-10 text-amber-300" />
@@ -146,7 +155,7 @@ const AdminPanel = () => {
           </div>
         </div>
 
-        {/* Nuevo: Sección de Reconciliación */}
+        {/* Sección de Reconciliación */}
         <Card className="mb-8 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -162,74 +171,89 @@ const AdminPanel = () => {
           </CardContent>
         </Card>
 
-        {/* Grid de estadísticas mejorado */}
+        {/* Grid de estadísticas optimizado */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Usuarios"
-            count={users.length}
-            description="Gestiona los usuarios del sistema"
+            count={stats.totalUsers}
+            description={`${stats.activeUsers} activos de ${stats.totalUsers} total`}
             icon={Users}
             buttonText="Administrar Usuarios"
-            onButtonClick={() => setIsUserDialogOpen(true)}
+            onButtonClick={handleOpenUserDialog}
             trend={{ value: 12, isPositive: true }}
+            isLoading={loading}
           />
 
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Clientes"
-            count={clients.length}
+            count={stats.totalClients}
             description="Gestiona los clientes de la empresa"
             icon={Truck}
             buttonText="Administrar Clientes"
-            onButtonClick={() => setIsClientDialogOpen(true)}
+            onButtonClick={handleOpenClientDialog}
             trend={{ value: 8, isPositive: true }}
+            isLoading={loading}
           />
 
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Máquinas"
-            count={machines.length}
-            description="Gestiona las máquinas de la empresa"
+            count={stats.totalMachines}
+            description={`${stats.activeMachines} activas de ${stats.totalMachines} total`}
             icon={Settings}
             buttonText="Administrar Máquinas"
-            onButtonClick={() => setIsMachineDialogOpen(true)}
+            onButtonClick={handleOpenMachineDialog}
             trend={{ value: 3, isPositive: false }}
+            isLoading={loading}
           />
 
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Proveedores"
-            count={providers.length}
+            count={stats.totalProviders}
             description="Gestiona los proveedores de la empresa"
             icon={Store}
             buttonText="Administrar Proveedores"
-            onButtonClick={() => setIsProviderDialogOpen(true)}
+            onButtonClick={handleOpenProviderDialog}
+            isLoading={loading}
           />
 
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Inventario Acopio"
-            count={inventory.length}
-            description="Gestiona el inventario de acopio"
+            count={stats.totalInventoryItems}
+            description={`${stats.lowStockItems} con stock bajo`}
             icon={FileText}
             buttonText="Administrar Inventario"
-            onButtonClick={() => setIsInventoryDialogOpen(true)}
+            onButtonClick={handleOpenInventoryDialog}
             trend={{ value: 15, isPositive: true }}
+            isLoading={loading}
           />
 
-          <AdminStatsCard
+          <OptimizedAdminStatsCard
             title="Materiales Volquetas"
-            count={materials.length}
+            count={stats.totalMaterials}
             description="Gestiona los materiales de las volquetas"
             icon={FileText}
             buttonText="Administrar Materiales"
-            onButtonClick={() => setIsMaterialDialogOpen(true)}
+            onButtonClick={handleOpenMaterialDialog}
+            isLoading={loading}
           />
         </div>
 
-        {/* Diálogos */}
-        <UserManagementDialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen} onUsersUpdated={loadData} />
-        <ClientManagementDialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen} onClientsUpdated={loadData} />
-        <MachineManagementDialog open={isMachineDialogOpen} onOpenChange={setIsMachineDialogOpen} onMachinesUpdated={loadData} />
-        <ProviderManagementDialog open={isProviderDialogOpen} onOpenChange={setIsProviderDialogOpen} onProvidersUpdated={loadData} />
-        <InventoryManagementDialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen} onInventoryUpdated={loadData} />
-        <MaterialManagementDialog open={isMaterialDialogOpen} onOpenChange={setIsMaterialDialogOpen} onMaterialsUpdated={loadData} />
+        {/* Diálogos con lazy loading */}
+        <LazyAdminDialogs
+          isUserDialogOpen={isUserDialogOpen}
+          isClientDialogOpen={isClientDialogOpen}
+          isMachineDialogOpen={isMachineDialogOpen}
+          isProviderDialogOpen={isProviderDialogOpen}
+          isInventoryDialogOpen={isInventoryDialogOpen}
+          isMaterialDialogOpen={isMaterialDialogOpen}
+          setIsUserDialogOpen={setIsUserDialogOpen}
+          setIsClientDialogOpen={setIsClientDialogOpen}
+          setIsMachineDialogOpen={setIsMachineDialogOpen}
+          setIsProviderDialogOpen={setIsProviderDialogOpen}
+          setIsInventoryDialogOpen={setIsInventoryDialogOpen}
+          setIsMaterialDialogOpen={setIsMaterialDialogOpen}
+          onDataUpdated={refreshData}
+        />
       </div>
     </div>
   );
