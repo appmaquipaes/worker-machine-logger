@@ -1,18 +1,28 @@
 
-// Define el tipo para materiales
-export type Material = {
+export interface Material {
   id: string;
-  nombre_material: string;
-  valor_por_m3: number;
-};
+  nombre: string;
+  categoria: string;
+  precioVenta: number;
+  unidadMedida: string;
+  descripcion: string;
+  fechaRegistro: string;
+}
 
-// Función para guardar materiales en localStorage
-export const saveMateriales = (materiales: Material[]): void => {
-  localStorage.setItem('materiales_volquetas', JSON.stringify(materiales));
-};
-
-// Función para cargar materiales desde localStorage
 export const loadMateriales = (): Material[] => {
-  const storedMateriales = localStorage.getItem('materiales_volquetas');
-  return storedMateriales ? JSON.parse(storedMateriales) : [];
+  try {
+    const stored = localStorage.getItem('materiales');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error loading materials:', error);
+    return [];
+  }
+};
+
+export const saveMateriales = (materiales: Material[]): void => {
+  try {
+    localStorage.setItem('materiales', JSON.stringify(materiales));
+  } catch (error) {
+    console.error('Error saving materials:', error);
+  }
 };

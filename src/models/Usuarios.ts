@@ -3,22 +3,18 @@ export interface Usuario {
   id: string;
   name: string;
   email: string;
-  role: 'Administrador' | 'Operador' | 'Supervisor';
   password: string;
-  assignedMachines?: string[];
+  role: 'Administrador' | 'Operador' | 'Supervisor';
   isActive: boolean;
   createdAt: Date;
+  assignedMachines?: string[];
+  comisionPorHora?: number;
 }
 
 export const loadUsers = (): Usuario[] => {
-  const usersString = localStorage.getItem('users');
-  if (!usersString) return [];
-
   try {
-    return JSON.parse(usersString).map((user: any) => ({
-      ...user,
-      createdAt: new Date(user.createdAt)
-    }));
+    const stored = localStorage.getItem('users');
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Error loading users:', error);
     return [];
@@ -26,5 +22,9 @@ export const loadUsers = (): Usuario[] => {
 };
 
 export const saveUsers = (users: Usuario[]): void => {
-  localStorage.setItem('users', JSON.stringify(users));
+  try {
+    localStorage.setItem('users', JSON.stringify(users));
+  } catch (error) {
+    console.error('Error saving users:', error);
+  }
 };

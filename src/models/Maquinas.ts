@@ -3,28 +3,25 @@ export interface Maquina {
   id: string;
   name: string;
   type: string;
+  status: string;
   plate?: string;
-  imageUrl?: string;
-  status: 'Disponible' | 'En Uso' | 'Mantenimiento';
-  hoursWorked?: number;
-  lastMaintenance?: Date;
+  fechaRegistro: string;
 }
 
 export const loadMaquinas = (): Maquina[] => {
-  const maquinasString = localStorage.getItem('machines');
-  if (!maquinasString) return [];
-
   try {
-    return JSON.parse(maquinasString).map((maquina: any) => ({
-      ...maquina,
-      lastMaintenance: maquina.lastMaintenance ? new Date(maquina.lastMaintenance) : undefined
-    }));
+    const stored = localStorage.getItem('machines');
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Error loading maquinas:', error);
+    console.error('Error loading machines:', error);
     return [];
   }
 };
 
 export const saveMaquinas = (maquinas: Maquina[]): void => {
-  localStorage.setItem('machines', JSON.stringify(maquinas));
+  try {
+    localStorage.setItem('machines', JSON.stringify(maquinas));
+  } catch (error) {
+    console.error('Error saving machines:', error);
+  }
 };
