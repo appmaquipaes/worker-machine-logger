@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Search, DollarSign, Truck, Settings, MapPin } from 'lucide-react';
 import {
@@ -111,7 +111,6 @@ const TarifasClientePage: React.FC = () => {
     setEditingTarifa(null);
   };
 
-  // Utilidades visuales
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -132,7 +131,6 @@ const TarifasClientePage: React.FC = () => {
     return machine ? `${machine.name} (${machine.plate})` : id;
   };
 
-  // Porcentaje margen material
   const calcularMargen = (tarifa: TarifaCliente) => {
     if (!tarifa.valor_material_m3 || !tarifa.valor_material_cliente_m3) return null;
     const margen = tarifa.valor_material_cliente_m3 - tarifa.valor_material_m3;
@@ -140,7 +138,6 @@ const TarifasClientePage: React.FC = () => {
     return { margen, porcentaje };
   };
 
-  // Estadísticas actualizadas para incluir escombrera
   const totalTransporte = tarifas.filter(t => t.tipo_servicio === 'transporte').length;
   const totalAlquiler = tarifas.filter(t => t.tipo_servicio === 'alquiler_maquina').length;
   const totalEscombrera = tarifas.filter(t => t.tipo_servicio === 'recepcion_escombrera').length;
@@ -149,7 +146,6 @@ const TarifasClientePage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 animate-fade-in min-h-screen">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-2 mb-4">
           <div className="space-y-2">
@@ -171,7 +167,6 @@ const TarifasClientePage: React.FC = () => {
         </div>
       </div>
       
-      {/* Estadísticas actualizadas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-6">
@@ -222,7 +217,6 @@ const TarifasClientePage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Card principal */}
       <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -244,8 +238,8 @@ const TarifasClientePage: React.FC = () => {
                   Agregar Tarifa
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[700px] bg-white shadow-2xl border-0 animate-fade-in">
-                <DialogHeader className="text-center space-y-4 pb-6">
+              <DialogContent className="sm:max-w-[800px] max-h-[90vh] bg-white shadow-2xl border-0 animate-fade-in">
+                <DialogHeader className="text-center space-y-4 pb-4 border-b border-slate-100">
                   <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                     <DollarSign className="h-8 w-8 text-white" />
                   </div>
@@ -259,17 +253,20 @@ const TarifasClientePage: React.FC = () => {
                   </div>
                 </DialogHeader>
 
-                <TarifaClienteForm
-                  initialData={editingTarifa}
-                  onTarifaCreated={handleTarifaCreated}
-                  onCancel={handleCancel}
-                />
+                <ScrollArea className="max-h-[60vh] pr-4">
+                  <div className="py-4">
+                    <TarifaClienteForm
+                      initialData={editingTarifa}
+                      onTarifaCreated={handleTarifaCreated}
+                      onCancel={handleCancel}
+                    />
+                  </div>
+                </ScrollArea>
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-8">
-          {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 pointer-events-none" />

@@ -30,11 +30,11 @@ const TarifaEscombreraForm: React.FC<TarifaEscombreraFormProps> = ({
   const escombreras = machines.filter(machine => isEscombrera(machine));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <Label htmlFor="escombrera">Escombrera *</Label>
+        <Label htmlFor="escombrera" className="text-sm font-medium text-slate-700">Escombrera *</Label>
         <Select value={escombreraId} onValueChange={onEscombreraChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full mt-1">
             <SelectValue placeholder="Selecciona una escombrera" />
           </SelectTrigger>
           <SelectContent>
@@ -47,9 +47,11 @@ const TarifaEscombreraForm: React.FC<TarifaEscombreraFormProps> = ({
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="valor-sencilla">Valor Volqueta Sencilla *</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="valor-sencilla" className="text-sm font-medium text-slate-700">
+            Valor Volqueta Sencilla *
+          </Label>
           <Input
             id="valor-sencilla"
             type="number"
@@ -60,8 +62,10 @@ const TarifaEscombreraForm: React.FC<TarifaEscombreraFormProps> = ({
           />
         </div>
 
-        <div>
-          <Label htmlFor="valor-dobletroque">Valor Volqueta Doble Troque *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="valor-dobletroque" className="text-sm font-medium text-slate-700">
+            Valor Volqueta Doble Troque *
+          </Label>
           <Input
             id="valor-dobletroque"
             type="number"
@@ -73,7 +77,7 @@ const TarifaEscombreraForm: React.FC<TarifaEscombreraFormProps> = ({
         </div>
       </div>
 
-      <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+      <div className="text-sm text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-200">
         <p><strong>Nota:</strong> Estos valores se aplicarán por cada viaje de volqueta que ingrese a la escombrera del cliente seleccionado.</p>
       </div>
     </div>
