@@ -3,7 +3,7 @@ import { loadClientes } from '@/models/Clientes';
 import { loadFincas } from '@/models/Fincas';
 import { loadMateriales } from '@/models/Materiales';
 import { loadTarifas } from '@/models/Tarifas';
-import { loadUsers } from '@/models/Users';
+import { loadUsers, createInitialAdminUser } from '@/models/Users';
 
 const createProveedoresIfNotExists = () => {
   if (!loadProveedores() || loadProveedores().length === 0) {
@@ -80,7 +80,7 @@ const createMachinesIfNotExists = () => {
   const machines = JSON.parse(localStorage.getItem('machines') || '[]');
   if (machines.length === 0) {
     const initialMachines = [
-      { id: '1', name: 'Excavadora 1', type: 'Excavadora' },
+      { id: '1', name: 'Excavadora 1', type: 'Retroexcavadora de Oruga' },
       { id: '2', name: 'Volqueta 1', type: 'Volqueta' },
       { id: '3', name: 'Cargador 1', type: 'Cargador' }
     ];
@@ -94,7 +94,7 @@ const createEscombreraIfNotExists = () => {
   
   // Verificar si ya existe una máquina escombrera
   const escombreraExists = machines.some((machine: any) => 
-    machine.name.toLowerCase().includes('escombrera') || machine.type === 'Escombrera'
+    machine.name.toLowerCase().includes('escombrera')
   );
   
   if (!escombreraExists) {
@@ -126,3 +126,6 @@ export const runInitialSetup = () => {
   createMachinesIfNotExists();
   createEscombreraIfNotExists();
 };
+
+// Export the createInitialAdminUser function
+export { createInitialAdminUser };

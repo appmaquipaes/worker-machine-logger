@@ -449,7 +449,6 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
               selectedFinca=""
               onClienteChange={onClienteChangeForDestination}
               onFincaChange={() => {}}
-              hideFieldLabels={true}
             />
           </div>
 
