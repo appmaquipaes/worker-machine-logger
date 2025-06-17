@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye } from 'lucide-react';
+import { Eye, Zap, User } from 'lucide-react';
 import { Venta } from '@/models/Ventas';
 
 interface VentasTableProps {
@@ -23,7 +23,19 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
   return (
     <Card className="shadow-xs border border-muted">
       <CardHeader>
-        <CardTitle className="text-lg">Listado de Ventas</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          Listado de Ventas
+          <div className="flex gap-2 ml-4">
+            <div className="flex items-center gap-1 text-xs">
+              <Zap className="h-3 w-3 text-green-600" />
+              <span className="text-green-600">Automática</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs">
+              <User className="h-3 w-3 text-blue-600" />
+              <span className="text-blue-600">Manual</span>
+            </div>
+          </div>
+        </CardTitle>
         <CardDescription>
           <span className="text-sm">{ventasFiltradas.length} venta(s) encontrada(s)</span>
         </CardDescription>
@@ -41,7 +53,7 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                 <TableHead>Origen</TableHead>
                 <TableHead>Forma de Pago</TableHead>
                 <TableHead>Total</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead>Tipo Registro</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -49,7 +61,9 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
               {ventasFiltradas.map((venta, idx) => (
                 <TableRow 
                   key={venta.id}
-                  className={idx % 2 === 1 ? "bg-muted/20" : ""}
+                  className={`${idx % 2 === 1 ? "bg-muted/20" : ""} ${
+                    esVentaAutomatica(venta) ? "border-l-4 border-l-green-500" : "border-l-4 border-l-blue-500"
+                  }`}
                   tabIndex={0}
                   aria-label={`Ver detalle de venta del ${new Date(venta.fecha).toLocaleDateString()}`}
                 >
@@ -74,11 +88,23 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                     ${venta.total_venta.toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium
-                      ${esVentaAutomatica(venta) ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}
-                    `}>
-                      {esVentaAutomatica(venta) ? 'Auto' : 'Manual'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      {esVentaAutomatica(venta) ? (
+                        <>
+                          <Zap className="h-4 w-4 text-green-600" />
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Automática
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-4 w-4 text-blue-600" />
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Manual
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm">

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Filter, Download, Users, MapPin } from 'lucide-react';
+import { Filter, Download, Users, MapPin, Zap } from 'lucide-react';
 import { tiposVenta, formasPago } from '@/models/Ventas';
 
 interface VentasFiltersProps {
@@ -17,6 +17,8 @@ interface VentasFiltersProps {
   setFiltroTipoVenta: (value: string) => void;
   filtroFormaPago: string;
   setFiltroFormaPago: (value: string) => void;
+  filtroTipoRegistro: string;
+  setFiltroTipoRegistro: (value: string) => void;
   filtroFechaInicio: string;
   setFiltroFechaInicio: (value: string) => void;
   filtroFechaFin: string;
@@ -37,6 +39,8 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
   setFiltroTipoVenta,
   filtroFormaPago,
   setFiltroFormaPago,
+  filtroTipoRegistro,
+  setFiltroTipoRegistro,
   filtroFechaInicio,
   setFiltroFechaInicio,
   filtroFechaFin,
@@ -56,7 +60,7 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           {/* Cliente */}
           <div>
             <Label className="flex items-center gap-1 text-xs mb-1">
@@ -139,6 +143,23 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
                     {forma}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tipo de Registro */}
+          <div>
+            <Label className="flex items-center gap-1 text-xs mb-1">
+              <Zap size={15} /> Tipo de Registro
+            </Label>
+            <Select onValueChange={setFiltroTipoRegistro} value={filtroTipoRegistro}>
+              <SelectTrigger className="bg-white border hover:bg-accent shadow-sm transition">
+                <SelectValue placeholder="Todos los tipos" />
+              </SelectTrigger>
+              <SelectContent className="z-[51]">
+                <SelectItem value="all">Todos los tipos</SelectItem>
+                <SelectItem value="automatica">Automáticas</SelectItem>
+                <SelectItem value="manual">Manuales</SelectItem>
               </SelectContent>
             </Select>
           </div>

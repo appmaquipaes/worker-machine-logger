@@ -27,6 +27,7 @@ const VentasPage = () => {
   const [filtroFinca, setFiltroFinca] = useState('all');
   const [filtroTipoVenta, setFiltroTipoVenta] = useState('all');
   const [filtroFormaPago, setFiltroFormaPago] = useState('all');
+  const [filtroTipoRegistro, setFiltroTipoRegistro] = useState('all');
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
   const [filtroFechaFin, setFiltroFechaFin] = useState('');
   
@@ -98,6 +99,15 @@ const VentasPage = () => {
       ventasFiltered = ventasFiltered.filter(v => v.forma_pago === filtroFormaPago);
     }
 
+    if (filtroTipoRegistro && filtroTipoRegistro !== 'all') {
+      const esAutomatica = (venta: Venta) => venta.observaciones?.includes('Venta automática') || false;
+      if (filtroTipoRegistro === 'automatica') {
+        ventasFiltered = ventasFiltered.filter(esAutomatica);
+      } else if (filtroTipoRegistro === 'manual') {
+        ventasFiltered = ventasFiltered.filter(v => !esAutomatica(v));
+      }
+    }
+
     if (filtroFechaInicio) {
       ventasFiltered = ventasFiltered.filter(v => 
         new Date(v.fecha) >= new Date(filtroFechaInicio)
@@ -111,13 +121,14 @@ const VentasPage = () => {
     }
 
     setVentasFiltradas(ventasFiltered);
-  }, [ventas, filtroCliente, filtroFinca, filtroTipoVenta, filtroFormaPago, filtroFechaInicio, filtroFechaFin]);
+  }, [ventas, filtroCliente, filtroFinca, filtroTipoVenta, filtroFormaPago, filtroTipoRegistro, filtroFechaInicio, filtroFechaFin]);
 
   const limpiarFiltros = () => {
     setFiltroCliente('all');
     setFiltroFinca('all');
     setFiltroTipoVenta('all');
     setFiltroFormaPago('all');
+    setFiltroTipoRegistro('all');
     setFiltroFechaInicio('');
     setFiltroFechaFin('');
   };
@@ -170,6 +181,8 @@ const VentasPage = () => {
         setFiltroTipoVenta={setFiltroTipoVenta}
         filtroFormaPago={filtroFormaPago}
         setFiltroFormaPago={setFiltroFormaPago}
+        filtroTipoRegistro={filtroTipoRegistro}
+        setFiltroTipoRegistro={setFiltroTipoRegistro}
         filtroFechaInicio={filtroFechaInicio}
         setFiltroFechaInicio={setFiltroFechaInicio}
         filtroFechaFin={filtroFechaFin}
