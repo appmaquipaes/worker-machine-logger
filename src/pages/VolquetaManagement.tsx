@@ -101,7 +101,11 @@ const VolquetaManagement: React.FC = () => {
     const newMaterial: Material = {
       id: Date.now().toString(),
       nombre_material: data.nombre_material,
-      valor_por_m3: data.valor_por_m3
+      categoria: 'Material',
+      unidad_medida: 'm³',
+      valor_por_m3: data.valor_por_m3,
+      activo: true,
+      fechaRegistro: new Date().toISOString()
     };
     
     const updatedMateriales = [...materiales, newMaterial];
@@ -156,7 +160,8 @@ const VolquetaManagement: React.FC = () => {
       id: Date.now().toString(),
       origen: data.origen,
       destino: data.destino,
-      valor_por_m3: data.valor_por_m3
+      valor_por_m3: data.valor_por_m3,
+      fechaRegistro: new Date().toISOString()
     };
     
     const updatedTarifas = [...tarifas, newTarifa];

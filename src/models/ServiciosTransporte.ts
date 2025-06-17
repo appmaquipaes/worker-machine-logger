@@ -13,7 +13,10 @@ export interface ServicioTransporte {
   vehiculo?: string;
   conductor?: string;
   observacion?: string;
+  observaciones?: string; // Alias para compatibilidad
   numero_viajes: number;
+  total_flete: number; // Propiedad calculada
+  total_material_referencia?: number; // Propiedad calculada
   fechaRegistro: string;
 }
 
@@ -50,6 +53,9 @@ export const createServicioTransporte = (
   observacion?: string,
   numero_viajes: number = 1
 ): ServicioTransporte => {
+  const total_flete = cantidad_m3 * valor_flete_m3;
+  const total_material_referencia = valor_material_m3 ? cantidad_m3 * valor_material_m3 : undefined;
+  
   return {
     id: Date.now().toString(),
     fecha,
@@ -64,7 +70,10 @@ export const createServicioTransporte = (
     vehiculo,
     conductor,
     observacion,
+    observaciones: observacion, // Alias para compatibilidad
     numero_viajes,
+    total_flete,
+    total_material_referencia,
     fechaRegistro: new Date().toISOString()
   };
 };
