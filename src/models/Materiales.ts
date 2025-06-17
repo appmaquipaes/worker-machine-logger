@@ -2,8 +2,10 @@
 export interface Material {
   id: string;
   nombre: string;
+  nombre_material: string; // Alias para compatibilidad
   categoria: string;
   precioVenta: number;
+  valor_por_m3?: number; // Alias para compatibilidad
   unidadMedida: string;
   descripcion: string;
   fechaRegistro: string;
@@ -12,7 +14,13 @@ export interface Material {
 export const loadMateriales = (): Material[] => {
   try {
     const stored = localStorage.getItem('materiales');
-    return stored ? JSON.parse(stored) : [];
+    const materiales = stored ? JSON.parse(stored) : [];
+    // Asegurar compatibilidad de nombres
+    return materiales.map((material: any) => ({
+      ...material,
+      nombre_material: material.nombre_material || material.nombre,
+      valor_por_m3: material.valor_por_m3 || material.precioVenta
+    }));
   } catch (error) {
     console.error('Error loading materials:', error);
     return [];
