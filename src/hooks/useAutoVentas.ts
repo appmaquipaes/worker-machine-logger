@@ -33,6 +33,31 @@ export const useAutoVentas = () => {
     return 'Solo transporte';
   };
 
+  const extraerTipoMaterial = (report: Report): string => {
+    // Intentar extraer de la descripción
+    if (report.description) {
+      const materialPatterns = {
+        'Arena': /arena/i,
+        'Recebo': /recebo/i,
+        'Gravilla': /gravilla/i,
+        'Material': /material/i
+      };
+      
+      for (const [material, pattern] of Object.entries(materialPatterns)) {
+        if (pattern.test(report.description)) {
+          return material;
+        }
+      }
+    }
+    
+    // Si es desde acopio, asumir material genérico
+    if (report.origin?.toLowerCase().includes('acopio')) {
+      return 'Material';
+    }
+    
+    return 'Material'; // Por defecto
+  };
+
   const crearVentaAutomatica = (report: Report): Venta | null => {
     try {
       // Solo procesar reportes de tipo "Viajes"
@@ -77,17 +102,7 @@ export const useAutoVentas = () => {
 
       // Si incluye material, agregar detalle de material
       if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
-        // Para cargador, el tipo de material viene del description o se asume
-        let tipoMaterial = 'Material'; // Por defecto
-        
-        if (report.description) {
-          // Intentar extraer tipo de material de la descripción
-          const materialMatch = report.description.match(/(arena|recebo|gravilla|material)/i);
-          if (materialMatch) {
-            tipoMaterial = materialMatch[1];
-          }
-        }
-
+        const tipoMaterial = extraerTipoMaterial(report);
         const precioMaterial = getPrecioVentaMaterial(tipoMaterial);
         
         if (precioMaterial > 0 && cantidadM3 > 0) {

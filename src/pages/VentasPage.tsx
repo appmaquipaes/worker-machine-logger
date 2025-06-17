@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { Venta, loadVentas, tiposVenta, formasPago } from '@/models/Ventas';
 import { loadClientes, getClienteByName } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
+import { migrateTarifas } from '@/models/Tarifas';
 import RegistrarVentaDialog from '@/components/RegistrarVentaDialog';
 import * as XLSX from 'xlsx';
 
@@ -60,6 +61,8 @@ const VentasPage = () => {
   }, [user, navigate]);
 
   useEffect(() => {
+    // Ejecutar migración de tarifas al cargar la página
+    migrateTarifas();
     loadData();
   }, []);
 
@@ -155,7 +158,8 @@ const VentasPage = () => {
       'Origen Material': venta.origen_material,
       'Forma de Pago': venta.forma_pago,
       'Total Venta': venta.total_venta,
-      'Observaciones': venta.observaciones || ''
+      'Observaciones': venta.observaciones || '',
+      'Tipo Registro': venta.observaciones?.includes('Venta automática') ? 'Automática' : 'Manual'
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -172,6 +176,11 @@ const VentasPage = () => {
   const getFincaFromDestino = (destino: string): string => {
     if (!destino) return '';
     return destino.split(' - ')[1] || '';
+  };
+
+  // Función para determinar si una venta es automática
+  const esVentaAutomatica = (venta: Venta): boolean => {
+    return venta.observaciones?.includes('Venta automática') || false;
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -345,7 +354,7 @@ const VentasPage = () => {
       </Card>
 
       {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card className="shadow-xs border border-muted bg-accent/40">
           <CardHeader className="pb-2">
             <CardDescription className="uppercase text-xs">Total Ventas</CardDescription>
@@ -363,6 +372,14 @@ const VentasPage = () => {
             <CardDescription className="uppercase text-xs">Promedio por Venta</CardDescription>
             <CardTitle className="text-2xl font-extrabold text-primary">
               ${ventasFiltradas.length > 0 ? (calcularTotalVentas() / ventasFiltradas.length).toLocaleString() : '0'}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="shadow-xs border border-muted bg-accent/40">
+          <CardHeader className="pb-2">
+            <CardDescription className="uppercase text-xs">Ventas Automáticas</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-green-600">
+              {ventasFiltradas.filter(esVentaAutomatica).length}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -397,6 +414,7 @@ const VentasPage = () => {
                 <TableHead>Origen</TableHead>
                 <TableHead>Forma de Pago</TableHead>
                 <TableHead>Total</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -427,6 +445,13 @@ const VentasPage = () => {
                   <TableCell>{venta.forma_pago}</TableCell>
                   <TableCell className="font-semibold">
                     ${venta.total_venta.toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium
+                      ${esVentaAutomatica(venta) ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}
+                    `}>
+                      {esVentaAutomatica(venta) ? 'Auto' : 'Manual'}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm">
