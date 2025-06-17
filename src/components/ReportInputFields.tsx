@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { ReportType } from '@/types/report';
-import { Machine } from '@/context/MachineContext';
-import MaquinariaSelector from '@/components/MaquinariaSelector';
+import { useMachine } from '@/context/MachineContext';
 import ReportDateInput from '@/components/report-input-fields/ReportDateInput';
 import WorkSiteInput from '@/components/report-input-fields/WorkSiteInput';
 import HoursInput from '@/components/report-input-fields/HoursInput';
@@ -13,8 +12,7 @@ import FuelInputs from '@/components/report-input-fields/FuelInputs';
 import MaintenanceInputs from '@/components/report-input-fields/MaintenanceInputs';
 import NovedadesInput from '@/components/report-input-fields/NovedadesInput';
 import EscombreraInputs from '@/components/report-input-fields/EscombreraInputs';
-import { useMachine } from '@/context/MachineContext';
-import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
+import ReportTypeInputs from '@/components/report-input-fields/ReportTypeInputs';
 
 interface ReportInputFieldsProps {
   reportType: ReportType;
@@ -96,7 +94,6 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
   setSelectedMaquinaria = () => {}
 }) => {
   const { selectedMachine } = useMachine();
-  const { isMachineryTransportVehicle } = useMachineSpecificReports();
 
   return (
     <>
@@ -135,12 +132,12 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         selectedMachine={selectedMachine}
       />
 
-      {reportType === 'Viajes' && isMachineryTransportVehicle(selectedMachine) && (
-        <MaquinariaSelector
-          selectedMaquinaria={selectedMaquinaria}
-          onMaquinariaChange={setSelectedMaquinaria}
-        />
-      )}
+      <ReportTypeInputs
+        reportType={reportType}
+        selectedMachine={selectedMachine}
+        selectedMaquinaria={selectedMaquinaria}
+        setSelectedMaquinaria={setSelectedMaquinaria}
+      />
 
       <MaterialInputs
         reportType={reportType}
