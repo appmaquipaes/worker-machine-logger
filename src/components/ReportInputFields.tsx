@@ -2,16 +2,9 @@
 import React from 'react';
 import { ReportType } from '@/types/report';
 import { useMachine } from '@/context/MachineContext';
-import ReportDateInput from '@/components/report-input-fields/ReportDateInput';
-import WorkSiteInput from '@/components/report-input-fields/WorkSiteInput';
-import HoursInput from '@/components/report-input-fields/HoursInput';
-import TripsInput from '@/components/report-input-fields/TripsInput';
-import OriginDestinationInputs from '@/components/report-input-fields/OriginDestinationInputs';
-import MaterialInputs from '@/components/report-input-fields/MaterialInputs';
-import FuelInputs from '@/components/report-input-fields/FuelInputs';
-import MaintenanceInputs from '@/components/report-input-fields/MaintenanceInputs';
-import NovedadesInput from '@/components/report-input-fields/NovedadesInput';
-import EscombreraInputs from '@/components/report-input-fields/EscombreraInputs';
+import BasicReportInputs from '@/components/report-input-fields/BasicReportInputs';
+import LocationInputs from '@/components/report-input-fields/LocationInputs';
+import ServiceInputs from '@/components/report-input-fields/ServiceInputs';
 import ReportTypeInputs from '@/components/report-input-fields/ReportTypeInputs';
 
 interface ReportInputFieldsProps {
@@ -97,30 +90,19 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
 
   return (
     <>
-      <ReportDateInput
+      <BasicReportInputs
+        reportType={reportType}
         reportDate={reportDate}
         setReportDate={setReportDate}
-      />
-
-      <WorkSiteInput
-        reportType={reportType}
         workSite={workSite}
         onClienteChangeForWorkSite={onClienteChangeForWorkSite}
-      />
-
-      <HoursInput
-        reportType={reportType}
         hours={hours}
         setHours={setHours}
-      />
-
-      <TripsInput
-        reportType={reportType}
         trips={trips}
         setTrips={setTrips}
       />
 
-      <OriginDestinationInputs
+      <LocationInputs
         reportType={reportType}
         origin={origin}
         setOrigin={setOrigin}
@@ -130,6 +112,10 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         onFincaChangeForDestination={onFincaChangeForDestination}
         proveedores={proveedores}
         selectedMachine={selectedMachine}
+        tipoMateria={tipoMateria}
+        setTipoMateria={setTipoMateria}
+        trips={trips}
+        setTrips={setTrips}
       />
 
       <ReportTypeInputs
@@ -139,7 +125,7 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         setSelectedMaquinaria={setSelectedMaquinaria}
       />
 
-      <MaterialInputs
+      <ServiceInputs
         reportType={reportType}
         origin={origin}
         tipoMateria={tipoMateria}
@@ -149,40 +135,17 @@ const ReportInputFields: React.FC<ReportInputFieldsProps> = ({
         tiposMaterial={tiposMaterial}
         inventarioAcopio={inventarioAcopio}
         selectedMachine={selectedMachine}
-      />
-
-      <FuelInputs
-        reportType={reportType}
         value={value}
         setValue={setValue}
         kilometraje={kilometraje}
         setKilometraje={setKilometraje}
-      />
-
-      <MaintenanceInputs
-        reportType={reportType}
         maintenanceValue={maintenanceValue}
         setMaintenanceValue={setMaintenanceValue}
         proveedor={proveedor}
         setProveedor={setProveedor}
         proveedores={proveedores}
-      />
-
-      <NovedadesInput
-        reportType={reportType}
         description={description}
         setDescription={setDescription}
-      />
-
-      <EscombreraInputs
-        reportType={reportType}
-        selectedCliente={selectedCliente}
-        onClienteChangeForDestination={onClienteChangeForDestination}
-        tipoMateria={tipoMateria}
-        setTipoMateria={setTipoMateria}
-        trips={trips}
-        setTrips={setTrips}
-        selectedMachine={selectedMachine}
       />
     </>
   );
