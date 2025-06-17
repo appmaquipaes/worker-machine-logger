@@ -1,54 +1,49 @@
 
-// Define el tipo para las ventas
-export type Venta = {
+export interface Venta {
   id: string;
   fecha: Date;
   cliente: string;
-  ciudad_entrega: string;
-  tipo_venta: 'Solo material' | 'Solo transporte' | 'Material + transporte';
-  origen_material: string;
+  ciudad_entrega?: string;
+  tipo_venta: string;
+  origen_material?: string;
   destino_material: string;
   forma_pago: string;
   observaciones?: string;
-  total_venta: number;
+  total: number;
   detalles: DetalleVenta[];
-};
+  fechaRegistro: string;
+}
 
-export type DetalleVenta = {
+export interface DetalleVenta {
   id: string;
+  venta_id?: string;
   tipo: 'Material' | 'Flete';
   producto_servicio: string;
   cantidad_m3: number;
   valor_unitario: number;
   subtotal: number;
-};
+}
 
-// Tipos de venta disponibles - actualizado para incluir "Solo transporte"
 export const tiposVenta = [
-  'Solo material',
-  'Solo transporte', 
-  'Material + transporte'
+  'Venta Material',
+  'Venta Flete',
+  'Venta Mixta'
 ];
 
-// Formas de pago disponibles
 export const formasPago = [
-  'Efectivo',
+  'Contado',
+  'Crédito 30 días',
+  'Crédito 60 días',
   'Transferencia',
-  'Cheque',
-  'Crédito',
-  'Mixto'
+  'Cheque'
 ];
 
-// Origenes de material
 export const origenesMaterial = [
   'Acopio Maquipaes',
-  'Cantera San José',
-  'Cantera El Roble',
-  'Cantera La Esperanza',
-  'Otro'
+  'Compra Directa',
+  'Extracción Propia'
 ];
 
-// Función para crear una nueva venta
 export const createVenta = (
   fecha: Date,
   cliente: string,
@@ -64,17 +59,17 @@ export const createVenta = (
     fecha,
     cliente,
     ciudad_entrega,
-    tipo_venta: tipo_venta as any,
+    tipo_venta,
     origen_material,
     destino_material,
     forma_pago,
     observaciones,
-    total_venta: 0,
-    detalles: []
+    total: 0,
+    detalles: [],
+    fechaRegistro: new Date().toISOString()
   };
 };
 
-// Función para crear un nuevo detalle de venta
 export const createDetalleVenta = (
   tipo: 'Material' | 'Flete',
   producto_servicio: string,
@@ -82,7 +77,7 @@ export const createDetalleVenta = (
   valor_unitario: number
 ): DetalleVenta => {
   return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    id: Date.now().toString(),
     tipo,
     producto_servicio,
     cantidad_m3,
@@ -91,31 +86,25 @@ export const createDetalleVenta = (
   };
 };
 
-// Función para calcular el total de una venta
-export const calculateVentaTotal = (detalles: DetalleVenta[]): number => {
-  return detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
-};
-
-// Función para actualizar el total de una venta
 export const updateVentaTotal = (venta: Venta): Venta => {
-  return {
-    ...venta,
-    total_venta: calculateVentaTotal(venta.detalles)
-  };
+  const total = venta.detalles.reduce((sum, detalle) => sum + detalle.subtotal, 0);
+  return { ...venta, total };
 };
 
-// Función para guardar ventas en localStorage
-export const saveVentas = (ventas: Venta[]): void => {
-  localStorage.setItem('ventas', JSON.stringify(ventas));
-};
-
-// Función para cargar ventas desde localStorage
 export const loadVentas = (): Venta[] => {
-  const storedVentas = localStorage.getItem('ventas');
-  if (!storedVentas) return [];
-  
-  return JSON.parse(storedVentas).map((venta: any) => ({
-    ...venta,
-    fecha: new Date(venta.fecha)
-  }));
+  try {
+    const stored = localStorage.getItem('ventas');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error loading ventas:', error);
+    return [];
+  }
+};
+
+export const saveVentas = (ventas: Venta[]): void => {
+  try {
+    localStorage.setItem('ventas', JSON.stringify(ventas));
+  } catch (error) {
+    console.error('Error saving ventas:', error);
+  }
 };

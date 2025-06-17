@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { ResultadoOperacionInventario, MovimientoInventario } from '@/types/inventario';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
@@ -32,31 +33,34 @@ export const useInventarioEntradas = () => {
       let inventarioActualizado = [...inventario];
       let cantidadAnterior = 0;
       
-      // Buscar si el material ya existe
       const materialIndex = inventario.findIndex(item => item.tipo_material === material);
       
       if (materialIndex >= 0) {
-        // Material existe, actualizar cantidad
         cantidadAnterior = inventario[materialIndex].cantidad_disponible;
         inventarioActualizado[materialIndex] = {
           ...inventario[materialIndex],
-          cantidad_disponible: cantidadAnterior + cantidad
+          cantidad_disponible: cantidadAnterior + cantidad,
+          cantidad: cantidadAnterior + cantidad
         };
       } else {
-        // Material nuevo, agregar al inventario
         const nuevoItem: InventarioAcopio = {
           id: Date.now().toString(),
+          nombre: material,
           tipo_material: material,
+          categoria: 'Material',
+          cantidad: cantidad,
           cantidad_disponible: cantidad,
-          costo_promedio_m3: 0 // Se puede actualizar después
+          unidadMedida: 'm³',
+          precioUnitario: 0,
+          costo_promedio_m3: 0,
+          stockMinimo: 0,
+          fechaRegistro: new Date().toISOString()
         };
         inventarioActualizado.push(nuevoItem);
       }
 
-      // Guardar inventario actualizado
       saveInventarioAcopio(inventarioActualizado);
 
-      // Crear registro de movimiento
       const movimiento: MovimientoInventario = {
         id: Date.now().toString(),
         fecha: new Date(),

@@ -2,15 +2,20 @@
 export interface Cliente {
   id: string;
   nombre: string;
-  nombre_cliente: string; // Alias para compatibilidad
-  telefono: string;
-  email: string;
-  direccion: string;
+  nombre_cliente: string;
+  telefono?: string;
+  telefono_contacto?: string;
+  email?: string;
+  correo_electronico?: string;
+  direccion?: string;
   ciudad?: string;
   tipo_cliente?: string;
-  tipo_persona?: string;
+  tipo_persona?: 'Natural' | 'Empresa';
   nit?: string;
+  nit_cedula?: string;
   contacto?: string;
+  persona_contacto?: string;
+  observaciones?: string;
   fechaRegistro: string;
 }
 
@@ -23,14 +28,13 @@ export const tiposCliente = [
 
 export const tiposPersona = [
   'Natural',
-  'Jurídica'
+  'Empresa'
 ];
 
 export const loadClientes = (): Cliente[] => {
   try {
     const stored = localStorage.getItem('clientes');
     const clientes = stored ? JSON.parse(stored) : [];
-    // Asegurar compatibilidad de nombres
     return clientes.map((cliente: any) => ({
       ...cliente,
       nombre_cliente: cliente.nombre_cliente || cliente.nombre
