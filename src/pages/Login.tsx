@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSecureForm } from '@/hooks/useSecureForm';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Loader2, Mail, Lock, AlertTriangle, Shield } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft } from 'lucide-react';
 import { enhancedToast } from '@/components/ui/enhanced-toast';
+import { LoginHeader } from '@/components/login/LoginHeader';
+import { LoginSecurityStatus } from '@/components/login/LoginSecurityStatus';
+import { LoginForm } from '@/components/login/LoginForm';
+import { LoginFooter } from '@/components/login/LoginFooter';
 
 const Login: React.FC = () => {
   const [error, setError] = useState('');
@@ -131,12 +132,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="container max-w-md mx-auto py-10 animate-fade-in">
       <div className="mb-6 flex justify-start">
@@ -151,133 +146,32 @@ const Login: React.FC = () => {
       </div>
       
       <Card className="shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
-          <CardDescription>
-            Ingresa tus credenciales para acceder al sistema
-          </CardDescription>
-          
-          {attemptCount > 0 && !isBlocked && (
-            <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded-md">
-              <AlertTriangle size={16} />
-              <span>Intentos fallidos: {attemptCount}/5</span>
-            </div>
-          )}
-        </CardHeader>
+        <LoginHeader />
         
         <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4 animate-fade-in">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {isBlocked && (
-            <Alert className="mb-4 border-red-200 bg-red-50 animate-fade-in">
-              <Shield className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                Cuenta bloqueada temporalmente. Tiempo restante: {formatTime(blockTimeRemaining)}
-              </AlertDescription>
-            </Alert>
-          )}
+          <LoginSecurityStatus
+            attemptCount={attemptCount}
+            isBlocked={isBlocked}
+            blockTimeRemaining={blockTimeRemaining}
+            error={error}
+          />
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="ejemplo@maquipaes.com"
-                  value={email.value}
-                  onChange={handleEmailChange}
-                  onBlur={handleEmailBlur}
-                  className={`pl-10 transition-colors ${
-                    email.touched && email.error 
-                      ? 'border-destructive focus:border-destructive' 
-                      : email.touched && !email.error 
-                      ? 'border-green-500' 
-                      : ''
-                  }`}
-                  disabled={isBlocked}
-                  required
-                />
-              </div>
-              {email.touched && email.error && (
-                <p className="text-sm text-destructive animate-fade-in">
-                  {email.error}
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline story-link"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password.value}
-                  onChange={handlePasswordChange}
-                  onBlur={handlePasswordBlur}
-                  className={`pl-10 transition-colors ${
-                    password.touched && password.error 
-                      ? 'border-destructive focus:border-destructive' 
-                      : password.touched && !password.error 
-                      ? 'border-green-500' 
-                      : ''
-                  }`}
-                  disabled={isBlocked}
-                  required
-                />
-              </div>
-              {password.touched && password.error && (
-                <p className="text-sm text-destructive animate-fade-in">
-                  {password.error}
-                </p>
-              )}
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full hover-scale" 
-              disabled={isSubmitting || !isFormValid || isBlocked}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Iniciando...
-                </>
-              ) : isBlocked ? (
-                <>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Bloqueado ({formatTime(blockTimeRemaining)})
-                </>
-              ) : (
-                "Iniciar Sesión"
-              )}
-            </Button>
-          </form>
+          <LoginForm
+            email={email}
+            password={password}
+            isSubmitting={isSubmitting}
+            isBlocked={isBlocked}
+            isFormValid={isFormValid}
+            blockTimeRemaining={blockTimeRemaining}
+            onSubmit={handleSubmit}
+            onEmailChange={handleEmailChange}
+            onPasswordChange={handlePasswordChange}
+            onEmailBlur={handleEmailBlur}
+            onPasswordBlur={handlePasswordBlur}
+          />
         </CardContent>
         
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center">
-            ¿No tienes una cuenta?{" "}
-            <Link to="/register" className="text-primary hover:underline story-link">
-              Regístrate
-            </Link>
-          </div>
-        </CardFooter>
+        <LoginFooter />
       </Card>
     </div>
   );
