@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -157,10 +156,20 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     setTipoMaterial(materialId);
     
     if (materialId) {
-      const material = materiales.find(m => m.id === materialId);
-      if (material) {
-        setValorMaterial(material.valor_por_m3);
-        setValorMaterialCliente(material.valor_por_m3);
+      // Buscar el producto del proveedor
+      const productosProveedores = require('@/models/Proveedores').loadProductosProveedores();
+      const producto = productosProveedores.find((p: any) => p.id === materialId);
+      
+      if (producto) {
+        setValorMaterial(producto.precio_unitario);
+        setValorMaterialCliente(producto.precio_unitario);
+      } else {
+        // Fallback a material general si no se encuentra el producto
+        const material = materiales.find(m => m.id === materialId);
+        if (material) {
+          setValorMaterial(material.valor_por_m3);
+          setValorMaterialCliente(material.valor_por_m3);
+        }
       }
     } else {
       setValorMaterial(0);

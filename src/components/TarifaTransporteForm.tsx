@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { loadProductosProveedores } from '@/models/Proveedores';
 
 interface TarifaTransporteFormProps {
   origen: string;
@@ -38,6 +39,33 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
   onMaterialChange,
   onValorMaterialClienteChange
 }) => {
+  const [materialesProveedor, setMaterialesProveedor] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (origen) {
+      // Buscar el proveedor seleccionado
+      const proveedorSeleccionado = proveedores.find(prov => 
+        `${prov.nombre} - ${prov.ciudad}` === origen
+      );
+      
+      if (proveedorSeleccionado) {
+        // Cargar productos del proveedor
+        const productosProveedores = loadProductosProveedores();
+        const materialesDelProveedor = productosProveedores.filter(
+          producto => producto.proveedor_id === proveedorSeleccionado.id && 
+          producto.tipo_insumo === 'Material'
+        );
+        setMaterialesProveedor(materialesDelProveedor);
+        console.log('Materiales encontrados para proveedor:', materialesDelProveedor);
+      } else {
+        setMaterialesProveedor([]);
+      }
+    } else {
+      // Si no hay origen seleccionado, usar la lista general de materiales
+      setMaterialesProveedor(materiales);
+    }
+  }, [origen, proveedores, materiales]);
+
   const getDestinoPlaceholder = () => {
     if (!cliente) {
       return "Seleccione primero un cliente";
@@ -63,7 +91,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
           >
             <option value="">Seleccionar origen</option>
             {proveedores.map((prov) => (
-              <option key={prov.id} value={prov.nombre}>
+              <option key={prov.id} value={`${prov.nombre} - ${prov.ciudad}`}>
                 {prov.nombre} - {prov.ciudad}
               </option>
             ))}
@@ -95,7 +123,14 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="tipo-material">Tipo de Material</Label>
+        <Label htmlFor="tipo-material">
+          Material/Producto 
+          {origen && materialesProveedor.length === 0 && (
+            <span className="text-sm text-orange-600 ml-2">
+              (No hay materiales registrados para este proveedor)
+            </span>
+          )}
+        </Label>
         <select
           id="tipo-material"
           value={tipoMaterial}
@@ -103,18 +138,25 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
           className="w-full p-2 border rounded-md"
         >
           <option value="">Seleccionar material</option>
-          {materiales.map((material) => (
+          {materialesProveedor.map((material) => (
             <option key={material.id} value={material.id}>
-              {material.nombre_material}
+              {material.nombre_producto} - {material.unidad} (${material.precio_unitario.toLocaleString()})
             </option>
           ))}
         </select>
+        {origen && materialesProveedor.length === 0 && (
+          <p className="text-sm text-orange-600 mt-1">
+            Debes agregar productos/materiales a este proveedor en la sección de Gestión de Proveedores.
+          </p>
+        )}
       </div>
 
       {tipoMaterial && (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="valor-material">Valor Material por m³ (Referencia)</Label>
+            <Label htmlFor="valor-material">Precio Proveedor por {
+              materialesProveedor.find(m => m.id === tipoMaterial)?.unidad || 'unidad'
+            }</Label>
             <Input
               id="valor-material"
               type="number"
@@ -125,13 +167,15 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
           </div>
           
           <div>
-            <Label htmlFor="valor-material-cliente">Valor Material Cliente por m³ *</Label>
+            <Label htmlFor="valor-material-cliente">Precio Cliente por {
+              materialesProveedor.find(m => m.id === tipoMaterial)?.unidad || 'unidad'
+            } *</Label>
             <Input
               id="valor-material-cliente"
               type="number"
               value={valorMaterialCliente}
               onChange={(e) => onValorMaterialClienteChange(parseFloat(e.target.value) || 0)}
-              placeholder="Valor que se le cobra al cliente"
+              placeholder="Precio que se le cobra al cliente"
             />
           </div>
         </div>
