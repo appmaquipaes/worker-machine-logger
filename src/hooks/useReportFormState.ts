@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { ReportType } from '@/types/report';
-import { loadProveedores, getUniqueProviderMaterialTypes } from '@/models/Proveedores';
+import { loadProveedores } from '@/models/Proveedores';
+import { loadMateriales } from '@/models/Materiales';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 
 export const useReportFormState = () => {
   const [reportType, setReportType] = useState<ReportType>('Horas Trabajadas');
@@ -10,32 +12,30 @@ export const useReportFormState = () => {
   const [hours, setHours] = useState<number | undefined>(undefined);
   const [value, setValue] = useState<number | undefined>(undefined);
   const [reportDate, setReportDate] = useState<Date>(new Date());
-  const [workSite, setWorkSite] = useState<string>('');
-  const [origin, setOrigin] = useState<string>('');
-  const [selectedCliente, setSelectedCliente] = useState<string>('');
-  const [selectedFinca, setSelectedFinca] = useState<string>('');
+  const [workSite, setWorkSite] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [selectedCliente, setSelectedCliente] = useState('');
+  const [selectedFinca, setSelectedFinca] = useState('');
   const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>(undefined);
-  const [cantidadM3, setCantidadM3] = useState<number | undefined>(15);
-  const [proveedor, setProveedor] = useState<string>('');
+  const [cantidadM3, setCantidadM3] = useState<number | undefined>(undefined);
+  const [proveedor, setProveedor] = useState('');
   const [kilometraje, setKilometraje] = useState<number | undefined>(undefined);
-  const [tipoMateria, setTipoMateria] = useState<string>('');
-  const [selectedMaquinaria, setSelectedMaquinaria] = useState<string>('');
+  const [tipoMateria, setTipoMateria] = useState('');
+  const [selectedMaquinaria, setSelectedMaquinaria] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitSuccess, setLastSubmitSuccess] = useState(false);
-  const [tipoVolqueta, setTipoVolqueta] = useState<'Sencilla' | 'Doble Troque'>('Sencilla');
-  
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
   const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
 
   useEffect(() => {
-    setProveedores(loadProveedores());
-    setTiposMaterial(getUniqueProviderMaterialTypes());
-    
-    const inventario = localStorage.getItem('inventario_acopio');
-    if (inventario) {
-      setInventarioAcopio(JSON.parse(inventario));
-    }
+    const loadedProveedores = loadProveedores();
+    const loadedMateriales = loadMateriales();
+    const loadedInventario = loadInventarioAcopio();
+
+    setProveedores(loadedProveedores);
+    setTiposMaterial(loadedMateriales.map(m => m.nombre));
+    setInventarioAcopio(loadedInventario);
   }, []);
 
   const clearForm = () => {
@@ -48,16 +48,16 @@ export const useReportFormState = () => {
     setSelectedCliente('');
     setSelectedFinca('');
     setMaintenanceValue(undefined);
-    setCantidadM3(15);
+    setCantidadM3(undefined);
     setProveedor('');
     setKilometraje(undefined);
-    setTipoMateria('');
+    setTipoMateria(''); // Asegurar que se resetee
     setSelectedMaquinaria('');
-    setTipoVolqueta('Sencilla');
+    setReportDate(new Date());
+    console.log('✓ Formulario limpiado correctamente - todos los campos reseteados');
   };
 
   return {
-    // State values
     reportType, setReportType,
     description, setDescription,
     trips, setTrips,
@@ -76,14 +76,9 @@ export const useReportFormState = () => {
     selectedMaquinaria, setSelectedMaquinaria,
     isSubmitting, setIsSubmitting,
     lastSubmitSuccess, setLastSubmitSuccess,
-    tipoVolqueta, setTipoVolqueta,
-    
-    // Data
     proveedores,
     tiposMaterial,
     inventarioAcopio,
-    
-    // Actions
     clearForm,
   };
 };
