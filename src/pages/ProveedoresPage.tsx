@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Package, Building, Store, Settings, Users, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Package, Building, Store, Settings, Users, ChevronRight, ArrowUp } from 'lucide-react';
 import { 
   Proveedor, 
   ProductoProveedor,
   loadProveedores, 
   saveProveedores, 
   createProveedor,
-  loadProductosProveedores,
+  loadProductosProveedores, 
   saveProductosProveedores,
   createProductoProveedor,
 } from '@/models/Proveedores';
@@ -207,15 +206,15 @@ const ProveedoresPage: React.FC = () => {
                 </h1>
                 <p className="text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed">
                   Administra la red completa de proveedores, sus productos y servicios. 
-                  Controla inventarios, precios y mantén actualizados los datos de contacto.
+                  Selecciona un proveedor para gestionar sus productos de manera intuitiva.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Lista de Proveedores */}
+        {/* Unified Content Area */}
+        <div className="max-w-6xl mx-auto">
           <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-t-lg">
               <div className="flex justify-between items-center">
@@ -224,14 +223,31 @@ const ProveedoresPage: React.FC = () => {
                     <Building className="w-6 h-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl font-bold">Lista de Proveedores</CardTitle>
+                    <CardTitle className="text-2xl font-bold">
+                      {selectedProveedor ? `${selectedProveedor.nombre} - Productos` : 'Proveedores'}
+                    </CardTitle>
                     <CardDescription className="text-emerald-50 mt-1">
-                      Selecciona un proveedor para gestionar sus productos
+                      {selectedProveedor ? 
+                        'Gestiona el catálogo de productos de este proveedor' : 
+                        'Selecciona un proveedor para ver y gestionar sus productos'
+                      }
                     </CardDescription>
                   </div>
                 </div>
+                
+                {selectedProveedor && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedProveedor(null)}
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+                  >
+                    <ArrowUp className="w-5 h-5 mr-2" />
+                    Ver todos los proveedores
+                  </Button>
+                )}
               </div>
-              <div className="mt-6">
+              
+              <div className="mt-6 flex gap-4">
                 <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
                   <DialogTrigger asChild>
                     <Button 
@@ -266,47 +282,15 @@ const ProveedoresPage: React.FC = () => {
                     />
                   </DialogContent>
                 </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="p-8">
-              <ProveedorTable 
-                proveedores={proveedores} 
-                onEdit={openEditProveedor} 
-                onDelete={handleDeleteProveedor} 
-                onSelect={handleSelectProveedor}
-                getProductosCount={(id) => getProveedorProductos(id).length}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Productos del Proveedor Seleccionado */}
-          <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-t-lg">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-bold">
-                      {selectedProveedor ? `Productos de ${selectedProveedor.nombre}` : 'Productos y Servicios'}
-                    </CardTitle>
-                    <CardDescription className="text-blue-50 mt-1">
-                      {selectedProveedor ? 'Gestiona el catálogo de este proveedor' : 'Selecciona un proveedor para ver sus productos'}
-                    </CardDescription>
-                  </div>
-                </div>
-              </div>
-              
-              {selectedProveedor && (
-                <div className="mt-6">
+                
+                {selectedProveedor && (
                   <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
                     <DialogTrigger asChild>
                       <Button 
                         onClick={() => {
                           setEditingProducto(null);
                         }}
-                        className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+                        className="bg-blue-600/20 hover:bg-blue-600/30 text-white border-blue-300/30 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
                       >
                         <Plus className="mr-2 h-5 w-5" />
                         <span className="font-semibold">Agregar Producto</span>
@@ -335,11 +319,20 @@ const ProveedoresPage: React.FC = () => {
                       />
                     </DialogContent>
                   </Dialog>
-                </div>
-              )}
+                )}
+              </div>
             </CardHeader>
+            
             <CardContent className="p-8">
-              {selectedProveedor ? (
+              {!selectedProveedor ? (
+                <ProveedorTable 
+                  proveedores={proveedores} 
+                  onEdit={openEditProveedor} 
+                  onDelete={handleDeleteProveedor} 
+                  onSelect={handleSelectProveedor}
+                  getProductosCount={(id) => getProveedorProductos(id).length}
+                />
+              ) : (
                 <div>
                   <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl border border-emerald-200">
                     <div className="flex items-center gap-4">
@@ -348,7 +341,9 @@ const ProveedoresPage: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-slate-800">{selectedProveedor.nombre}</h3>
-                        <p className="text-sm text-slate-600">Tipo: {selectedProveedor.tipo_proveedor} • Ciudad: {selectedProveedor.ciudad}</p>
+                        <p className="text-sm text-slate-600">
+                          Tipo: {selectedProveedor.tipo_proveedor} • Ciudad: {selectedProveedor.ciudad} • Contacto: {selectedProveedor.contacto}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2">
                         <Package className="w-4 h-4 text-emerald-600" />
@@ -364,18 +359,6 @@ const ProveedoresPage: React.FC = () => {
                     onEdit={openEditProducto} 
                     onDelete={handleDeleteProducto} 
                   />
-                </div>
-              ) : (
-                <div className="text-center py-16 space-y-6">
-                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
-                    <ChevronRight className="w-12 h-12 text-slate-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xl font-semibold text-slate-600">Selecciona un proveedor</p>
-                    <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                      Haz clic en el botón "👁️" de cualquier proveedor de la lista para ver y gestionar sus productos
-                    </p>
-                  </div>
                 </div>
               )}
             </CardContent>
