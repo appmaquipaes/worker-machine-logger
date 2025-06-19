@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { MovimientoInventario, TipoMovimientoInventario, ValidacionInventario, ResultadoOperacionInventario } from '@/types/inventario';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
@@ -161,7 +160,7 @@ export const useInventarioOperations = () => {
         exito: true,
         mensaje: `Se agregaron ${cantidad} m³ de ${material} al inventario`,
         movimientoId: movimiento.id,
-        inventarioActualizada: inventarioActualizado
+        inventarioActualizado
       };
 
     } catch (error) {
