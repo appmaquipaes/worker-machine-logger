@@ -34,12 +34,18 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
 
+  // Solo mostrar si es reporte de viajes y es una máquina que transporta material
   if (reportType !== 'Viajes' || (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine))) {
     return null;
   }
 
-  const shouldShowInventoryMaterialSelect = origin === 'Acopio Maquipaes' || isCargador(selectedMachine);
-  const shouldShowTipoMateriaInput = origin !== 'Acopio Maquipaes' && !isCargador(selectedMachine);
+  console.log('MaterialInputs - selectedMachine:', selectedMachine);
+  console.log('MaterialInputs - isCargador:', isCargador(selectedMachine));
+  console.log('MaterialInputs - origin:', origin);
+
+  // Para Cargadores, siempre mostrar materiales del inventario
+  const shouldShowInventoryMaterialSelect = isCargador(selectedMachine) || origin === 'Acopio Maquipaes';
+  const shouldShowTipoMateriaInput = !isCargador(selectedMachine) && origin !== 'Acopio Maquipaes';
   
   // Obtener stock disponible del material seleccionado
   const materialSeleccionado = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
@@ -75,10 +81,10 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
               <SelectValue placeholder="Selecciona el material del inventario" />
             </SelectTrigger>
             <SelectContent>
-              {inventarioAcopio.map((item) => (
+              {inventarioAcopio.filter(item => item.cantidad_disponible > 0).map((item) => (
                 <SelectItem key={item.id} value={item.tipo_material}>
                   {item.tipo_material} 
-                  <span className={`ml-2 font-medium ${item.cantidad_disponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="ml-2 font-medium text-green-600">
                     ({item.cantidad_disponible} m³ disponibles)
                   </span>
                 </SelectItem>

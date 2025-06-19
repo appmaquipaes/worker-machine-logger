@@ -3,9 +3,11 @@ import { useReport } from '@/context/ReportContext';
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
 import { toast } from "sonner";
+import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 
 export const useReportFormSubmission = () => {
   const { addReport } = useReport();
+  const { isCargador } = useMachineSpecificReports();
 
   const submitReport = (
     selectedMachine: Machine,
@@ -45,8 +47,18 @@ export const useReportFormSubmission = () => {
       tipoMateria
     } = formData;
 
-    const reportDescription = reportType === 'Novedades' ? description : 
-                            reportType === 'Recepción Escombrera' ? `Recepción ${tipoMateria} - ${trips} volquetas` : '';
+    // Para viajes del Cargador, usar el tipo de materia como descripción
+    let reportDescription = '';
+    if (reportType === 'Viajes' && isCargador(selectedMachine) && tipoMateria) {
+      reportDescription = tipoMateria;
+      console.log('Cargador - usando tipoMateria como descripción:', tipoMateria);
+    } else if (reportType === 'Novedades') {
+      reportDescription = description;
+    } else if (reportType === 'Recepción Escombrera') {
+      reportDescription = `Recepción ${tipoMateria} - ${trips} volquetas`;
+    } else {
+      reportDescription = description;
+    }
     
     const finalDestination = reportType === 'Viajes' 
       ? `${selectedCliente} - ${selectedFinca}`
