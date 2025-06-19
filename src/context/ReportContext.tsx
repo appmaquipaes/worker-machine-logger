@@ -4,6 +4,9 @@ import { parseStoredReports, filterReports } from '@/utils/reportUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
 import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
+import { useOperacionesComerciales } from '@/hooks/useOperacionesComerciales';
+import { useVentaCreationEnhanced } from '@/hooks/useVentaCreationEnhanced';
+import { loadVentas, saveVentas } from '@/models/Ventas';
 import { toast } from "sonner";
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -28,6 +31,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
   const { procesarReporteParaVenta } = useAutoVentas();
   const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
+  const { registrarReporteEnOperacion, marcarVentaGenerada } = useOperacionesComerciales();
+  const { crearVentaDesdeOperacion } = useVentaCreationEnhanced();
 
   useEffect(() => {
     const storedReports = localStorage.getItem('reports');
@@ -134,6 +139,46 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error procesando inventario:', error);
+      }
+    }
+
+    // *** NUEVO SISTEMA DE OPERACIONES COMERCIALES ***
+    if (newReport.reportType === 'Viajes' && newReport.destination) {
+      try {
+        console.log('→ Procesando operación comercial');
+        const resultadoOperacion = registrarReporteEnOperacion(newReport);
+        
+        if (resultadoOperacion.debeGenerarVenta) {
+          console.log('→ Generando venta automática');
+          const ventaAutomatica = crearVentaDesdeOperacion(newReport, resultadoOperacion.operacionId);
+          
+          if (ventaAutomatica) {
+            // Guardar la venta
+            const ventasExistentes = loadVentas();
+            const nuevasVentas = [...ventasExistentes, ventaAutomatica];
+            saveVentas(nuevasVentas);
+            
+            // Marcar operación como procesada
+            marcarVentaGenerada(resultadoOperacion.operacionId, ventaAutomatica.id);
+            
+            console.log('✓ Venta automática creada y guardada');
+            toast.success('💰 Venta automática generada', {
+              duration: 3000,
+              style: {
+                fontSize: '14px',
+                backgroundColor: '#059669',
+                color: 'white'
+              }
+            });
+          }
+        } else if (!resultadoOperacion.esOperacionCompleta) {
+          console.log('→ Esperando reporte complementario para completar operación');
+          toast.info('⏳ Operación registrada - esperando reporte complementario', {
+            duration: 2000
+          });
+        }
+      } catch (error) {
+        console.error('Error procesando operación comercial:', error);
       }
     }
 
