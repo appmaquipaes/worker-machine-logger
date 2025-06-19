@@ -2,6 +2,7 @@
 import { ReportType } from '@/types/report';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { useMachine } from '@/context/MachineContext';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 
 export const useReportFormValidation = () => {
   const { selectedMachine } = useMachine();
@@ -66,14 +67,22 @@ export const useReportFormValidation = () => {
           return 'Debe seleccionar el cliente de destino';
         }
         
-        // Validar stock disponible
-        const materialInventario = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+        // Validar stock disponible - cargar inventario fresco desde localStorage
+        const inventarioActual = loadInventarioAcopio();
+        console.log('Inventario actual cargado:', inventarioActual);
+        
+        const materialInventario = inventarioActual.find(item => item.tipo_material === tipoMateria);
+        console.log('Material encontrado en inventario:', materialInventario);
+        
         if (!materialInventario) {
           return `El material "${tipoMateria}" no se encuentra en el inventario`;
         }
         if (materialInventario.cantidad_disponible < cantidadM3) {
+          console.log(`Stock insuficiente - Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
           return `Stock insuficiente. Disponible: ${materialInventario.cantidad_disponible} m³, solicitado: ${cantidadM3} m³`;
         }
+        
+        console.log(`✓ Validación de stock exitosa - Material: ${tipoMateria}, Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
       } else {
         // Validación para otras máquinas de transporte
         if (!trips || trips <= 0) {
@@ -134,3 +143,4 @@ export const useReportFormValidation = () => {
     validateForm,
   };
 };
+

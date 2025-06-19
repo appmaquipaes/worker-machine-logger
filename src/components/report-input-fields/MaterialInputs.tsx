@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Truck, Wrench, AlertTriangle, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Machine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { ReportType } from '@/types/report';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 
 interface MaterialInputsProps {
   reportType: ReportType;
@@ -33,6 +34,14 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   selectedMachine
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
+  const [inventarioActual, setInventarioActual] = useState<any[]>([]);
+
+  // Cargar inventario fresco cuando el componente se monta o cuando cambia el material
+  useEffect(() => {
+    const inventario = loadInventarioAcopio();
+    setInventarioActual(inventario);
+    console.log('MaterialInputs - Inventario cargado:', inventario);
+  }, [tipoMateria]);
 
   // Solo mostrar si es reporte de viajes y es una máquina que transporta material
   if (reportType !== 'Viajes' || (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine))) {
@@ -47,10 +56,15 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   const shouldShowInventoryMaterialSelect = isCargador(selectedMachine) || origin === 'Acopio Maquipaes';
   const shouldShowTipoMateriaInput = !isCargador(selectedMachine) && origin !== 'Acopio Maquipaes';
   
-  // Obtener stock disponible del material seleccionado
-  const materialSeleccionado = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+  // Obtener stock disponible del material seleccionado usando el inventario actual
+  const materialSeleccionado = inventarioActual.find(item => item.tipo_material === tipoMateria);
   const stockDisponible = materialSeleccionado?.cantidad_disponible || 0;
   const stockInsuficiente = cantidadM3 && cantidadM3 > stockDisponible;
+
+  console.log('MaterialInputs - Material seleccionado:', materialSeleccionado);
+  console.log('MaterialInputs - Stock disponible:', stockDisponible);
+  console.log('MaterialInputs - Cantidad solicitada:', cantidadM3);
+  console.log('MaterialInputs - Stock insuficiente:', stockInsuficiente);
 
   return (
     <>
@@ -81,7 +95,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
               <SelectValue placeholder="Selecciona el material del inventario" />
             </SelectTrigger>
             <SelectContent>
-              {inventarioAcopio.filter(item => item.cantidad_disponible > 0).map((item) => (
+              {inventarioActual.filter(item => item.cantidad_disponible > 0).map((item) => (
                 <SelectItem key={item.id} value={item.tipo_material}>
                   {item.tipo_material} 
                   <span className="ml-2 font-medium text-green-600">
@@ -159,3 +173,4 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 };
 
 export default MaterialInputs;
+
