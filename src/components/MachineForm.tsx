@@ -1,128 +1,134 @@
 
 import React, { useState } from 'react';
+import { Machine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Machine } from '@/context/MachineContext';
+import { toast } from "sonner";
+import { Plus, Wrench, Sparkles } from 'lucide-react';
 
 interface MachineFormProps {
-  onMachineCreated: (machine: Omit<Machine, 'id'>) => void;
-  initialData?: Machine;
-  onCancel?: () => void;
+  onAddMachine: (machine: Omit<Machine, 'id'>) => void;
 }
 
-const MachineForm: React.FC<MachineFormProps> = ({ 
-  onMachineCreated, 
-  initialData,
-  onCancel 
-}) => {
-  const [name, setName] = useState(initialData?.name || '');
-  const [type, setType] = useState(initialData?.type || '');
-  const [plate, setPlate] = useState(initialData?.plate || '');
-  const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '');
+const MachineForm: React.FC<MachineFormProps> = ({ onAddMachine }) => {
+  const [newMachine, setNewMachine] = useState<Omit<Machine, 'id'>>({
+    name: '',
+    type: 'Retroexcavadora de Oruga',
+    status: 'Disponible',
+  });
 
-  const machineTypes = [
-    'Excavadora',
+  const machineTypes: Machine['type'][] = [
     'Retroexcavadora de Oruga',
-    'Bulldozer',
+    'Retroexcavadora de Llanta', 
     'Cargador',
-    'Compactador',
-    'Motoniveladora',
+    'Vibrocompactador',
     'Paladraga',
-    'Volqueta',
-    'Camión',
+    'Bulldozer',
     'Camabaja',
-    'Semirremolque',
-    'Tractomula',
-    'Escombrera'
+    'Volqueta',
+    'Motoniveladora',
+    'Escombrera',
+    'Otro',
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name.trim() || !type) {
-      toast.error('Por favor complete los campos obligatorios');
+  const handleAddMachine = () => {
+    if (!newMachine.name.trim()) {
+      toast.error('El nombre de la máquina es obligatorio');
       return;
     }
 
-    onMachineCreated({
-      name: name.trim(),
-      type,
-      plate: plate.trim() || undefined,
-      imageUrl: imageUrl.trim() || undefined,
-      status: initialData?.status || 'Disponible'
+    onAddMachine(newMachine);
+    toast.success(`${newMachine.type} ${newMachine.name} agregada exitosamente`);
+    
+    // Limpiar el formulario
+    setNewMachine({
+      name: '',
+      type: 'Retroexcavadora de Oruga',
+      status: 'Disponible',
     });
-
-    if (!initialData) {
-      setName('');
-      setType('');
-      setPlate('');
-      setImageUrl('');
-    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name">Nombre de la Máquina *</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ej: CAT320D"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="type">Tipo de Equipo *</Label>
-        <Select value={type} onValueChange={setType} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona el tipo de equipo" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto bg-white z-50">
-            {machineTypes.map((machineType) => (
-              <SelectItem key={machineType} value={machineType}>
-                {machineType}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="plate">Placa (Opcional)</Label>
-        <Input
-          id="plate"
-          value={plate}
-          onChange={(e) => setPlate(e.target.value)}
-          placeholder="Ej: ABC123"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="imageUrl">URL de Imagen (Opcional)</Label>
-        <Input
-          id="imageUrl"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://ejemplo.com/imagen.jpg"
-        />
-      </div>
-
-      <div className="flex justify-end space-x-2">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
+    <Card className="mb-8 border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
+      <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <Plus className="w-6 h-6" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold">Añadir Nueva Máquina</CardTitle>
+            <CardDescription className="text-green-50 mt-1">
+              Completa el formulario para registrar una nueva máquina o vehículo en el sistema
+            </CardDescription>
+          </div>
+          <div className="ml-auto hidden sm:flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-green-200" />
+            <span className="text-green-100 text-sm font-medium">Registro Rápido</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <Label htmlFor="name" className="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-green-600" />
+              Nombre de la Máquina *
+            </Label>
+            <Input
+              id="name"
+              placeholder="Ej: Volqueta Kenworth T880"
+              value={newMachine.name}
+              onChange={(e) => setNewMachine({...newMachine, name: e.target.value})}
+              className="h-12 text-base border-slate-300 focus:border-green-500 focus:ring-green-500 bg-slate-50 focus:bg-white transition-colors"
+            />
+          </div>
+          <div className="space-y-3">
+            <Label htmlFor="type" className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+              Tipo de Equipo *
+            </Label>
+            <Select 
+              value={newMachine.type} 
+              onValueChange={(value: Machine['type']) => setNewMachine({...newMachine, type: value})}
+            >
+              <SelectTrigger className="h-12 text-base border-slate-300 focus:border-green-500 focus:ring-green-500 bg-slate-50 focus:bg-white transition-colors">
+                <SelectValue placeholder="Selecciona un tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {machineTypes.map((type) => (
+                  <SelectItem key={type} value={type} className="text-base py-3">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-3">
+            <Label htmlFor="plate" className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+              Placa (opcional)
+            </Label>
+            <Input
+              id="plate"
+              placeholder="Ej: ABC-123"
+              value={newMachine.plate || ''}
+              onChange={(e) => setNewMachine({...newMachine, plate: e.target.value})}
+              className="h-12 text-base border-slate-300 focus:border-green-500 focus:ring-green-500 bg-slate-50 focus:bg-white transition-colors"
+            />
+          </div>
+        </div>
+        <div className="mt-8 flex justify-center">
+          <Button 
+            onClick={handleAddMachine} 
+            className="px-8 py-4 h-14 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          >
+            <Plus className="w-5 h-5 mr-3" /> 
+            Añadir Máquina al Sistema
           </Button>
-        )}
-        <Button type="submit">
-          {initialData ? 'Actualizar Máquina' : 'Crear Máquina'}
-        </Button>
-      </div>
-    </form>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
