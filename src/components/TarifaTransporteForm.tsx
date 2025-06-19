@@ -59,8 +59,8 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
     // Filtrar materiales que coincidan con los productos del proveedor
     return materiales.filter(material => 
       productosDelProveedor.some(producto => 
-        producto.nombre.toLowerCase().includes(material.nombre_material.toLowerCase()) ||
-        material.nombre_material.toLowerCase().includes(producto.nombre.toLowerCase())
+        producto.nombre_producto.toLowerCase().includes(material.nombre_material.toLowerCase()) ||
+        material.nombre_material.toLowerCase().includes(producto.nombre_producto.toLowerCase())
       )
     );
   }, [origen, proveedores, materiales]);

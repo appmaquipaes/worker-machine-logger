@@ -1,4 +1,3 @@
-import { Producto } from "./Producto";
 
 // Define el tipo para proveedores
 export type Proveedor = {
@@ -23,6 +22,9 @@ export type ProductoProveedor = {
   precio_unitario: number;
   observaciones?: string;
 };
+
+// Export Producto as alias for ProductoProveedor for backward compatibility
+export type Producto = ProductoProveedor;
 
 // Función para crear un nuevo proveedor
 export const createProveedor = (
@@ -94,6 +96,9 @@ export const loadProductos = (): ProductoProveedor[] => {
   return JSON.parse(storedProductos);
 };
 
+// Alias for backward compatibility
+export const loadProductosProveedores = loadProductos;
+
 // Función para buscar un proveedor por ID
 export const findProveedor = (id: string): Proveedor | undefined => {
   const proveedores = loadProveedores();
@@ -132,4 +137,11 @@ export const deleteProductoProveedor = (id: string): void => {
   const productos = loadProductos();
   const updatedProductos = productos.filter(producto => producto.id !== id);
   saveProductos(updatedProductos);
+};
+
+// Función para obtener tipos únicos de materiales de proveedores
+export const getUniqueProviderMaterialTypes = (): string[] => {
+  const productos = loadProductos();
+  const tiposUnicos = [...new Set(productos.map(producto => producto.nombre_producto))];
+  return tiposUnicos;
 };

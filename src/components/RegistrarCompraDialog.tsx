@@ -18,7 +18,7 @@ import {
   saveCompras, 
   updateCompraTotal 
 } from '@/models/Compras';
-import { loadProveedores, Proveedor, ProductoProveedor, loadProductosProveedores } from '@/models/Proveedores';
+import { loadProveedores, Proveedor, ProductoProveedor, loadProductos } from '@/models/Proveedores';
 import { loadInventarioAcopio, updateInventarioAfterCompra, saveInventarioAcopio } from '@/models/InventarioAcopio';
 
 interface RegistrarCompraDialogProps {
@@ -58,7 +58,7 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
 
   useEffect(() => {
     setProveedores(loadProveedores());
-    setProductosProveedor(loadProductosProveedores());
+    setProductosProveedor(loadProductos());
   }, []);
 
   // Filtrar productos cuando cambie el proveedor
@@ -82,7 +82,7 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
         setNombreProducto(producto.nombre_producto);
         setUnidad(producto.unidad);
         setPrecioUnitario(producto.precio_unitario);
-        setTipoInsumo(producto.tipo_insumo);
+        setTipoInsumo(producto.tipo_insumo as 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio' | 'Otro');
       }
     } else {
       setNombreProducto('');
@@ -223,16 +223,15 @@ const RegistrarCompraDialog: React.FC<RegistrarCompraDialogProps> = ({
         toast.success('Compra registrada e inventario actualizado');
       } else {
         console.log('✗ Compra no aplica para inventario de acopio');
-        console.log('- Destino correcto?', destinoInsumo === 'Acopio Maquipaes');
-        console.log('- Tipo correcto?', tipoInsumo === 'Material');
         toast.success('Compra registrada exitosamente');
       }
 
       onCompraRegistrada();
+      onOpenChange(false);
       resetForm();
 
     } catch (error) {
-      console.error('Error registrando compra:', error);
+      console.error('Error al registrar compra:', error);
       toast.error('Error al registrar la compra');
     }
   };
