@@ -1,4 +1,3 @@
-
 import { ReportType } from '@/types/report';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { useMachine } from '@/context/MachineContext';
@@ -67,24 +66,24 @@ export const useReportFormValidation = () => {
           return 'Debe seleccionar el cliente de destino';
         }
         
-        // Solo validar stock si hay material seleccionado
+        // Validar stock disponible SOLO si hay material seleccionado - cargar inventario fresco
         if (tipoMateria.trim()) {
-          // Validar stock disponible - cargar inventario fresco desde localStorage
+          console.log('=== VALIDACIÓN DE STOCK EN FORMULARIO ===');
           const inventarioActual = loadInventarioAcopio();
-          console.log('Inventario actual cargado:', inventarioActual);
+          console.log('Inventario cargado para validación:', inventarioActual);
           
           const materialInventario = inventarioActual.find(item => item.tipo_material === tipoMateria);
-          console.log('Material encontrado en inventario:', materialInventario);
+          console.log('Material encontrado:', materialInventario);
           
           if (!materialInventario) {
             return `El material "${tipoMateria}" no se encuentra en el inventario`;
           }
           if (materialInventario.cantidad_disponible < cantidadM3) {
-            console.log(`Stock insuficiente - Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
+            console.log(`❌ VALIDACIÓN FALLIDA - Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
             return `Stock insuficiente. Disponible: ${materialInventario.cantidad_disponible} m³, solicitado: ${cantidadM3} m³`;
           }
           
-          console.log(`✓ Validación de stock exitosa - Material: ${tipoMateria}, Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
+          console.log(`✅ VALIDACIÓN EXITOSA - Material: ${tipoMateria}, Disponible: ${materialInventario.cantidad_disponible}, Solicitado: ${cantidadM3}`);
         }
       } else {
         // Validación para otras máquinas de transporte

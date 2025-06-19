@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
@@ -59,7 +58,10 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     proveedor?: string,
     kilometraje?: number
   ) => {
-    // Validar inventario antes de crear el reporte si es necesario
+    console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
+    console.log('Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
+
+    // Solo validar inventario sin procesarlo aquí
     if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
       const tempReport: Report = {
         id: 'temp',
@@ -76,9 +78,9 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         cantidadM3
       };
 
-      // Validar si es una salida del acopio
-      const validacion = procesarReporteInventario(tempReport);
-      if (!validacion.exito && validacion.mensaje.includes('Stock insuficiente')) {
+      // Solo validar, no procesar todavía
+      const validacion = validarOperacion(description, cantidadM3, 'salida');
+      if (!validacion.esValida) {
         toast.error(`❌ ${validacion.mensaje}`, {
           duration: 6000,
           style: {
@@ -90,6 +92,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
+    // Crear el reporte
     const newReport = createReport(
       reports,
       machineId,
@@ -111,11 +114,13 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
 
-    // Procesar para inventario si es un viaje
+    // Ahora SÍ procesar para inventario si es un viaje (una sola vez)
     if (newReport.reportType === 'Viajes') {
       try {
+        console.log('→ Procesando inventario para reporte:', newReport.id);
         const resultadoInventario = procesarReporteInventario(newReport);
         if (resultadoInventario.exito) {
+          console.log('✓ Inventario actualizado exitosamente');
           toast.success(`✅ Inventario actualizado: ${resultadoInventario.mensaje}`, {
             duration: 4000,
             style: {
@@ -124,6 +129,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
               color: 'white'
             }
           });
+        } else {
+          console.log('⚠ No se procesó inventario:', resultadoInventario.mensaje);
         }
       } catch (error) {
         console.error('Error procesando inventario:', error);
