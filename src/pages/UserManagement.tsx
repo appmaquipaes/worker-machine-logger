@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -66,6 +67,14 @@ const UserManagement: React.FC = () => {
     setSelectedUserForMachines(null);
     setSelectedMachines([]);
     toast.success('Máquinas asignadas actualizadas');
+  };
+
+  const handleMachineToggle = (machineId: string) => {
+    setSelectedMachines(prev => 
+      prev.includes(machineId) 
+        ? prev.filter(id => id !== machineId)
+        : [...prev, machineId]
+    );
   };
 
   const getRoleColor = (role: string) => {
@@ -189,9 +198,9 @@ const UserManagement: React.FC = () => {
           </DialogHeader>
           {selectedUserForMachines && (
             <MachineAssignment
-              initialMachines={selectedUserForMachines.assignedMachines || []}
               machines={machines}
-              onMachinesChange={(machines) => setSelectedMachines(machines)}
+              selectedMachines={selectedMachines}
+              onMachineToggle={handleMachineToggle}
             />
           )}
           <div className="flex justify-end gap-2 mt-4">

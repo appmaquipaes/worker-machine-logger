@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Store, Package } from 'lucide-react';
-import { Proveedor, Producto, loadProveedores, saveProveedores, loadProductos, saveProductos } from '@/models/Proveedores';
+import { Proveedor, ProductoProveedor, loadProveedores, saveProveedores, loadProductos, saveProductos } from '@/models/Proveedores';
 import ProveedorForm from '@/components/proveedores/ProveedorForm';
 import ProveedorTable from '@/components/proveedores/ProveedorTable';
 import ProductoForm from '@/components/proveedores/ProductoForm';
@@ -18,11 +18,11 @@ const ProveedoresPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<ProductoProveedor[]>([]);
   const [showProveedorDialog, setShowProveedorDialog] = useState(false);
   const [showProductoDialog, setShowProductoDialog] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+  const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -55,8 +55,8 @@ const ProveedoresPage: React.FC = () => {
     setEditingProveedor(null);
   };
 
-  const handleProductoCreated = (nuevoProducto: Producto) => {
-    let productosActualizados: Producto[];
+  const handleProductoCreated = (nuevoProducto: ProductoProveedor) => {
+    let productosActualizados: ProductoProveedor[];
     if (editingProducto) {
       productosActualizados = productos.map(p => 
         p.id === editingProducto.id ? { ...nuevoProducto, id: editingProducto.id } : p
@@ -77,7 +77,7 @@ const ProveedoresPage: React.FC = () => {
     setShowProveedorDialog(true);
   };
 
-  const handleEditProducto = (producto: Producto) => {
+  const handleEditProducto = (producto: ProductoProveedor) => {
     setEditingProducto(producto);
     setShowProductoDialog(true);
   };
@@ -104,6 +104,14 @@ const ProveedoresPage: React.FC = () => {
   const handleCancelProducto = () => {
     setShowProductoDialog(false);
     setEditingProducto(null);
+  };
+
+  const getProductosCount = (proveedorId: string): number => {
+    return productos.filter(p => p.proveedor_id === proveedorId).length;
+  };
+
+  const handleSelectProveedor = (proveedor: Proveedor) => {
+    // Implementation for selecting proveedor if needed
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -173,7 +181,7 @@ const ProveedoresPage: React.FC = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <ProveedorForm
-                      initialData={editingProveedor}
+                      defaultValues={editingProveedor || undefined}
                       onProveedorCreated={handleProveedorCreated}
                       onCancel={handleCancelProveedor}
                     />
@@ -186,6 +194,8 @@ const ProveedoresPage: React.FC = () => {
                 proveedores={proveedores}
                 onEdit={handleEditProveedor}
                 onDelete={handleDeleteProveedor}
+                onSelect={handleSelectProveedor}
+                getProductosCount={getProductosCount}
               />
             </CardContent>
           </Card>
@@ -221,10 +231,10 @@ const ProveedoresPage: React.FC = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <ProductoForm
-                      initialData={editingProducto}
-                      onProductoCreated={handleProductoCreated}
+                      defaultValues={editingProducto || undefined}
+                      onSubmit={handleProductoCreated}
                       onCancel={handleCancelProducto}
-                      proveedores={proveedores}
+                      proveedorNombre=""
                     />
                   </DialogContent>
                 </Dialog>
@@ -233,7 +243,6 @@ const ProveedoresPage: React.FC = () => {
             <CardContent className="p-6">
               <ProductoTable
                 productos={productos}
-                proveedores={proveedores}
                 onEdit={handleEditProducto}
                 onDelete={handleDeleteProducto}
               />
