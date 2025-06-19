@@ -26,6 +26,13 @@ export const useInventarioOperations = () => {
     }));
   }, []);
 
+  // Función mejorada para detectar si es acopio
+  const esAcopio = useCallback((ubicacion?: string): boolean => {
+    if (!ubicacion) return false;
+    const ubicacionNorm = ubicacion.toLowerCase().trim();
+    return ubicacionNorm.includes('acopio') || ubicacionNorm === 'acopio maquipaes';
+  }, []);
+
   // Validar si una operación es válida
   const validarOperacion = useCallback((
     material: string,
@@ -154,7 +161,7 @@ export const useInventarioOperations = () => {
         exito: true,
         mensaje: `Se agregaron ${cantidad} m³ de ${material} al inventario`,
         movimientoId: movimiento.id,
-        inventarioActualizado
+        inventarioActualizada: inventarioActualizado
       };
 
     } catch (error) {
@@ -165,7 +172,7 @@ export const useInventarioOperations = () => {
     }
   }, [validarOperacion, saveMovimiento]);
 
-  // Procesar salida del inventario (mantener lógica existente)
+  // Procesar salida del inventario (corregida)
   const procesarSalida = useCallback((
     material: string,
     cantidad: number,
@@ -175,9 +182,13 @@ export const useInventarioOperations = () => {
     maquinaNombre?: string,
     usuario?: string
   ): ResultadoOperacionInventario => {
+    console.log('=== PROCESANDO SALIDA DE INVENTARIO ===');
+    console.log('Material:', material, 'Cantidad:', cantidad, 'Destino:', destino);
+    
     const validacion = validarOperacion(material, cantidad, 'salida');
     
     if (!validacion.esValida) {
+      console.log('❌ Validación fallida:', validacion.mensaje);
       return { exito: false, mensaje: validacion.mensaje || 'Error de validación' };
     }
 
@@ -185,21 +196,28 @@ export const useInventarioOperations = () => {
     
     try {
       const inventario = loadInventarioAcopio();
+      console.log('Inventario actual:', inventario);
+      
       const materialIndex = inventario.findIndex(item => item.tipo_material === material);
       
       if (materialIndex === -1) {
+        console.log('❌ Material no encontrado en inventario');
         return { exito: false, mensaje: `Material "${material}" no encontrado en inventario` };
       }
 
       const cantidadAnterior = inventario[materialIndex].cantidad_disponible;
-      const inventarioActualizado = [...inventario];
+      const cantidadPosterior = Math.max(0, cantidadAnterior - cantidad);
       
+      console.log(`Cantidad anterior: ${cantidadAnterior}, Cantidad a descontar: ${cantidad}, Cantidad posterior: ${cantidadPosterior}`);
+      
+      const inventarioActualizado = [...inventario];
       inventarioActualizado[materialIndex] = {
         ...inventario[materialIndex],
-        cantidad_disponible: Math.max(0, cantidadAnterior - cantidad)
+        cantidad_disponible: cantidadPosterior
       };
 
       saveInventarioAcopio(inventarioActualizado);
+      console.log('✓ Inventario guardado exitosamente');
 
       // Crear registro de movimiento
       const movimiento: MovimientoInventario = {
@@ -209,7 +227,7 @@ export const useInventarioOperations = () => {
         material,
         cantidad,
         cantidadAnterior,
-        cantidadPosterior: cantidadAnterior - cantidad,
+        cantidadPosterior,
         destino,
         reporteId,
         maquinaId,
@@ -237,21 +255,22 @@ export const useInventarioOperations = () => {
     }
   }, [validarOperacion, saveMovimiento]);
 
-  // Detectar y procesar automáticamente según el reporte
+  // Detectar y procesar automáticamente según el reporte (CORREGIDA)
   const procesarReporteInventario = useCallback((report: Report): ResultadoOperacionInventario => {
     console.log('=== PROCESANDO REPORTE PARA INVENTARIO ===');
     console.log('Reporte:', report);
 
     // Solo procesar reportes de viajes con cantidad de m³
     if (report.reportType !== 'Viajes' || !report.cantidadM3 || report.cantidadM3 <= 0) {
+      console.log('→ Reporte no aplica para inventario (no es viaje o sin cantidad)');
       return { exito: false, mensaje: 'Reporte no aplica para inventario' };
     }
 
-    const esOrigenAcopio = isAcopio(report.origin || '');
-    const esDestinoAcopio = isAcopio(report.destination || '');
+    const esOrigenAcopio = esAcopio(report.origin);
+    const esDestinoAcopio = esAcopio(report.destination);
     
-    console.log('Origen es acopio:', esOrigenAcopio);
-    console.log('Destino es acopio:', esDestinoAcopio);
+    console.log('Origen:', report.origin, '- Es acopio:', esOrigenAcopio);
+    console.log('Destino:', report.destination, '- Es acopio:', esDestinoAcopio);
 
     // Determinar el material a procesar
     const material = report.description || 'Material sin especificar';
@@ -284,7 +303,7 @@ export const useInventarioOperations = () => {
       console.log('→ No aplica para inventario (ni entrada ni salida válida)');
       return { exito: false, mensaje: 'El reporte no representa movimiento de inventario válido' };
     }
-  }, [procesarEntrada, procesarSalida]);
+  }, [esAcopio, procesarEntrada, procesarSalida]);
 
   return {
     // Estados
@@ -301,6 +320,6 @@ export const useInventarioOperations = () => {
     saveMovimiento,
     
     // Funciones auxiliares
-    isAcopio
+    isAcopio: esAcopio
   };
 };
