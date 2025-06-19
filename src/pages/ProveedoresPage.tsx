@@ -4,11 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Package, Building, Store, Settings, Users } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Plus, Package, Building, Store, Settings, Users, ChevronRight } from 'lucide-react';
 import { 
   Proveedor, 
   ProductoProveedor,
@@ -84,6 +82,12 @@ const ProveedoresPage: React.FC = () => {
     
     saveProveedores(proveedoresActualizados);
     setProveedores(proveedoresActualizados);
+    
+    // Actualizar el proveedor seleccionado si es el mismo que se está editando
+    if (selectedProveedor?.id === editingProveedor.id) {
+      setSelectedProveedor({ ...editingProveedor, ...data });
+    }
+    
     setEditingProveedor(null);
     setShowProveedorDialog(false);
     toast.success('Proveedor actualizado correctamente');
@@ -98,6 +102,7 @@ const ProveedoresPage: React.FC = () => {
     setProveedores(proveedoresActualizados);
     setProductos(productosActualizados);
     toast.success('Proveedor eliminado correctamente');
+    
     if (selectedProveedor?.id === id) {
       setSelectedProveedor(null);
     }
@@ -106,6 +111,10 @@ const ProveedoresPage: React.FC = () => {
   const openEditProveedor = (proveedor: Proveedor) => {
     setEditingProveedor(proveedor);
     setShowProveedorDialog(true);
+  };
+
+  const handleSelectProveedor = (proveedor: Proveedor) => {
+    setSelectedProveedor(proveedor);
   };
 
   const handleAddProducto = (data: ProductoFormData) => {
@@ -166,9 +175,8 @@ const ProveedoresPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto py-8 px-4">
-        {/* Modern Header with improved visual design */}
+        {/* Header */}
         <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-800 rounded-3xl mb-12 shadow-2xl">
-          {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.08%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
           
           <div className="relative px-8 py-12">
@@ -202,229 +210,177 @@ const ProveedoresPage: React.FC = () => {
                   Controla inventarios, precios y mantén actualizados los datos de contacto.
                 </p>
               </div>
-
-              <div className="flex flex-wrap justify-center gap-4 pt-4">
-                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                  <span className="text-white/90 text-sm">🏪 Red de Proveedores</span>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                  <span className="text-white/90 text-sm">📦 Catálogo de Productos</span>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                  <span className="text-white/90 text-sm">💰 Control de Precios</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <Tabs defaultValue="proveedores" className="space-y-8">
-          <div className="flex justify-center">
-            <TabsList className="bg-white/70 backdrop-blur-sm border-0 shadow-lg rounded-xl p-2">
-              <TabsTrigger 
-                value="proveedores" 
-                className="px-6 py-3 rounded-lg font-semibold data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Proveedores
-              </TabsTrigger>
-              <TabsTrigger 
-                value="productos" 
-                className="px-6 py-3 rounded-lg font-semibold data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
-              >
-                <Package className="w-4 h-4 mr-2" />
-                Productos y Servicios
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="proveedores">
-            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-t-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Building className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl font-bold">Lista de Proveedores</CardTitle>
-                      <CardDescription className="text-emerald-50 mt-1">
-                        Gestiona la información completa de tus proveedores registrados
-                      </CardDescription>
-                    </div>
-                    <div className="ml-auto hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-emerald-100 text-sm font-medium">{proveedores.length} proveedores activos</span>
-                    </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Lista de Proveedores */}
+          <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Building className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Lista de Proveedores</CardTitle>
+                    <CardDescription className="text-emerald-50 mt-1">
+                      Selecciona un proveedor para gestionar sus productos
+                    </CardDescription>
                   </div>
                 </div>
+              </div>
+              <div className="mt-6">
+                <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      onClick={() => {
+                        setEditingProveedor(null);
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      <span className="font-semibold">Agregar Proveedor</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-white shadow-2xl border-0">
+                    <DialogHeader className="text-center space-y-4 pb-6 border-b border-slate-200">
+                      <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <Building className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="space-y-2">
+                        <DialogTitle className="text-2xl font-bold text-slate-800">
+                          {editingProveedor ? 'Editar Proveedor' : 'Agregar Nuevo Proveedor'}
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-slate-600">
+                          {editingProveedor ? 'Modifica los datos del proveedor seleccionado' : 'Completa la información del nuevo proveedor'}
+                        </DialogDescription>
+                      </div>
+                    </DialogHeader>
+                    <ProveedorForm 
+                      onSubmit={editingProveedor ? handleUpdateProveedor : handleAddProveedor} 
+                      onCancel={() => setShowProveedorDialog(false)} 
+                      defaultValues={editingProveedor || undefined}
+                      isEditing={!!editingProveedor}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <ProveedorTable 
+                proveedores={proveedores} 
+                onEdit={openEditProveedor} 
+                onDelete={handleDeleteProveedor} 
+                onSelect={handleSelectProveedor}
+                getProductosCount={(id) => getProveedorProductos(id).length}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Productos del Proveedor Seleccionado */}
+          <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Package className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">
+                      {selectedProveedor ? `Productos de ${selectedProveedor.nombre}` : 'Productos y Servicios'}
+                    </CardTitle>
+                    <CardDescription className="text-blue-50 mt-1">
+                      {selectedProveedor ? 'Gestiona el catálogo de este proveedor' : 'Selecciona un proveedor para ver sus productos'}
+                    </CardDescription>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedProveedor && (
                 <div className="mt-6">
-                  <Dialog open={showProveedorDialog} onOpenChange={setShowProveedorDialog}>
+                  <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
                     <DialogTrigger asChild>
                       <Button 
                         onClick={() => {
-                          setEditingProveedor(null);
+                          setEditingProducto(null);
                         }}
                         className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
                       >
                         <Plus className="mr-2 h-5 w-5" />
-                        <span className="font-semibold">Agregar Proveedor</span>
+                        <span className="font-semibold">Agregar Producto</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-white shadow-2xl border-0">
+                    <DialogContent className="sm:max-w-[600px] bg-white shadow-2xl border-0">
                       <DialogHeader className="text-center space-y-4 pb-6 border-b border-slate-200">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
-                          <Building className="h-8 w-8 text-white" />
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                          <Package className="h-8 w-8 text-white" />
                         </div>
                         <div className="space-y-2">
                           <DialogTitle className="text-2xl font-bold text-slate-800">
-                            {editingProveedor ? 'Editar Proveedor' : 'Agregar Nuevo Proveedor'}
+                            {editingProducto ? 'Editar Producto' : 'Agregar Nuevo Producto'}
                           </DialogTitle>
                           <DialogDescription className="text-base text-slate-600">
-                            {editingProveedor ? 'Modifica los datos del proveedor seleccionado' : 'Completa la información del nuevo proveedor'}
+                            {editingProducto ? 'Modifica el producto o servicio seleccionado' : `Agregar producto para ${selectedProveedor.nombre}`}
                           </DialogDescription>
                         </div>
                       </DialogHeader>
-                      <ProveedorForm 
-                        onSubmit={editingProveedor ? handleUpdateProveedor : handleAddProveedor} 
-                        onCancel={() => setShowProveedorDialog(false)} 
-                        defaultValues={editingProveedor || undefined}
-                        isEditing={!!editingProveedor}
+                      <ProductoForm 
+                        onSubmit={editingProducto ? handleUpdateProducto : handleAddProducto} 
+                        onCancel={() => setShowProductDialog(false)} 
+                        defaultValues={editingProducto || undefined}
+                        isEditing={!!editingProducto}
+                        proveedorNombre={selectedProveedor.nombre}
                       />
                     </DialogContent>
                   </Dialog>
                 </div>
-              </CardHeader>
-              <CardContent className="p-8">
-                <ProveedorTable 
-                  proveedores={proveedores} 
-                  onEdit={openEditProveedor} 
-                  onDelete={handleDeleteProveedor} 
-                  onSelect={setSelectedProveedor}
-                  getProductosCount={(id) => getProveedorProductos(id).length}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="productos">
-            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-t-lg">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Package className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl font-bold">Productos y Servicios</CardTitle>
-                      <CardDescription className="text-blue-50 mt-1">
-                        Gestiona el catálogo completo de productos y servicios de tus proveedores
-                      </CardDescription>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                  <Select
-                    value={selectedProveedor?.id || ""}
-                    onValueChange={(value) => {
-                      const proveedor = proveedores.find(p => p.id === value);
-                      setSelectedProveedor(proveedor || null);
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-[250px] bg-white/10 border-white/20 text-white placeholder:text-white/70 h-12">
-                      <SelectValue placeholder="Seleccionar proveedor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {proveedores.map((proveedor) => (
-                        <SelectItem key={proveedor.id} value={proveedor.id}>
-                          {proveedor.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {selectedProveedor && (
-                    <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          onClick={() => {
-                            setEditingProducto(null);
-                          }}
-                          className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-xl px-6 py-3 transition-all duration-300 hover:scale-105"
-                        >
-                          <Plus className="mr-2 h-5 w-5" />
-                          <span className="font-semibold">Agregar Producto</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[600px] bg-white shadow-2xl border-0">
-                        <DialogHeader className="text-center space-y-4 pb-6 border-b border-slate-200">
-                          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <Package className="h-8 w-8 text-white" />
-                          </div>
-                          <div className="space-y-2">
-                            <DialogTitle className="text-2xl font-bold text-slate-800">
-                              {editingProducto ? 'Editar Producto' : 'Agregar Nuevo Producto'}
-                            </DialogTitle>
-                            <DialogDescription className="text-base text-slate-600">
-                              {editingProducto ? 'Modifica el producto o servicio seleccionado' : `Agregar producto para ${selectedProveedor.nombre}`}
-                            </DialogDescription>
-                          </div>
-                        </DialogHeader>
-                        <ProductoForm 
-                          onSubmit={editingProducto ? handleUpdateProducto : handleAddProducto} 
-                          onCancel={() => setShowProductDialog(false)} 
-                          defaultValues={editingProducto || undefined}
-                          isEditing={!!editingProducto}
-                          proveedorNombre={selectedProveedor.nombre}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-8">
-                {selectedProveedor ? (
-                  <div>
-                    <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl border border-emerald-200">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
-                          <Store className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-800">Productos de: {selectedProveedor.nombre}</h3>
-                          <p className="text-sm text-slate-600">Tipo: {selectedProveedor.tipo_proveedor} • Ciudad: {selectedProveedor.ciudad}</p>
-                        </div>
-                        <div className="ml-auto bg-white/80 backdrop-blur-sm rounded-full px-4 py-2">
-                          <span className="text-emerald-600 text-sm font-medium">
-                            {getProveedorProductos(selectedProveedor.id).length} productos registrados
-                          </span>
-                        </div>
+              )}
+            </CardHeader>
+            <CardContent className="p-8">
+              {selectedProveedor ? (
+                <div>
+                  <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl border border-emerald-200">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                        <Store className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-800">{selectedProveedor.nombre}</h3>
+                        <p className="text-sm text-slate-600">Tipo: {selectedProveedor.tipo_proveedor} • Ciudad: {selectedProveedor.ciudad}</p>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2">
+                        <Package className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-600 text-sm font-medium">
+                          {getProveedorProductos(selectedProveedor.id).length} productos
+                        </span>
                       </div>
                     </div>
-                    
-                    <ProductoTable 
-                      productos={getProveedorProductos(selectedProveedor.id)} 
-                      onEdit={openEditProducto} 
-                      onDelete={handleDeleteProducto} 
-                    />
                   </div>
-                ) : (
-                  <div className="text-center py-16 space-y-6">
-                    <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
-                      <Package className="w-12 h-12 text-slate-400" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xl font-semibold text-slate-600">Selecciona un proveedor</p>
-                      <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                        Selecciona un proveedor para ver y gestionar sus productos y servicios
-                      </p>
-                    </div>
+                  
+                  <ProductoTable 
+                    productos={getProveedorProductos(selectedProveedor.id)} 
+                    onEdit={openEditProducto} 
+                    onDelete={handleDeleteProducto} 
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-16 space-y-6">
+                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+                    <ChevronRight className="w-12 h-12 text-slate-400" />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-slate-600">Selecciona un proveedor</p>
+                    <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+                      Haz clic en el botón "👁️" de cualquier proveedor de la lista para ver y gestionar sus productos
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
