@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -5,22 +6,24 @@ import { useMachine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, UserPlus, ArrowLeft, Settings, DollarSign, Users, Eye } from 'lucide-react';
+import { Trash2, UserPlus, ArrowLeft, Settings, DollarSign, Users, Eye, Truck } from 'lucide-react';
 import UserCommissionDialog from '@/components/UserCommissionDialog';
+import UserTripCommissionDialog from '@/components/UserTripCommissionDialog';
 
 type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Trabajador' | 'Administrador' | 'Operador';
+  role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor';
   assignedMachines?: string[];
   comisionPorHora?: number;
+  comisionPorViaje?: number;
 };
 
 const UserManagement: React.FC = () => {
@@ -33,6 +36,8 @@ const UserManagement: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [commissionUser, setCommissionUser] = useState<User | null>(null);
   const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
+  const [tripCommissionUser, setTripCommissionUser] = useState<User | null>(null);
+  const [isTripCommissionDialogOpen, setIsTripCommissionDialogOpen] = useState(false);
   const [viewMachinesUser, setViewMachinesUser] = useState<User | null>(null);
   const [isViewMachinesOpen, setIsViewMachinesOpen] = useState(false);
   
@@ -114,6 +119,11 @@ const UserManagement: React.FC = () => {
     setIsCommissionDialogOpen(true);
   };
 
+  const handleEditTripCommission = (userToEdit: User) => {
+    setTripCommissionUser(userToEdit);
+    setIsTripCommissionDialogOpen(true);
+  };
+
   const handleSaveCommission = (userId: string, commission: number) => {
     // Actualizar en localStorage
     const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
@@ -129,6 +139,25 @@ const UserManagement: React.FC = () => {
     setUsers(prev => prev.map(u => 
       u.id === userId 
         ? { ...u, comisionPorHora: commission }
+        : u
+    ));
+  };
+
+  const handleSaveTripCommission = (userId: string, commission: number) => {
+    // Actualizar en localStorage
+    const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const updatedUsers = currentUsers.map((u: any) => 
+      u.id === userId 
+        ? { ...u, comisionPorViaje: commission }
+        : u
+    );
+    
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    // Actualizar estado local
+    setUsers(prev => prev.map(u => 
+      u.id === userId 
+        ? { ...u, comisionPorViaje: commission }
         : u
     ));
   };
@@ -151,9 +180,15 @@ const UserManagement: React.FC = () => {
         return 'bg-blue-600 text-white hover:bg-blue-700';
       case 'Operador':
         return 'bg-green-600 text-white hover:bg-green-700';
+      case 'Conductor':
+        return 'bg-purple-600 text-white hover:bg-purple-700';
       default:
         return 'bg-slate-500 text-white hover:bg-slate-600';
     }
+  };
+
+  const isVehicleDriver = (role: string) => {
+    return role === 'Conductor';
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -182,7 +217,7 @@ const UserManagement: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={() => navigate('/register')}
-              className="bg-white text-blue-700 hover:bg-blue-50 font-semibold flex items-center gap-2 px-6 py-3"
+              className="bg-white text-blue-700 hover:bg-blue-50 font-semibold flex items-center gap-2 px-6 py-3 shadow-lg"
             >
               <UserPlus className="h-5 w-5" />
               Nuevo Usuario
@@ -190,7 +225,7 @@ const UserManagement: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/admin')}
-              className="border-white/30 text-white hover:bg-white/10 font-semibold flex items-center gap-2 px-6 py-3"
+              className="bg-white/10 border-white text-white hover:bg-white hover:text-blue-700 font-semibold flex items-center gap-2 px-6 py-3 shadow-lg backdrop-blur-sm"
             >
               <ArrowLeft className="h-5 w-5" />
               Panel Admin
@@ -200,7 +235,7 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -225,6 +260,22 @@ const UserManagement: React.FC = () => {
                 <p className="text-sm font-semibold text-green-700 uppercase tracking-wide">Operadores</p>
                 <p className="text-3xl font-bold text-green-900">
                   {users.filter(u => u.role === 'Operador').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-600 rounded-xl">
+                <Truck className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-purple-700 uppercase tracking-wide">Conductores</p>
+                <p className="text-3xl font-bold text-purple-900">
+                  {users.filter(u => u.role === 'Conductor').length}
                 </p>
               </div>
             </div>
@@ -268,7 +319,7 @@ const UserManagement: React.FC = () => {
                     <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Usuario</TableHead>
                     <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Rol</TableHead>
                     <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Máquinas</TableHead>
-                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Comisión/Hr</TableHead>
+                    <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide">Comisión</TableHead>
                     <TableHead className="font-bold text-slate-700 text-sm uppercase tracking-wide text-center">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -289,7 +340,7 @@ const UserManagement: React.FC = () => {
                       </TableCell>
                       
                       <TableCell className="max-w-48 py-4">
-                        {u.role === 'Operador' ? (
+                        {(u.role === 'Operador' || u.role === 'Conductor') ? (
                           <div className="space-y-2">
                             <p className="text-sm font-semibold text-slate-700">
                               {u.assignedMachines?.length || 0} asignada(s)
@@ -314,7 +365,11 @@ const UserManagement: React.FC = () => {
                       <TableCell className="py-4">
                         {u.role === 'Operador' ? (
                           <div className="font-bold text-green-700 text-base">
-                            ${(u.comisionPorHora || 0).toLocaleString()}
+                            ${(u.comisionPorHora || 0).toLocaleString()}/hr
+                          </div>
+                        ) : u.role === 'Conductor' ? (
+                          <div className="font-bold text-purple-700 text-base">
+                            ${(u.comisionPorViaje || 0).toLocaleString()}/viaje
                           </div>
                         ) : (
                           <span className="text-sm text-slate-400 font-medium">-</span>
@@ -323,27 +378,38 @@ const UserManagement: React.FC = () => {
                       
                       <TableCell className="py-4">
                         <div className="flex items-center justify-center gap-2">
+                          {(u.role === 'Operador' || u.role === 'Conductor') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMachines(u)}
+                              className="h-9 w-9 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              title="Configurar máquinas"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          )}
                           {u.role === 'Operador' && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditMachines(u)}
-                                className="h-9 w-9 p-0 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                title="Configurar máquinas"
-                              >
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditCommission(u)}
-                                className="h-9 w-9 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                title="Configurar comisión"
-                              >
-                                <DollarSign className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditCommission(u)}
+                              className="h-9 w-9 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                              title="Configurar comisión por hora"
+                            >
+                              <DollarSign className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {u.role === 'Conductor' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditTripCommission(u)}
+                              className="h-9 w-9 p-0 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                              title="Configurar comisión por viaje"
+                            >
+                              <Truck className="h-4 w-4" />
+                            </Button>
                           )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -408,7 +474,7 @@ const UserManagement: React.FC = () => {
 
       {/* Enhanced Dialog para editar máquinas asignadas */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md bg-white shadow-2xl border-0">
+        <DialogContent className="max-w-2xl bg-white shadow-2xl border-0 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-center space-y-4 pb-4">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Settings className="h-8 w-8 text-white" />
@@ -418,13 +484,13 @@ const UserManagement: React.FC = () => {
                 Editar Máquinas Asignadas
               </DialogTitle>
               <DialogDescription className="text-base text-slate-600 font-medium">
-                Selecciona las máquinas para el operador <span className="font-bold text-slate-800">{editingUser?.name}</span>
+                Selecciona las máquinas para {editingUser?.role.toLowerCase()} <span className="font-bold text-slate-800">{editingUser?.name}</span>
               </DialogDescription>
             </div>
           </DialogHeader>
           
           <div className="py-4">
-            <div className="max-h-80 overflow-y-auto pr-2">
+            <div className="max-h-96 overflow-y-auto pr-2">
               {machines.length > 0 ? (
                 <div className="space-y-3">
                   {machines.map((machine) => (
@@ -510,7 +576,7 @@ const UserManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Máquinas Asignadas</DialogTitle>
             <DialogDescription>
-              Máquinas asignadas al operador {viewMachinesUser?.name}
+              Máquinas asignadas al {viewMachinesUser?.role.toLowerCase()} {viewMachinesUser?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -551,6 +617,18 @@ const UserManagement: React.FC = () => {
           }}
           user={commissionUser}
           onSave={handleSaveCommission}
+        />
+      )}
+
+      {tripCommissionUser && (
+        <UserTripCommissionDialog
+          isOpen={isTripCommissionDialogOpen}
+          onClose={() => {
+            setIsTripCommissionDialogOpen(false);
+            setTripCommissionUser(null);
+          }}
+          user={tripCommissionUser}
+          onSave={handleSaveTripCommission}
         />
       )}
     </div>
