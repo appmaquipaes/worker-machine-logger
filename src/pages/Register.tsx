@@ -20,7 +20,7 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'Trabajador' | 'Administrador' | 'Operador'>('Trabajador');
+  const [role, setRole] = useState<'Trabajador' | 'Administrador' | 'Operador' | 'Conductor'>('Trabajador');
   const [selectedMachines, setSelectedMachines] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -49,9 +49,9 @@ const Register: React.FC = () => {
     );
   };
 
-  const handleRoleChange = (newRole: 'Trabajador' | 'Administrador' | 'Operador') => {
+  const handleRoleChange = (newRole: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor') => {
     setRole(newRole);
-    if (newRole !== 'Operador') {
+    if (newRole !== 'Operador' && newRole !== 'Conductor') {
       setSelectedMachines([]);
     }
   };
@@ -64,7 +64,7 @@ const Register: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const assignedMachines = role === 'Operador' ? selectedMachines : undefined;
+    const assignedMachines = (role === 'Operador' || role === 'Conductor') ? selectedMachines : undefined;
     const success = await register(name, email, password, role, assignedMachines);
     setIsSubmitting(false);
     
@@ -122,7 +122,7 @@ const Register: React.FC = () => {
                 />
               )}
 
-              {role === 'Operador' && user && user.role === 'Administrador' && (
+              {(role === 'Operador' || role === 'Conductor') && user && user.role === 'Administrador' && (
                 <MachineAssignment
                   machines={machines}
                   selectedMachines={selectedMachines}

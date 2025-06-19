@@ -2,11 +2,11 @@
 import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Users, Settings, Shield } from 'lucide-react';
+import { Users, Settings, Shield, Truck } from 'lucide-react';
 
 interface RoleSelectionProps {
-  role: 'Trabajador' | 'Administrador' | 'Operador';
-  onRoleChange: (role: 'Trabajador' | 'Administrador' | 'Operador') => void;
+  role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor';
+  onRoleChange: (role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor') => void;
 }
 
 const RoleSelection: React.FC<RoleSelectionProps> = ({ role, onRoleChange }) => {
@@ -16,6 +16,8 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ role, onRoleChange }) => 
         return <Shield className="h-5 w-5" />;
       case 'Operador':
         return <Settings className="h-5 w-5" />;
+      case 'Conductor':
+        return <Truck className="h-5 w-5" />;
       default:
         return <Users className="h-5 w-5" />;
     }
@@ -27,6 +29,8 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ role, onRoleChange }) => 
         return "Control total del sistema";
       case 'Operador':
         return "Opera máquinas asignadas";
+      case 'Conductor':
+        return "Conduce vehículos asignados";
       default:
         return "Usuario básico del sistema";
     }
@@ -39,10 +43,10 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ role, onRoleChange }) => 
       </h3>
       <RadioGroup
         value={role}
-        onValueChange={(value) => onRoleChange(value as 'Trabajador' | 'Administrador' | 'Operador')}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        onValueChange={(value) => onRoleChange(value as 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor')}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {(['Trabajador', 'Operador', 'Administrador'] as const).map((roleOption) => (
+        {(['Trabajador', 'Operador', 'Conductor', 'Administrador'] as const).map((roleOption) => (
           <div key={roleOption} className="flex items-center space-x-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
             <RadioGroupItem value={roleOption} id={roleOption.toLowerCase()} />
             <div className="flex items-center gap-3 flex-1">

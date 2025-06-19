@@ -4,15 +4,17 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Trabajador' | 'Administrador' | 'Operador';
-  assignedMachines?: string[]; // IDs de las máquinas asignadas para operadores
+  role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor';
+  assignedMachines?: string[]; // IDs de las máquinas asignadas para operadores y conductores
+  comisionPorHora?: number; // Para operadores
+  comisionPorViaje?: number; // Para conductores
 };
 
 // Definir el tipo de contexto
 export type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador', assignedMachines?: string[]) => Promise<boolean>;
+  register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor', assignedMachines?: string[]) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   resetPassword: (email: string) => Promise<boolean>;

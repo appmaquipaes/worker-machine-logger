@@ -14,7 +14,7 @@ const RegisterHeader: React.FC<RegisterHeaderProps> = ({ user }) => {
 
   const pageTitle = user && user.role === 'Administrador' ? "Crear Usuario" : "Registrarse";
   const pageDescription = user && user.role === 'Administrador' 
-    ? "Registra un nuevo usuario trabajador, administrador u operador"
+    ? "Registra un nuevo usuario trabajador, administrador, operador o conductor"
     : "Crea una cuenta para acceder al sistema";
 
   return (
@@ -39,7 +39,7 @@ const RegisterHeader: React.FC<RegisterHeaderProps> = ({ user }) => {
         <Button
           variant="outline"
           onClick={() => navigate(user ? '/admin/users' : '/')}
-          className="border-white/30 text-white hover:bg-white/10 font-semibold flex items-center gap-2 px-6 py-3"
+          className="bg-white text-blue-700 hover:bg-blue-50 border-2 border-white font-semibold flex items-center gap-2 px-6 py-3 shadow-lg"
         >
           <ArrowLeft className="h-5 w-5" />
           {user ? 'Volver a gestión' : 'Volver al inicio'}
