@@ -1,3 +1,4 @@
+
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
 
@@ -20,6 +21,17 @@ export const useMachineSpecificReports = () => {
     return machine.type === 'Escombrera' || machine.name.toLowerCase().includes('escombrera');
   };
 
+  const isCargador = (machine?: Machine): boolean => {
+    if (!machine) return false;
+    return machine.type === 'Cargador';
+  };
+
+  const isInventoryMachine = (machine?: Machine): boolean => {
+    if (!machine) return false;
+    // Máquinas que manejan inventario: Volquetas, Camiones y Cargadores
+    return isMaterialTransportVehicle(machine) || isCargador(machine);
+  };
+
   const getAvailableReportTypes = (machine?: Machine): ReportType[] => {
     if (!machine) return [];
 
@@ -34,7 +46,7 @@ export const useMachineSpecificReports = () => {
       return [...baseReports, 'Horas Extras'];
     }
     
-    if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine)) {
+    if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine) || isCargador(machine)) {
       return [...baseReports, 'Viajes'];
     }
     
@@ -42,6 +54,10 @@ export const useMachineSpecificReports = () => {
   };
 
   const getReportTypeDescription = (machine: Machine, reportType: ReportType): string => {
+    if (isCargador(machine) && reportType === 'Viajes') {
+      return `Registro de carga de material desde el Acopio hacia clientes. El ${machine.name} siempre opera desde el Acopio Maquipaes, solo necesitas seleccionar el material y destino.`;
+    }
+
     switch (reportType) {
       case 'Recepción Escombrera':
         return 'Registro de recepción de volquetas en la escombrera. Selecciona el cliente y tipo de volqueta para calcular automáticamente el valor a cobrar.';
@@ -64,6 +80,9 @@ export const useMachineSpecificReports = () => {
     if (isEscombrera(machine)) {
       return 'Escombrera';
     }
+    if (isCargador(machine)) {
+      return 'Cargador (Acopio)';
+    }
     return machine.type;
   };
 
@@ -71,6 +90,8 @@ export const useMachineSpecificReports = () => {
     isMaterialTransportVehicle,
     isMachineryTransportVehicle,
     isEscombrera,
+    isCargador,
+    isInventoryMachine,
     getAvailableReportTypes,
     getReportTypeDescription,
     getMachineTypeLabel,

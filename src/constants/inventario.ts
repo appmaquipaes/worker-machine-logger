@@ -30,7 +30,9 @@ export const MACHINE_INVENTORY_CONFIG = {
   'Cargador': { 
     canEnter: false, 
     canExit: true, 
-    forceOriginAcopio: true 
+    forceOriginAcopio: true,
+    isAlwaysAtAcopio: true,
+    defaultOrigin: 'Acopio Maquipaes'
   }
 };
 
@@ -39,4 +41,6 @@ export type MachineInventoryConfig = {
   canEnter: boolean;
   canExit: boolean;
   forceOriginAcopio: boolean;
+  isAlwaysAtAcopio?: boolean;
+  defaultOrigin?: string;
 };
