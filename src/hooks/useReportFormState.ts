@@ -34,7 +34,7 @@ export const useReportFormState = () => {
     const loadedInventario = loadInventarioAcopio();
 
     setProveedores(loadedProveedores);
-    setTiposMaterial(loadedMateriales.map(m => m.nombre));
+    setTiposMaterial(loadedMateriales.map(m => m.nombre_material));
     setInventarioAcopio(loadedInventario);
   }, []);
 
