@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import RegisterForm from '@/components/register/RegisterForm';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +22,10 @@ const Register: React.FC = () => {
         </div>
         
         <div className="bg-white rounded-2xl shadow-2xl border-0 overflow-hidden">
-          <RegisterForm />
+          <div className="p-8">
+            <h1 className="text-2xl font-bold text-center mb-4">Registro de Usuario</h1>
+            <p className="text-center text-gray-600">Funcionalidad de registro disponible próximamente.</p>
+          </div>
         </div>
       </div>
     </div>

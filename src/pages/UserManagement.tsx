@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, User, Edit, Trash2, Settings } from 'lucide-react';
 import { StoredUser } from '@/types/auth';
 import { getStoredUsers, setStoredUsers } from '@/utils/authStorage';
 import { useMachine } from '@/context/MachineContext';
-import RegisterForm from '@/components/register/RegisterForm';
 import MachineAssignment from '@/components/register/MachineAssignment';
 
 const UserManagement: React.FC = () => {
@@ -128,7 +127,9 @@ const UserManagement: React.FC = () => {
                     Crea una nueva cuenta de usuario para el sistema.
                   </DialogDescription>
                 </DialogHeader>
-                <RegisterForm onSuccess={loadUsers} />
+                <div className="p-4">
+                  <p className="text-sm text-gray-600">Formulario de registro disponible próximamente.</p>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -188,7 +189,6 @@ const UserManagement: React.FC = () => {
           </DialogHeader>
           {selectedUserForMachines && (
             <MachineAssignment
-              userId={selectedUserForMachines.id}
               initialMachines={selectedUserForMachines.assignedMachines || []}
               machines={machines}
               onMachinesChange={(machines) => setSelectedMachines(machines)}
