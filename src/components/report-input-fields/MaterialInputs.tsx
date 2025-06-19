@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Truck, Wrench } from 'lucide-react';
+import { Truck, Wrench, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,6 +39,11 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 
   const shouldShowInventoryMaterialSelect = origin === 'Acopio Maquipaes';
   const shouldShowTipoMateriaInput = origin !== 'Acopio Maquipaes';
+  
+  // Obtener stock disponible del material seleccionado
+  const materialSeleccionado = inventarioAcopio.find(item => item.tipo_material === tipoMateria);
+  const stockDisponible = materialSeleccionado?.cantidad_disponible || 0;
+  const stockInsuficiente = cantidadM3 && cantidadM3 > stockDisponible;
 
   return (
     <>
@@ -55,7 +60,10 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
             <SelectContent>
               {inventarioAcopio.map((item) => (
                 <SelectItem key={item.id} value={item.tipo_material}>
-                  {item.tipo_material} ({item.cantidad_disponible} m³ disponibles)
+                  {item.tipo_material} 
+                  <span className={`ml-2 ${item.cantidad_disponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ({item.cantidad_disponible} m³ disponibles)
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -90,23 +98,32 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
           <Label htmlFor="cantidad-m3" className="text-lg">
             Cantidad de m³ Transportados
             {shouldShowInventoryMaterialSelect && tipoMateria && (
-              <span className="text-sm text-muted-foreground ml-2">
-                (Disponibles: {inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible || 0} m³)
+              <span className={`text-sm ml-2 ${stockDisponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                (Disponibles: {stockDisponible} m³)
               </span>
             )}
           </Label>
         </div>
+        
+        {stockInsuficiente && shouldShowInventoryMaterialSelect && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-700 font-medium">
+              Cantidad solicitada ({cantidadM3} m³) supera el stock disponible ({stockDisponible} m³)
+            </span>
+          </div>
+        )}
+        
         <Input 
           id="cantidad-m3"
           type="number"
           min="0.1"
           step="0.1"
-          max={shouldShowInventoryMaterialSelect && tipoMateria ? 
-            inventarioAcopio.find(item => item.tipo_material === tipoMateria)?.cantidad_disponible : undefined}
+          max={shouldShowInventoryMaterialSelect && tipoMateria ? stockDisponible : undefined}
           placeholder="Ej: 6"
           value={cantidadM3 === undefined ? '' : cantidadM3}
           onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
-          className="text-lg p-6"
+          className={`text-lg p-6 ${stockInsuficiente && shouldShowInventoryMaterialSelect ? 'border-red-300 focus:border-red-500' : ''}`}
           required
         />
       </div>

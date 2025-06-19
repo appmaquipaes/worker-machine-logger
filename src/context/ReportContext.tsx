@@ -1,8 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
 import { useAutoVentas } from '@/hooks/useAutoVentas';
+import { useInventarioOperations } from '@/hooks/useInventarioOperations';
+import { toast } from "sonner";
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
@@ -25,6 +28,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const [reports, setReports] = useState<Report[]>([]);
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
   const { procesarReporteParaVenta } = useAutoVentas();
+  const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
 
   useEffect(() => {
     const storedReports = localStorage.getItem('reports');
@@ -55,6 +59,37 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     proveedor?: string,
     kilometraje?: number
   ) => {
+    // Validar inventario antes de crear el reporte si es necesario
+    if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
+      const tempReport: Report = {
+        id: 'temp',
+        machineId,
+        machineName,
+        userName: 'Current User',
+        reportType,
+        description,
+        reportDate,
+        createdAt: new Date(),
+        value: 0,
+        origin,
+        destination,
+        cantidadM3
+      };
+
+      // Validar si es una salida del acopio
+      const validacion = procesarReporteInventario(tempReport);
+      if (!validacion.exito && validacion.mensaje.includes('Stock insuficiente')) {
+        toast.error(`❌ ${validacion.mensaje}`, {
+          duration: 6000,
+          style: {
+            fontSize: '16px',
+            fontWeight: 'bold',
+          }
+        });
+        return;
+      }
+    }
+
     const newReport = createReport(
       reports,
       machineId,
@@ -75,6 +110,25 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
+
+    // Procesar para inventario si es un viaje
+    if (newReport.reportType === 'Viajes') {
+      try {
+        const resultadoInventario = procesarReporteInventario(newReport);
+        if (resultadoInventario.exito) {
+          toast.success(`✅ Inventario actualizado: ${resultadoInventario.mensaje}`, {
+            duration: 4000,
+            style: {
+              fontSize: '14px',
+              backgroundColor: '#22c55e',
+              color: 'white'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error procesando inventario:', error);
+      }
+    }
 
     // Procesar para ventas automáticas si es un viaje a cliente
     if (newReport.reportType === 'Viajes' && newReport.destination) {

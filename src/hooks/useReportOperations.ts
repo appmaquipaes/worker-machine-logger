@@ -1,6 +1,5 @@
 
 import { Report, ReportType } from '@/types/report';
-import { actualizarInventarioPorViaje } from '@/utils/inventarioUtils';
 import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
 import { findTarifaEscombrera } from '@/models/TarifasCliente';
 
@@ -99,21 +98,14 @@ export const useReportOperations = () => {
       tipoVolqueta: reportType === 'Recepción Escombrera' && description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla',
       cantidadVolquetas: reportType === 'Recepción Escombrera' ? trips : undefined,
     };
-    
-    // Actualizar inventario si es un viaje desde acopio
-    if (newReport.reportType === 'Viajes') {
-      const inventarioActualizado = actualizarInventarioPorViaje(newReport);
-      if (inventarioActualizado) {
-        console.log('Inventario de acopio actualizado por nuevo viaje');
-      }
-    }
 
     // Log para debugging
     console.log('Nuevo reporte creado:', {
       tipo: reportType,
       valor: calculatedValue,
       detalleCalculo,
-      tarifaEncontrada
+      tarifaEncontrada,
+      inventarioSeraAfectado: reportType === 'Viajes' && (origin?.includes('Acopio') || destination?.includes('Acopio'))
     });
 
     return newReport;
