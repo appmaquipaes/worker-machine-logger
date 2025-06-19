@@ -64,17 +64,23 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     kilometraje?: number
   ) => {
     console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
-    console.log('Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
-    console.log('Origen:', origin, 'Destino:', destination);
+    console.log('🚛 Máquina:', machineName, '(ID:', machineId, ')');
+    console.log('📋 Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
+    console.log('📍 Origen:', origin, 'Destino:', destination);
 
     // Solo validar inventario para viajes con cantidad y desde acopio
     if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
       const esOrigenAcopio = origin.toLowerCase().includes('acopio');
       
+      console.log('🔍 Validando inventario:');
+      console.log('- Es origen acopio:', esOrigenAcopio);
+      console.log('- Origen original:', origin);
+      
       if (esOrigenAcopio) {
         console.log('→ Validando stock para salida desde acopio');
         const validacion = validarOperacion(description, cantidadM3, 'salida');
         if (!validacion.esValida) {
+          console.log('❌ Validación de stock fallida:', validacion.mensaje);
           toast.error(`❌ ${validacion.mensaje}`, {
             duration: 6000,
             style: {
@@ -89,6 +95,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     }
 
     // Crear el reporte
+    console.log('📝 Creando reporte...');
     const newReport = createReport(
       reports,
       machineId,
@@ -107,16 +114,19 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       kilometraje
     );
     
+    console.log('✅ Reporte creado:', newReport);
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
 
-    // PROCESAR INVENTARIO PRIMERO (para todas las máquinas, no solo cargadores)
+    // PROCESAR INVENTARIO PRIMERO (para todas las máquinas)
     if (newReport.reportType === 'Viajes' && (newReport.origin || newReport.destination)) {
+      console.log('🏭 Iniciando procesamiento de inventario...');
       try {
-        console.log('→ Procesando inventario para reporte:', newReport.id);
         const resultadoInventario = procesarReporteInventario(newReport);
+        console.log('📊 Resultado procesamiento inventario:', resultadoInventario);
+        
         if (resultadoInventario.exito) {
-          console.log('✓ Inventario actualizado exitosamente');
+          console.log('✅ Inventario actualizado exitosamente');
           toast.success(`✅ Inventario actualizado: ${resultadoInventario.mensaje}`, {
             duration: 4000,
             style: {
@@ -129,7 +139,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           console.log('⚠ No se procesó inventario:', resultadoInventario.mensaje);
         }
       } catch (error) {
-        console.error('Error procesando inventario:', error);
+        console.error('❌ Error procesando inventario:', error);
       }
     }
 
