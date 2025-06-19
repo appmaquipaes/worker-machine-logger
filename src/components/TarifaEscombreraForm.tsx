@@ -31,20 +31,31 @@ const TarifaEscombreraForm: React.FC<TarifaEscombreraFormProps> = ({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="escombrera" className="text-sm font-medium text-slate-700">Escombrera *</Label>
         <Select value={escombreraId} onValueChange={onEscombreraChange}>
-          <SelectTrigger className="w-full mt-1">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecciona una escombrera" />
           </SelectTrigger>
-          <SelectContent>
-            {escombreras.map((escombrera) => (
-              <SelectItem key={escombrera.id} value={escombrera.id}>
-                {escombrera.name}
+          <SelectContent className="bg-white z-50 max-h-60 overflow-y-auto">
+            {escombreras.length > 0 ? (
+              escombreras.map((escombrera) => (
+                <SelectItem key={escombrera.id} value={escombrera.id}>
+                  {escombrera.name} {escombrera.plate ? `(${escombrera.plate})` : ''}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                No hay escombreras disponibles. Cree una máquina de tipo "Escombrera" primero.
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
+        {escombreras.length === 0 && (
+          <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+            <strong>Nota:</strong> No se encontraron escombreras. Para usar este servicio, primero debe crear una máquina de tipo "Escombrera" en la gestión de máquinas.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
