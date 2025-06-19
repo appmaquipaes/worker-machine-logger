@@ -7,7 +7,7 @@ export type Proveedor = {
   contacto: string;
   correo_electronico: string;
   nit: string;
-  tipo_proveedor: string;
+  tipo_proveedor: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros';
   forma_pago: string;
   observaciones?: string;
 };
@@ -16,7 +16,7 @@ export type Proveedor = {
 export type ProductoProveedor = {
   id: string;
   proveedor_id: string;
-  tipo_insumo: string;
+  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
   nombre_producto: string;
   unidad: string;
   precio_unitario: number;
@@ -33,7 +33,7 @@ export const createProveedor = (
   contacto: string,
   correo_electronico: string,
   nit: string,
-  tipo_proveedor: string,
+  tipo_proveedor: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros',
   forma_pago: string,
   observaciones?: string
 ): Proveedor => {
@@ -53,7 +53,7 @@ export const createProveedor = (
 // Función para crear un nuevo producto de proveedor
 export const createProductoProveedor = (
   proveedor_id: string,
-  tipo_insumo: string,
+  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio',
   nombre_producto: string,
   unidad: string,
   precio_unitario: number,

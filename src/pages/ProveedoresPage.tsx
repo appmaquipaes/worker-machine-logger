@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Store, Package } from 'lucide-react';
-import { Proveedor, ProductoProveedor, loadProveedores, saveProveedores, loadProductos, saveProductos } from '@/models/Proveedores';
+import { Proveedor, ProductoProveedor, loadProveedores, saveProveedores, loadProductos, saveProductos, createProveedor, createProductoProveedor } from '@/models/Proveedores';
 import ProveedorForm from '@/components/proveedores/ProveedorForm';
 import ProveedorTable from '@/components/proveedores/ProveedorTable';
 import ProductoForm from '@/components/proveedores/ProductoForm';
@@ -38,14 +37,24 @@ const ProveedoresPage: React.FC = () => {
     setProductos(loadProductos());
   }, [user, navigate]);
 
-  const handleProveedorCreated = (nuevoProveedor: Proveedor) => {
+  const handleProveedorCreated = (formData: any) => {
     let proveedoresActualizados: Proveedor[];
     if (editingProveedor) {
       proveedoresActualizados = proveedores.map(p => 
-        p.id === editingProveedor.id ? { ...nuevoProveedor, id: editingProveedor.id } : p
+        p.id === editingProveedor.id ? { ...formData, id: editingProveedor.id } : p
       );
       toast.success('Proveedor actualizado exitosamente');
     } else {
+      const nuevoProveedor = createProveedor(
+        formData.nombre,
+        formData.ciudad,
+        formData.contacto,
+        formData.correo_electronico,
+        formData.nit,
+        formData.tipo_proveedor,
+        formData.forma_pago,
+        formData.observaciones
+      );
       proveedoresActualizados = [...proveedores, nuevoProveedor];
       toast.success('Proveedor agregado exitosamente');
     }
@@ -55,14 +64,24 @@ const ProveedoresPage: React.FC = () => {
     setEditingProveedor(null);
   };
 
-  const handleProductoCreated = (nuevoProducto: ProductoProveedor) => {
+  const handleProductoCreated = (formData: any) => {
     let productosActualizados: ProductoProveedor[];
     if (editingProducto) {
       productosActualizados = productos.map(p => 
-        p.id === editingProducto.id ? { ...nuevoProducto, id: editingProducto.id } : p
+        p.id === editingProducto.id ? { ...formData, id: editingProducto.id, proveedor_id: editingProducto.proveedor_id } : p
       );
       toast.success('Producto actualizado exitosamente');
     } else {
+      // For new products, we'll use the first provider for now
+      const proveedorId = proveedores.length > 0 ? proveedores[0].id : 'default';
+      const nuevoProducto = createProductoProveedor(
+        proveedorId,
+        formData.tipo_insumo,
+        formData.nombre_producto,
+        formData.unidad,
+        formData.precio_unitario,
+        formData.observaciones
+      );
       productosActualizados = [...productos, nuevoProducto];
       toast.success('Producto agregado exitosamente');
     }
@@ -182,7 +201,7 @@ const ProveedoresPage: React.FC = () => {
                     </DialogHeader>
                     <ProveedorForm
                       defaultValues={editingProveedor || undefined}
-                      onProveedorCreated={handleProveedorCreated}
+                      onSubmit={handleProveedorCreated}
                       onCancel={handleCancelProveedor}
                     />
                   </DialogContent>
