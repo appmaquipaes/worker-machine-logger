@@ -42,11 +42,16 @@ export const useMachineSpecificReports = () => {
 
     const baseReports: ReportType[] = ['Horas Trabajadas', 'Mantenimiento', 'Combustible', 'Novedades'];
     
-    if (machine.type === 'Retroexcavadora de Oruga' || machine.type === 'Cargador' || machine.type === 'Bulldozer' || machine.type === 'Motoniveladora') {
+    // Para Cargadores: agregar Viajes (para cargar material del acopio)
+    if (isCargador(machine)) {
+      return [...baseReports, 'Viajes'];
+    }
+    
+    if (machine.type === 'Retroexcavadora de Oruga' || machine.type === 'Bulldozer' || machine.type === 'Motoniveladora') {
       return [...baseReports, 'Horas Extras'];
     }
     
-    if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine) || isCargador(machine)) {
+    if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine)) {
       return [...baseReports, 'Viajes'];
     }
     
