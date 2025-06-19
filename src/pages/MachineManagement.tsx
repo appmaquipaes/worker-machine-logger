@@ -92,7 +92,7 @@ const MachineManagement: React.FC = () => {
           </div>
         </div>
 
-        <MachineForm onMachineCreated={handleAddMachine} />
+        <MachineForm onAddMachine={handleAddMachine} />
         <MachineTable machines={machines} onDeleteMachine={handleDeleteMachine} />
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Store, Package } from 'lucide-react';
-import { Proveedor, ProductoProveedor, loadProveedores, saveProveedores, loadProductos, saveProductos, createProveedor, createProductoProveedor } from '@/models/Proveedores';
+import { Proveedor, Producto, loadProveedores, saveProveedores, loadProductos, saveProductos } from '@/models/Proveedores';
 import ProveedorForm from '@/components/proveedores/ProveedorForm';
 import ProveedorTable from '@/components/proveedores/ProveedorTable';
 import ProductoForm from '@/components/proveedores/ProductoForm';
@@ -17,11 +18,11 @@ const ProveedoresPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [productos, setProductos] = useState<ProductoProveedor[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [showProveedorDialog, setShowProveedorDialog] = useState(false);
   const [showProductoDialog, setShowProductoDialog] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState<Proveedor | null>(null);
-  const [editingProducto, setEditingProducto] = useState<ProductoProveedor | null>(null);
+  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,24 +38,14 @@ const ProveedoresPage: React.FC = () => {
     setProductos(loadProductos());
   }, [user, navigate]);
 
-  const handleProveedorCreated = (formData: any) => {
+  const handleProveedorCreated = (nuevoProveedor: Proveedor) => {
     let proveedoresActualizados: Proveedor[];
     if (editingProveedor) {
       proveedoresActualizados = proveedores.map(p => 
-        p.id === editingProveedor.id ? { ...formData, id: editingProveedor.id } : p
+        p.id === editingProveedor.id ? { ...nuevoProveedor, id: editingProveedor.id } : p
       );
       toast.success('Proveedor actualizado exitosamente');
     } else {
-      const nuevoProveedor = createProveedor(
-        formData.nombre,
-        formData.ciudad,
-        formData.contacto,
-        formData.correo_electronico,
-        formData.nit,
-        formData.tipo_proveedor,
-        formData.forma_pago,
-        formData.observaciones
-      );
       proveedoresActualizados = [...proveedores, nuevoProveedor];
       toast.success('Proveedor agregado exitosamente');
     }
@@ -64,24 +55,14 @@ const ProveedoresPage: React.FC = () => {
     setEditingProveedor(null);
   };
 
-  const handleProductoCreated = (formData: any) => {
-    let productosActualizados: ProductoProveedor[];
+  const handleProductoCreated = (nuevoProducto: Producto) => {
+    let productosActualizados: Producto[];
     if (editingProducto) {
       productosActualizados = productos.map(p => 
-        p.id === editingProducto.id ? { ...formData, id: editingProducto.id, proveedor_id: editingProducto.proveedor_id } : p
+        p.id === editingProducto.id ? { ...nuevoProducto, id: editingProducto.id } : p
       );
       toast.success('Producto actualizado exitosamente');
     } else {
-      // For new products, we'll use the first provider for now
-      const proveedorId = proveedores.length > 0 ? proveedores[0].id : 'default';
-      const nuevoProducto = createProductoProveedor(
-        proveedorId,
-        formData.tipo_insumo,
-        formData.nombre_producto,
-        formData.unidad,
-        formData.precio_unitario,
-        formData.observaciones
-      );
       productosActualizados = [...productos, nuevoProducto];
       toast.success('Producto agregado exitosamente');
     }
@@ -96,7 +77,7 @@ const ProveedoresPage: React.FC = () => {
     setShowProveedorDialog(true);
   };
 
-  const handleEditProducto = (producto: ProductoProveedor) => {
+  const handleEditProducto = (producto: Producto) => {
     setEditingProducto(producto);
     setShowProductoDialog(true);
   };
@@ -123,14 +104,6 @@ const ProveedoresPage: React.FC = () => {
   const handleCancelProducto = () => {
     setShowProductoDialog(false);
     setEditingProducto(null);
-  };
-
-  const getProductosCount = (proveedorId: string): number => {
-    return productos.filter(p => p.proveedor_id === proveedorId).length;
-  };
-
-  const handleSelectProveedor = (proveedor: Proveedor) => {
-    // Implementation for selecting proveedor if needed
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -200,8 +173,8 @@ const ProveedoresPage: React.FC = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <ProveedorForm
-                      defaultValues={editingProveedor || undefined}
-                      onSubmit={handleProveedorCreated}
+                      initialData={editingProveedor}
+                      onProveedorCreated={handleProveedorCreated}
                       onCancel={handleCancelProveedor}
                     />
                   </DialogContent>
@@ -213,8 +186,6 @@ const ProveedoresPage: React.FC = () => {
                 proveedores={proveedores}
                 onEdit={handleEditProveedor}
                 onDelete={handleDeleteProveedor}
-                onSelect={handleSelectProveedor}
-                getProductosCount={getProductosCount}
               />
             </CardContent>
           </Card>
@@ -250,10 +221,10 @@ const ProveedoresPage: React.FC = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <ProductoForm
-                      defaultValues={editingProducto || undefined}
-                      onSubmit={handleProductoCreated}
+                      initialData={editingProducto}
+                      onProductoCreated={handleProductoCreated}
                       onCancel={handleCancelProducto}
-                      proveedorNombre=""
+                      proveedores={proveedores}
                     />
                   </DialogContent>
                 </Dialog>
@@ -262,6 +233,7 @@ const ProveedoresPage: React.FC = () => {
             <CardContent className="p-6">
               <ProductoTable
                 productos={productos}
+                proveedores={proveedores}
                 onEdit={handleEditProducto}
                 onDelete={handleDeleteProducto}
               />

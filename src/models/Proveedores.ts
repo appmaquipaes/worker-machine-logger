@@ -1,6 +1,7 @@
 
-// Define el tipo para proveedores
-export type Proveedor = {
+// Model for material providers and their associated products
+
+export interface Proveedor {
   id: string;
   nombre: string;
   ciudad: string;
@@ -9,11 +10,11 @@ export type Proveedor = {
   nit: string;
   tipo_proveedor: 'Materiales' | 'Lubricantes' | 'Repuestos' | 'Servicios' | 'Otros';
   forma_pago: string;
+  fecha_registro: Date;
   observaciones?: string;
-};
+}
 
-// Define el tipo para productos de proveedores
-export type ProductoProveedor = {
+export interface ProductoProveedor {
   id: string;
   proveedor_id: string;
   tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
@@ -21,12 +22,48 @@ export type ProductoProveedor = {
   unidad: string;
   precio_unitario: number;
   observaciones?: string;
+}
+
+// Load providers from localStorage
+export const loadProveedores = (): Proveedor[] => {
+  const proveedoresString = localStorage.getItem('proveedores');
+  if (!proveedoresString) return [];
+
+  try {
+    return JSON.parse(proveedoresString).map((proveedor: any) => ({
+      ...proveedor,
+      fecha_registro: new Date(proveedor.fecha_registro)
+    }));
+  } catch (error) {
+    console.error('Error loading providers:', error);
+    return [];
+  }
 };
 
-// Export Producto as alias for ProductoProveedor for backward compatibility
-export type Producto = ProductoProveedor;
+// Save providers to localStorage
+export const saveProveedores = (proveedores: Proveedor[]): void => {
+  localStorage.setItem('proveedores', JSON.stringify(proveedores));
+};
 
-// Función para crear un nuevo proveedor
+// Load products from localStorage
+export const loadProductosProveedores = (): ProductoProveedor[] => {
+  const productosString = localStorage.getItem('productos_proveedores');
+  if (!productosString) return [];
+
+  try {
+    return JSON.parse(productosString);
+  } catch (error) {
+    console.error('Error loading provider products:', error);
+    return [];
+  }
+};
+
+// Save products to localStorage
+export const saveProductosProveedores = (productos: ProductoProveedor[]): void => {
+  localStorage.setItem('productos_proveedores', JSON.stringify(productos));
+};
+
+// Create a new provider
 export const createProveedor = (
   nombre: string,
   ciudad: string,
@@ -38,7 +75,7 @@ export const createProveedor = (
   observaciones?: string
 ): Proveedor => {
   return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    id: Date.now().toString(),
     nombre,
     ciudad,
     contacto,
@@ -46,11 +83,12 @@ export const createProveedor = (
     nit,
     tipo_proveedor,
     forma_pago,
+    fecha_registro: new Date(),
     observaciones
   };
 };
 
-// Función para crear un nuevo producto de proveedor
+// Create a new product for a provider
 export const createProductoProveedor = (
   proveedor_id: string,
   tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio',
@@ -60,7 +98,7 @@ export const createProductoProveedor = (
   observaciones?: string
 ): ProductoProveedor => {
   return {
-    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    id: Date.now().toString(),
     proveedor_id,
     tipo_insumo,
     nombre_producto,
@@ -70,78 +108,21 @@ export const createProductoProveedor = (
   };
 };
 
-// Función para guardar proveedores en localStorage
-export const saveProveedores = (proveedores: Proveedor[]): void => {
-  localStorage.setItem('proveedores', JSON.stringify(proveedores));
+// Get provider names for dropdown
+export const getProveedoresNames = (): string[] => {
+  return loadProveedores().map(proveedor => proveedor.nombre);
 };
 
-// Función para cargar proveedores desde localStorage
-export const loadProveedores = (): Proveedor[] => {
-  const storedProveedores = localStorage.getItem('proveedores');
-  if (!storedProveedores) return [];
-  
-  return JSON.parse(storedProveedores);
+// Get products by provider ID
+export const getProductosByProveedorId = (proveedorId: string): ProductoProveedor[] => {
+  return loadProductosProveedores().filter(producto => producto.proveedor_id === proveedorId);
 };
 
-// Función para guardar productos en localStorage
-export const saveProductos = (productos: ProductoProveedor[]): void => {
-  localStorage.setItem('productos_proveedor', JSON.stringify(productos));
-};
-
-// Función para cargar productos desde localStorage
-export const loadProductos = (): ProductoProveedor[] => {
-  const storedProductos = localStorage.getItem('productos_proveedor');
-  if (!storedProductos) return [];
-  
-  return JSON.parse(storedProductos);
-};
-
-// Alias for backward compatibility
-export const loadProductosProveedores = loadProductos;
-
-// Función para buscar un proveedor por ID
-export const findProveedor = (id: string): Proveedor | undefined => {
-  const proveedores = loadProveedores();
-  return proveedores.find(proveedor => proveedor.id === id);
-};
-
-// Función para editar un proveedor existente
-export const editProveedor = (id: string, updates: Partial<Proveedor>): void => {
-  const proveedores = loadProveedores();
-  const updatedProveedores = proveedores.map(proveedor =>
-    proveedor.id === id ? { ...proveedor, ...updates } : proveedor
-  );
-  saveProveedores(updatedProveedores);
-};
-
-// Función para eliminar un proveedor por ID
-export const deleteProveedor = (id: string): void => {
-  const proveedores = loadProveedores();
-  const updatedProveedores = proveedores.filter(proveedor => proveedor.id !== id);
-  saveProveedores(updatedProveedores);
-
-   // Eliminar también los productos asociados a este proveedor
-   const productos = loadProductos();
-   const updatedProductos = productos.filter(producto => producto.proveedor_id !== id);
-   saveProductos(updatedProductos);
-};
-
-// Función para obtener todos los productos de un proveedor específico
-export const getProductosByProveedor = (proveedorId: string): ProductoProveedor[] => {
-  const productos = loadProductos();
-  return productos.filter(producto => producto.proveedor_id === proveedorId);
-};
-
-// Función para eliminar un producto de proveedor por ID
-export const deleteProductoProveedor = (id: string): void => {
-  const productos = loadProductos();
-  const updatedProductos = productos.filter(producto => producto.id !== id);
-  saveProductos(updatedProductos);
-};
-
-// Función para obtener tipos únicos de materiales de proveedores
+// Get unique material types from provider products
 export const getUniqueProviderMaterialTypes = (): string[] => {
-  const productos = loadProductos();
-  const tiposUnicos = [...new Set(productos.map(producto => producto.nombre_producto))];
-  return tiposUnicos;
+  const productos = loadProductosProveedores();
+  const materialTypes = productos
+    .filter(producto => producto.tipo_insumo === 'Material')
+    .map(producto => producto.nombre_producto);
+  return [...new Set(materialTypes)];
 };

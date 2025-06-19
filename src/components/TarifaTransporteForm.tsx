@@ -59,8 +59,8 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
     // Filtrar materiales que coincidan con los productos del proveedor
     return materiales.filter(material => 
       productosDelProveedor.some(producto => 
-        producto.nombre_producto.toLowerCase().includes(material.nombre_material.toLowerCase()) ||
-        material.nombre_material.toLowerCase().includes(producto.nombre_producto.toLowerCase())
+        producto.nombre.toLowerCase().includes(material.nombre_material.toLowerCase()) ||
+        material.nombre_material.toLowerCase().includes(producto.nombre.toLowerCase())
       )
     );
   }, [origen, proveedores, materiales]);
@@ -142,7 +142,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="no-materials-available" disabled>
+              <SelectItem value="" disabled>
                 {origen ? "No hay materiales disponibles para este proveedor" : "Seleccione primero un origen"}
               </SelectItem>
             )}
@@ -150,7 +150,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
         </Select>
       </div>
 
-      {tipoMaterial && tipoMaterial !== "no-materials-available" && (
+      {tipoMaterial && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="valor-material" className="text-sm font-medium text-slate-700">Valor Material por m³ (Referencia)</Label>

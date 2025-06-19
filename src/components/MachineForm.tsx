@@ -19,7 +19,7 @@ const MachineForm: React.FC<MachineFormProps> = ({
   onCancel 
 }) => {
   const [name, setName] = useState(initialData?.name || '');
-  const [type, setType] = useState<string>(initialData?.type || '');
+  const [type, setType] = useState(initialData?.type || '');
   const [plate, setPlate] = useState(initialData?.plate || '');
   const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '');
 
@@ -49,7 +49,7 @@ const MachineForm: React.FC<MachineFormProps> = ({
 
     onMachineCreated({
       name: name.trim(),
-      type: type as Machine['type'],
+      type,
       plate: plate.trim() || undefined,
       imageUrl: imageUrl.trim() || undefined,
       status: initialData?.status || 'Disponible'
