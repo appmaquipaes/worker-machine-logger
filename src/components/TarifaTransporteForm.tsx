@@ -78,6 +78,13 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
 
   const isDestinoDisabled = !cliente || clienteTieneFincas;
 
+  const formatPrice = (price: number | undefined) => {
+    if (typeof price !== 'number' || isNaN(price)) {
+      return '0';
+    }
+    return price.toLocaleString();
+  };
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -140,7 +147,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
           <option value="">Seleccionar material</option>
           {materialesProveedor.map((material) => (
             <option key={material.id} value={material.id}>
-              {material.nombre_producto} - {material.unidad} (${material.precio_unitario.toLocaleString()})
+              {material.nombre_producto} - {material.unidad} (${formatPrice(material.precio_unitario)})
             </option>
           ))}
         </select>
