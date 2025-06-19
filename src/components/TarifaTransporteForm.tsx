@@ -142,7 +142,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="" disabled>
+              <SelectItem value="no-materials-available" disabled>
                 {origen ? "No hay materiales disponibles para este proveedor" : "Seleccione primero un origen"}
               </SelectItem>
             )}
@@ -150,7 +150,7 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
         </Select>
       </div>
 
-      {tipoMaterial && (
+      {tipoMaterial && tipoMaterial !== "no-materials-available" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="valor-material" className="text-sm font-medium text-slate-700">Valor Material por m³ (Referencia)</Label>
