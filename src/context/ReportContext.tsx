@@ -65,35 +65,26 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   ) => {
     console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
     console.log('Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
+    console.log('Origen:', origin, 'Destino:', destination);
 
-    // Solo validar inventario sin procesarlo aquí
+    // Solo validar inventario para viajes con cantidad y desde acopio
     if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
-      const tempReport: Report = {
-        id: 'temp',
-        machineId,
-        machineName,
-        userName: 'Current User',
-        reportType,
-        description,
-        reportDate,
-        createdAt: new Date(),
-        value: 0,
-        origin,
-        destination,
-        cantidadM3
-      };
-
-      // Solo validar, no procesar todavía
-      const validacion = validarOperacion(description, cantidadM3, 'salida');
-      if (!validacion.esValida) {
-        toast.error(`❌ ${validacion.mensaje}`, {
-          duration: 6000,
-          style: {
-            fontSize: '16px',
-            fontWeight: 'bold',
-          }
-        });
-        return;
+      const esOrigenAcopio = origin.toLowerCase().includes('acopio');
+      
+      if (esOrigenAcopio) {
+        console.log('→ Validando stock para salida desde acopio');
+        const validacion = validarOperacion(description, cantidadM3, 'salida');
+        if (!validacion.esValida) {
+          toast.error(`❌ ${validacion.mensaje}`, {
+            duration: 6000,
+            style: {
+              fontSize: '16px',
+              fontWeight: 'bold',
+            }
+          });
+          return;
+        }
+        console.log('✅ Validación de stock exitosa');
       }
     }
 
@@ -119,8 +110,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
 
-    // Ahora SÍ procesar para inventario si es un viaje (una sola vez)
-    if (newReport.reportType === 'Viajes') {
+    // PROCESAR INVENTARIO PRIMERO (para todas las máquinas, no solo cargadores)
+    if (newReport.reportType === 'Viajes' && (newReport.origin || newReport.destination)) {
       try {
         console.log('→ Procesando inventario para reporte:', newReport.id);
         const resultadoInventario = procesarReporteInventario(newReport);
@@ -142,7 +133,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // *** NUEVO SISTEMA DE OPERACIONES COMERCIALES ***
+    // SISTEMA DE OPERACIONES COMERCIALES (para evitar duplicación de ventas)
     if (newReport.reportType === 'Viajes' && newReport.destination) {
       try {
         console.log('→ Procesando operación comercial');
@@ -179,15 +170,6 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error procesando operación comercial:', error);
-      }
-    }
-
-    // Procesar para ventas automáticas si es un viaje a cliente
-    if (newReport.reportType === 'Viajes' && newReport.destination) {
-      try {
-        procesarReporteParaVenta(newReport);
-      } catch (error) {
-        console.error('Error procesando reporte para venta automática:', error);
       }
     }
   };
