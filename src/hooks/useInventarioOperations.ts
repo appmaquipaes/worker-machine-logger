@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { MovimientoInventario, TipoMovimientoInventario, ValidacionInventario, ResultadoOperacionInventario } from '@/types/inventario';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
@@ -25,15 +26,20 @@ export const useInventarioOperations = () => {
     }));
   }, []);
 
-  // Función mejorada para detectar si es acopio
+  // Función mejorada para detectar si es acopio (CORREGIDA para manejar concatenación con ciudad)
   const esAcopio = useCallback((ubicacion?: string): boolean => {
     if (!ubicacion) return false;
     const ubicacionNorm = ubicacion.toLowerCase().trim();
     console.log('🔍 Verificando si es acopio:', ubicacion, '- Normalizado:', ubicacionNorm);
     
-    const esAcopioResult = ubicacionNorm.includes('acopio') || 
-                          ubicacionNorm === 'acopio maquipaes' ||
-                          ubicacionNorm.includes('maquipaes');
+    // Buscar específicamente por "acopio" seguido de "maquipaes" o solo "acopio maquipaes"
+    // También manejar casos donde venga concatenado con ciudad (ej: "Acopio Maquipaes - Madrid")
+    const esAcopioResult = (
+      ubicacionNorm.includes('acopio maquipaes') ||
+      ubicacionNorm.includes('acopio') && ubicacionNorm.includes('maquipaes') ||
+      ubicacionNorm.startsWith('acopio maquipaes -') ||
+      ubicacionNorm === 'acopio maquipaes'
+    );
     
     console.log('📍 Resultado esAcopio:', esAcopioResult);
     return esAcopioResult;
@@ -202,7 +208,7 @@ export const useInventarioOperations = () => {
     
     try {
       const inventario = loadInventarioAcopio();
-      console.log('Inventario actual:', inventario);
+      console.log('📦 Inventario actual:', inventario);
       
       const materialIndex = inventario.findIndex(item => item.tipo_material === material);
       
@@ -214,7 +220,7 @@ export const useInventarioOperations = () => {
       const cantidadAnterior = inventario[materialIndex].cantidad_disponible;
       const cantidadPosterior = Math.max(0, cantidadAnterior - cantidad);
       
-      console.log(`Cantidad anterior: ${cantidadAnterior}, Cantidad a descontar: ${cantidad}, Cantidad posterior: ${cantidadPosterior}`);
+      console.log(`📊 Cantidad anterior: ${cantidadAnterior}, Cantidad a descontar: ${cantidad}, Cantidad posterior: ${cantidadPosterior}`);
       
       const inventarioActualizado = [...inventario];
       inventarioActualizado[materialIndex] = {
@@ -223,7 +229,7 @@ export const useInventarioOperations = () => {
       };
 
       saveInventarioAcopio(inventarioActualizado);
-      console.log('✓ Inventario guardado exitosamente');
+      console.log('✅ Inventario guardado exitosamente');
 
       // Crear registro de movimiento
       const movimiento: MovimientoInventario = {
@@ -244,7 +250,7 @@ export const useInventarioOperations = () => {
 
       saveMovimiento(movimiento);
 
-      console.log(`✓ Inventario actualizado: -${cantidad} m³ de ${material} hacia ${destino}`);
+      console.log(`✅ Inventario actualizado exitosamente: -${cantidad} m³ de ${material} hacia ${destino}`);
       
       return {
         exito: true,
@@ -254,35 +260,37 @@ export const useInventarioOperations = () => {
       };
 
     } catch (error) {
-      console.error('Error procesando salida del inventario:', error);
+      console.error('❌ Error procesando salida del inventario:', error);
       return { exito: false, mensaje: 'Error interno al procesar la salida' };
     } finally {
       setIsProcessing(false);
     }
   }, [validarOperacion, saveMovimiento]);
 
-  // Detectar y procesar automáticamente según el reporte (CORREGIDA)
+  // Detectar y procesar automáticamente según el reporte (MEJORADA)
   const procesarReporteInventario = useCallback((report: Report): ResultadoOperacionInventario => {
     console.log('=== PROCESANDO REPORTE PARA INVENTARIO ===');
-    console.log('Reporte completo:', report);
-    console.log('Tipo reporte:', report.reportType);
-    console.log('Origen:', report.origin);
-    console.log('Destino:', report.destination);
-    console.log('Cantidad M3:', report.cantidadM3);
-    console.log('Material:', report.description);
+    console.log('🚛 Reporte completo:', report);
+    console.log('📋 Tipo reporte:', report.reportType);
+    console.log('📍 Origen:', report.origin);
+    console.log('📍 Destino:', report.destination);
+    console.log('📦 Cantidad M3:', report.cantidadM3);
+    console.log('🔨 Material:', report.description);
 
     // Solo procesar reportes de viajes con cantidad de m³
     if (report.reportType !== 'Viajes' || !report.cantidadM3 || report.cantidadM3 <= 0) {
-      console.log('→ Reporte no aplica para inventario (no es viaje o sin cantidad)');
+      console.log('⚠️ Reporte no aplica para inventario (no es viaje o sin cantidad)');
       return { exito: false, mensaje: 'Reporte no aplica para inventario' };
     }
 
     const esOrigenAcopio = esAcopio(report.origin);
     const esDestinoAcopio = esAcopio(report.destination);
     
-    console.log('🔍 Análisis de ubicaciones:');
-    console.log('- Origen es acopio:', esOrigenAcopio);
-    console.log('- Destino es acopio:', esDestinoAcopio);
+    console.log('🔍 Análisis detallado de ubicaciones:');
+    console.log('- Origen original:', report.origin);
+    console.log('- Destino original:', report.destination);
+    console.log('- ¿Origen es acopio?:', esOrigenAcopio);
+    console.log('- ¿Destino es acopio?:', esDestinoAcopio);
 
     // Determinar el material a procesar
     const material = report.description || 'Material sin especificar';
@@ -290,7 +298,7 @@ export const useInventarioOperations = () => {
 
     if (esDestinoAcopio && !esOrigenAcopio) {
       // ENTRADA: El destino es acopio
-      console.log('→ Procesando ENTRADA al acopio');
+      console.log('➡️ Procesando ENTRADA al acopio');
       return procesarEntrada(
         material,
         report.cantidadM3,
@@ -302,13 +310,13 @@ export const useInventarioOperations = () => {
       );
     } else if (esOrigenAcopio && !esDestinoAcopio) {
       // SALIDA: El origen es acopio
-      console.log('→ Procesando SALIDA del acopio');
-      console.log('📤 Parámetros de salida:');
+      console.log('⬅️ Procesando SALIDA del acopio');
+      console.log('📤 Parámetros de salida confirmados:');
       console.log('- Material:', material);
       console.log('- Cantidad:', report.cantidadM3);
       console.log('- Destino:', report.destination);
       
-      return procesarSalida(
+      const resultado = procesarSalida(
         material,
         report.cantidadM3,
         report.destination || 'Destino no especificado',
@@ -317,8 +325,12 @@ export const useInventarioOperations = () => {
         report.machineName,
         report.userName
       );
+      
+      console.log('📋 Resultado del procesamiento de salida:', resultado);
+      return resultado;
     } else {
-      console.log('→ No aplica para inventario (ni entrada ni salida válida)');
+      console.log('⚠️ No aplica para inventario:');
+      console.log('- Motivo: No representa movimiento de inventario válido');
       console.log('- Es origen acopio:', esOrigenAcopio);
       console.log('- Es destino acopio:', esDestinoAcopio);
       return { exito: false, mensaje: 'El reporte no representa movimiento de inventario válido' };
