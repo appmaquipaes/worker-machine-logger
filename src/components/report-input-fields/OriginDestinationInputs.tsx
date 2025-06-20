@@ -46,11 +46,11 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     }
   }, [selectedMachine, isCargador, setOrigin]);
 
-  // Función mejorada para normalizar el origen cuando es acopio
+  // Función simplificada para manejar cambios en el origen
   const handleOriginChange = (value: string) => {
     console.log('🔄 Origen seleccionado:', value);
     
-    // Si contiene "Acopio Maquipaes", normalizar a solo "Acopio Maquipaes"
+    // Solo normalizar si contiene "acopio maquipaes" para efectos de inventario
     if (value.toLowerCase().includes('acopio maquipaes')) {
       const normalizedValue = 'Acopio Maquipaes';
       console.log('✅ Normalizando origen de acopio:', value, '→', normalizedValue);
@@ -58,18 +58,6 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     } else {
       setOrigin(value);
     }
-  };
-
-  // Función para mostrar el valor correcto en el Select
-  const getDisplayValue = () => {
-    // Si el origen actual es "Acopio Maquipaes", buscar el proveedor original para mostrarlo
-    if (origin === 'Acopio Maquipaes') {
-      const acopioProvider = proveedores.find(prov => 
-        prov.nombre.toLowerCase().includes('acopio maquipaes')
-      );
-      return acopioProvider ? `${acopioProvider.nombre} - ${acopioProvider.ciudad}` : origin;
-    }
-    return origin;
   };
 
   return (
@@ -115,7 +103,7 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
             required
           />
         ) : (
-          <Select onValueChange={handleOriginChange} value={getDisplayValue()}>
+          <Select onValueChange={handleOriginChange} value={origin}>
             <SelectTrigger className="text-lg p-6">
               <SelectValue placeholder="Selecciona el origen" />
             </SelectTrigger>
