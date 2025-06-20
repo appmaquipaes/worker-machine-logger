@@ -52,6 +52,10 @@ export const useReportFormSubmission = () => {
     if (reportType === 'Viajes' && isCargador(selectedMachine) && tipoMateria) {
       reportDescription = tipoMateria;
       console.log('Cargador - usando tipoMateria como descripción:', tipoMateria);
+    } else if (reportType === 'Viajes' && origin === 'Acopio Maquipaes' && tipoMateria) {
+      // Para cualquier vehículo que transporte desde acopio, usar el material seleccionado
+      reportDescription = tipoMateria;
+      console.log('Viaje desde acopio - usando tipoMateria como descripción:', tipoMateria);
     } else if (reportType === 'Novedades') {
       reportDescription = description;
     } else if (reportType === 'Recepción Escombrera') {
