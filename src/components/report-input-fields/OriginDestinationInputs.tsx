@@ -46,6 +46,20 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     }
   }, [selectedMachine, isCargador, setOrigin]);
 
+  // Función para normalizar el origen cuando es acopio
+  const handleOriginChange = (value: string) => {
+    console.log('🔄 Origen seleccionado:', value);
+    
+    // Si contiene "Acopio Maquipaes", normalizar a solo "Acopio Maquipaes"
+    if (value.toLowerCase().includes('acopio maquipaes')) {
+      const normalizedValue = 'Acopio Maquipaes';
+      console.log('✅ Normalizando origen de acopio:', value, '→', normalizedValue);
+      setOrigin(normalizedValue);
+    } else {
+      setOrigin(value);
+    }
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -89,7 +103,7 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
             required
           />
         ) : (
-          <Select onValueChange={setOrigin} value={origin}>
+          <Select onValueChange={handleOriginChange} value={origin}>
             <SelectTrigger className="text-lg p-6">
               <SelectValue placeholder="Selecciona el origen" />
             </SelectTrigger>
