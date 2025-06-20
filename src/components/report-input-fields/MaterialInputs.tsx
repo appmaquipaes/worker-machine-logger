@@ -43,8 +43,11 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
     console.log('MaterialInputs - Inventario cargado:', inventario);
   }, [tipoMateria]);
 
-  // Solo mostrar si es reporte de viajes y es una máquina que transporta material
-  if (reportType !== 'Viajes' || (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine))) {
+  // Verificar si es Camabaja (transporta maquinaria, no material)
+  const isCamabaja = selectedMachine?.type === 'Camabaja';
+
+  // Solo mostrar si es reporte de viajes y es una máquina que transporta material (excluyendo Camabaja)
+  if (reportType !== 'Viajes' || isCamabaja || (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine))) {
     return null;
   }
 
@@ -173,4 +176,3 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 };
 
 export default MaterialInputs;
-

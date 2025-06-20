@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { MapPin, Info, Truck } from 'lucide-react';
+import { MapPin, Info, Truck, ArrowRight } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 import { Machine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
@@ -122,19 +123,119 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     return '';
   };
 
+  // Renderizar interfaz específica para Camabaja
+  if (isCamabaja) {
+    return (
+      <Card className="border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
+        <CardContent className="p-6 space-y-6">
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-orange-800 mb-2">
+              🚛 Transporte de Maquinaria - Camabaja
+            </h3>
+            <p className="text-orange-700">
+              Configura el tipo de viaje para determinar automáticamente origen y destino
+            </p>
+          </div>
+
+          {/* Selector de tipo de viaje */}
+          <div className="space-y-3">
+            <Label className="text-lg font-semibold text-orange-800">
+              1. Selecciona el Tipo de Viaje:
+            </Label>
+            <Select onValueChange={handleCamabajaRouteChange} value={getCamabajaRouteType()}>
+              <SelectTrigger className="text-lg p-6 border-orange-300 focus:border-orange-500">
+                <SelectValue placeholder="Selecciona el tipo de viaje" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="salida">
+                  <div className="flex items-center gap-3 py-2">
+                    <Truck className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="font-medium">Salida: Llevando Maquinaria</div>
+                      <div className="text-sm text-gray-600">Acopio → Cliente</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="regreso">
+                  <div className="flex items-center gap-3 py-2">
+                    <Truck className="h-5 w-5 text-blue-600 rotate-180" />
+                    <div>
+                      <div className="font-medium">Regreso: Trayendo Maquinaria</div>
+                      <div className="text-sm text-gray-600">Cliente → Acopio</div>
+                    </div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {getCamabajaRouteType() && (
+            <>
+              {/* Mostrar ruta visual */}
+              <div className="bg-white rounded-lg p-4 border-2 border-dashed border-orange-300">
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <div className="font-semibold text-gray-700">ORIGEN</div>
+                    <div className="text-lg font-bold text-orange-600">
+                      {getCamabajaRouteType() === 'salida' ? 'Acopio Maquipaes' : 
+                       selectedCliente ? `${selectedCliente}` : 'Cliente'}
+                    </div>
+                  </div>
+                  <ArrowRight className="h-8 w-8 text-orange-500" />
+                  <div className="text-center">
+                    <div className="font-semibold text-gray-700">DESTINO</div>
+                    <div className="text-lg font-bold text-blue-600">
+                      {getCamabajaRouteType() === 'salida' ? 
+                       (selectedCliente ? selectedCliente : 'Cliente') : 'Acopio Maquipaes'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selector de cliente */}
+              <div className="space-y-3">
+                <Label className="text-lg font-semibold text-orange-800">
+                  2. {getCamabajaRouteType() === 'salida' ? 
+                      'Selecciona el Cliente de Destino:' : 
+                      'Selecciona el Cliente de Origen:'}
+                </Label>
+                <ClienteFincaSelector
+                  selectedCliente={selectedCliente}
+                  selectedFinca={selectedFinca}
+                  onClienteChange={onClienteChangeForDestination}
+                  onFincaChange={onFincaChangeForDestination}
+                  autoSetDestination={true}
+                />
+              </div>
+            </>
+          )}
+
+          <Alert className="border-orange-300 bg-orange-100">
+            <Info className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Información importante:</strong><br/>
+              • <strong>Salida:</strong> Transporta maquinaria desde el Acopio hacia el sitio del cliente<br/>
+              • <strong>Regreso:</strong> Trae la maquinaria de vuelta desde el cliente al Acopio<br/>
+              • El origen y destino se configuran automáticamente según el tipo de viaje
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Interfaz para otras máquinas (código existente)
   return (
     <>
       <div className="space-y-2">
         <div className="flex items-center gap-2 mb-2">
           <MapPin size={24} />
           <Label htmlFor="origin" className="text-lg">
-            {isCamabaja 
-              ? 'Tipo de Viaje y Origen'
-              : isMachineryTransportVehicle(selectedMachine) 
-                ? 'Origen (Punto de Recogida)' 
-                : isCargador(selectedMachine)
-                  ? 'Origen (Fijo - Acopio)'
-                  : 'Origen (Proveedor)'
+            {isMachineryTransportVehicle(selectedMachine) 
+              ? 'Origen (Punto de Recogida)' 
+              : isCargador(selectedMachine)
+                ? 'Origen (Fijo - Acopio)'
+                : 'Origen (Proveedor)'
             }
           </Label>
         </div>
@@ -153,54 +254,6 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
               <AlertDescription className="text-blue-800">
                 <strong>Cargador siempre opera desde el Acopio:</strong> El origen está fijo como "Acopio Maquipaes" 
                 ya que los cargadores siempre cargan material desde nuestro acopio hacia los clientes.
-              </AlertDescription>
-            </Alert>
-          </div>
-        ) : isCamabaja ? (
-          <div className="space-y-4">
-            {/* Selector de tipo de viaje para Camabaja */}
-            <div className="space-y-2">
-              <Label className="text-base font-medium">Tipo de Viaje:</Label>
-              <Select onValueChange={handleCamabajaRouteChange} value={getCamabajaRouteType()}>
-                <SelectTrigger className="text-lg p-6">
-                  <SelectValue placeholder="Selecciona el tipo de viaje" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="salida">
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4" />
-                      <span>Salida: Acopio → Cliente (llevando maquinaria)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="regreso">
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4 rotate-180" />
-                      <span>Regreso: Cliente → Acopio (trayendo maquinaria)</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Mostrar origen actual */}
-            <div className="space-y-2">
-              <Label className="text-base">Origen determinado:</Label>
-              <Input 
-                id="origin"
-                type="text"
-                value={origin}
-                readOnly
-                className="text-lg p-6 bg-gray-50 text-gray-600 font-medium"
-              />
-            </div>
-
-            <Alert className="border-orange-200 bg-orange-50">
-              <Truck className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                <strong>Camabaja - Transporte de Maquinaria:</strong><br/>
-                • <strong>Salida:</strong> Transporta maquinaria desde Acopio hacia el cliente<br/>
-                • <strong>Regreso:</strong> Trae la maquinaria de vuelta desde el cliente al Acopio<br/>
-                <em>Nota: Para viajes de regreso, selecciona primero el destino (Acopio) y el origen se actualizará automáticamente.</em>
               </AlertDescription>
             </Alert>
           </div>
@@ -234,11 +287,9 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
         <div className="flex items-center gap-2 mb-2">
           <MapPin size={24} />
           <Label className="text-lg">
-            {isCamabaja 
-              ? 'Destino (Selecciona el cliente para viajes de regreso, o Acopio para viajes de salida)'
-              : isCargador(selectedMachine) 
-                ? 'Destino (Cliente que recibe el material)'
-                : 'Destino (Cliente y Finca)'
+            {isCargador(selectedMachine) 
+              ? 'Destino (Cliente que recibe el material)'
+              : 'Destino (Cliente y Finca)'
             }
           </Label>
         </div>
