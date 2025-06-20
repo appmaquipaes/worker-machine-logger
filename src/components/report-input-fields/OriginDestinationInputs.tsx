@@ -46,7 +46,7 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     }
   }, [selectedMachine, isCargador, setOrigin]);
 
-  // Función simplificada para manejar cambios en el origen
+  // Función para manejar cambios en el origen
   const handleOriginChange = (value: string) => {
     console.log('🔄 Origen seleccionado:', value);
     
@@ -58,6 +58,26 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
     } else {
       setOrigin(value);
     }
+  };
+
+  // Función para obtener el valor correcto para el Select
+  const getSelectValue = () => {
+    // Si el origin actual es exactamente "Acopio Maquipaes", buscar el proveedor correspondiente
+    if (origin === 'Acopio Maquipaes') {
+      const acopioProvider = proveedores.find(prov => 
+        prov.nombre.toLowerCase().includes('acopio') && prov.nombre.toLowerCase().includes('maquipaes')
+      );
+      if (acopioProvider) {
+        return `${acopioProvider.nombre} - ${acopioProvider.ciudad}`;
+      }
+    }
+    
+    // Para otros casos, verificar si el valor actual existe en la lista de proveedores
+    const existingProvider = proveedores.find(prov => 
+      `${prov.nombre} - ${prov.ciudad}` === origin
+    );
+    
+    return existingProvider ? origin : '';
   };
 
   return (
@@ -103,7 +123,7 @@ const OriginDestinationInputs: React.FC<OriginDestinationInputsProps> = ({
             required
           />
         ) : (
-          <Select onValueChange={handleOriginChange} value={origin}>
+          <Select onValueChange={handleOriginChange} value={getSelectValue()}>
             <SelectTrigger className="text-lg p-6">
               <SelectValue placeholder="Selecciona el origen" />
             </SelectTrigger>
