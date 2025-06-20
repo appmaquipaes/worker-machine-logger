@@ -27,7 +27,6 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
   destino,
   valorFlete,
   tipoMaterial,
-  valorMaterial,
   valorMaterialCliente,
   proveedores,
   materiales,
@@ -159,32 +158,17 @@ const TarifaTransporteForm: React.FC<TarifaTransporteFormProps> = ({
       </div>
 
       {tipoMaterial && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="valor-material">Precio Proveedor por {
-              materialesProveedor.find(m => m.id === tipoMaterial)?.unidad || 'unidad'
-            }</Label>
-            <Input
-              id="valor-material"
-              type="number"
-              value={valorMaterial}
-              disabled
-              className="bg-gray-50"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="valor-material-cliente">Precio Cliente por {
-              materialesProveedor.find(m => m.id === tipoMaterial)?.unidad || 'unidad'
-            } *</Label>
-            <Input
-              id="valor-material-cliente"
-              type="number"
-              value={valorMaterialCliente}
-              onChange={(e) => onValorMaterialClienteChange(parseFloat(e.target.value) || 0)}
-              placeholder="Precio que se le cobra al cliente"
-            />
-          </div>
+        <div>
+          <Label htmlFor="valor-material-cliente">Precio Cliente por {
+            materialesProveedor.find(m => m.id === tipoMaterial)?.unidad || 'unidad'
+          } *</Label>
+          <Input
+            id="valor-material-cliente"
+            type="number"
+            value={valorMaterialCliente}
+            onChange={(e) => onValorMaterialClienteChange(parseFloat(e.target.value) || 0)}
+            placeholder="Precio que se le cobra al cliente"
+          />
         </div>
       )}
     </>

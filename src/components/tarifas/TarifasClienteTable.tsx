@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, ToggleLeft, ToggleRight, DollarSign, Truck, Settings, MapPin } from 'lucide-react';
 import { TarifaCliente } from '@/models/TarifasCliente';
+import { loadProductosProveedores } from '@/models/Proveedores';
 
 interface TarifasClienteTableProps {
   tarifas: TarifaCliente[];
@@ -30,13 +31,31 @@ const TarifasClienteTable: React.FC<TarifasClienteTableProps> = ({
   onToggleStatus,
   calcularMargen,
   formatCurrency,
-  getMaterialName,
   getMachineName
 }) => {
   const getEscombreraName = (id?: string) => {
     if (!id) return '-';
     const escombrera = machines.find(m => m.id === id);
     return escombrera ? escombrera.name : id;
+  };
+
+  const getMaterialName = (id?: string) => {
+    if (!id) return '-';
+    
+    // First try to find in general materials
+    const material = materiales.find(m => m.id === id);
+    if (material) {
+      return material.nombre_material;
+    }
+    
+    // Then try to find in provider products
+    const productosProveedores = loadProductosProveedores();
+    const producto = productosProveedores.find(p => p.id === id);
+    if (producto) {
+      return producto.nombre_producto;
+    }
+    
+    return id;
   };
 
   const getServiceIcon = (tipo: string) => {
