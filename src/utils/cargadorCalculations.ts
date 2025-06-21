@@ -20,7 +20,7 @@ export const calcularValorCargador = (
     t.destino.toLowerCase().includes(workSite.toLowerCase())
   );
 
-  if (tarifaCargador && tarifaCargador.valor_por_hora > 0) {
+  if (tarifaCargador && tarifaCargador.valor_por_hora && tarifaCargador.valor_por_hora > 0) {
     const valorCalculado = tarifaCargador.valor_por_hora * hours;
     return {
       valorCalculado,

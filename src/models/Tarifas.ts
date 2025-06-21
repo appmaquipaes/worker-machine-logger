@@ -1,10 +1,10 @@
-
 // Define el tipo para tarifas de flete
 export type Tarifa = {
   id: string;
   origen: string;
   destino: string;
-  valor_por_m3: number; // Cambiado de valor_flete a valor_por_m3
+  valor_por_m3: number; // Para tarifas de transporte por volumen
+  valor_por_hora?: number; // Para tarifas de maquinaria por horas trabajadas
 };
 
 // Función para guardar tarifas en localStorage

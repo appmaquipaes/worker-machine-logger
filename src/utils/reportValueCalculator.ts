@@ -27,7 +27,7 @@ export const calcularValorHorasTrabajadas = (
     t.destino.toLowerCase().includes(workSite.toLowerCase())
   );
 
-  if (tarifa && tarifa.valor_por_hora > 0) {
+  if (tarifa && tarifa.valor_por_hora && tarifa.valor_por_hora > 0) {
     const valorCalculado = tarifa.valor_por_hora * hours;
     return {
       valorCalculado,
