@@ -9,6 +9,7 @@ export type OperacionComercial = {
   venta_generada: boolean;
   venta_id?: string;
   tipo_operacion: 'Acopio' | 'Cantera' | 'Proveedor'; // Para identificar el flujo
+  cantidad_total?: number; // Suma de todas las cantidades
 };
 
 // Función para generar un ID único de operación basado en fecha + cliente + material
@@ -53,7 +54,8 @@ export const gestionarOperacionComercial = (
   fecha: Date,
   cliente: string,
   material: string,
-  esDesdeAcopio: boolean
+  esDesdeAcopio: boolean,
+  cantidad?: number
 ): OperacionComercial => {
   const operaciones = loadOperacionesComerciales();
   const idOperacion = generarIdOperacion(fecha, cliente, material);
@@ -65,6 +67,10 @@ export const gestionarOperacionComercial = (
     // Agregar el reporte a la operación existente si no está ya
     if (!operacionExistente.reportes_asociados.includes(reporteId)) {
       operacionExistente.reportes_asociados.push(reporteId);
+      // Sumar cantidad si existe
+      if (cantidad) {
+        operacionExistente.cantidad_total = (operacionExistente.cantidad_total || 0) + cantidad;
+      }
     }
   } else {
     // Crear nueva operación
@@ -75,7 +81,8 @@ export const gestionarOperacionComercial = (
       material,
       reportes_asociados: [reporteId],
       venta_generada: false,
-      tipo_operacion: esDesdeAcopio ? 'Acopio' : 'Cantera'
+      tipo_operacion: esDesdeAcopio ? 'Acopio' : 'Cantera',
+      cantidad_total: cantidad || 0
     };
     operaciones.push(operacionExistente);
   }
@@ -94,4 +101,20 @@ export const marcarOperacionProcesada = (idOperacion: string, ventaId: string): 
     operacion.venta_id = ventaId;
     saveOperacionesComerciales(operaciones);
   }
+};
+
+// Función para verificar si una operación está completa y lista para venta
+export const esOperacionCompletaParaVenta = (operacion: OperacionComercial): boolean => {
+  // Si ya se generó la venta, no generar otra
+  if (operacion.venta_generada) {
+    return false;
+  }
+
+  // Si es desde cantera/proveedor (no Acopio), generar venta inmediatamente
+  if (operacion.tipo_operacion !== 'Acopio') {
+    return true;
+  }
+
+  // Si es desde Acopio, esperar al menos 2 reportes (Cargador + Volqueta)
+  return operacion.reportes_asociados.length >= 2;
 };

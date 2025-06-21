@@ -5,6 +5,7 @@ import {
   marcarOperacionProcesada,
   extraerClienteDelDestino,
   esOperacionDesdeAcopio,
+  esOperacionCompletaParaVenta,
   loadOperacionesComerciales
 } from '@/models/OperacionesComerciales';
 
@@ -27,9 +28,11 @@ export const useOperacionesComerciales = () => {
 
     const material = report.description || 'Material';
     const esDesdeAcopio = esOperacionDesdeAcopio(report.origin);
+    const cantidad = report.cantidadM3 || 0;
     
     console.log('=== PROCESANDO OPERACIÓN COMERCIAL ===');
     console.log('Cliente:', cliente, 'Material:', material, 'Desde Acopio:', esDesdeAcopio);
+    console.log('Cantidad:', cantidad, 'Máquina:', report.machineName);
     
     // Gestionar la operación comercial
     const operacion = gestionarOperacionComercial(
@@ -37,14 +40,17 @@ export const useOperacionesComerciales = () => {
       report.reportDate,
       cliente,
       material,
-      esDesdeAcopio
+      esDesdeAcopio,
+      cantidad
     );
 
     console.log('Operación gestionada:', operacion);
 
-    // Si NO es desde Acopio (cantera/proveedor), generar venta inmediatamente
-    if (!esDesdeAcopio) {
-      console.log('→ Operación desde cantera/proveedor - generando venta inmediata');
+    // Verificar si la operación está completa para generar venta
+    const operacionCompleta = esOperacionCompletaParaVenta(operacion);
+    
+    if (operacionCompleta) {
+      console.log('→ Operación completa - generando venta');
       return { 
         debeGenerarVenta: true, 
         esOperacionCompleta: true, 
@@ -52,28 +58,10 @@ export const useOperacionesComerciales = () => {
       };
     }
 
-    // Si es desde Acopio, verificar si ya se generó la venta
-    if (operacion.venta_generada) {
-      console.log('→ Ya se generó venta para esta operación');
-      return { 
-        debeGenerarVenta: false, 
-        esOperacionCompleta: true, 
-        operacionId: operacion.id 
-      };
-    }
-
-    // Si es desde Acopio y tenemos 2 reportes (Cargador + Volqueta), generar venta completa
-    if (operacion.reportes_asociados.length >= 2) {
-      console.log('→ Operación completa (Cargador + Volqueta) - generando venta');
-      return { 
-        debeGenerarVenta: true, 
-        esOperacionCompleta: true, 
-        operacionId: operacion.id 
-      };
-    }
-
-    // Si solo tenemos 1 reporte, esperar al segundo
-    console.log('→ Esperando reporte complementario para operación completa');
+    // Si no está completa, esperar más reportes
+    console.log('→ Esperando reportes complementarios para operación completa');
+    console.log('Reportes actuales:', operacion.reportes_asociados.length);
+    
     return { 
       debeGenerarVenta: false, 
       esOperacionCompleta: false, 
@@ -92,9 +80,15 @@ export const useOperacionesComerciales = () => {
     return operacion?.reportes_asociados || [];
   };
 
+  const obtenerOperacionPorId = (operacionId: string) => {
+    const operaciones = loadOperacionesComerciales();
+    return operaciones.find(op => op.id === operacionId);
+  };
+
   return {
     registrarReporteEnOperacion,
     marcarVentaGenerada,
-    obtenerReportesDeOperacion
+    obtenerReportesDeOperacion,
+    obtenerOperacionPorId
   };
 };

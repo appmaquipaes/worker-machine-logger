@@ -143,14 +143,14 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // SISTEMA DE OPERACIONES COMERCIALES (para evitar duplicación de ventas)
+    // SISTEMA DE OPERACIONES COMERCIALES (NUEVO - para evitar duplicación de ventas)
     if (newReport.reportType === 'Viajes' && newReport.destination) {
       try {
-        console.log('→ Procesando operación comercial');
+        console.log('💼 Procesando operación comercial...');
         const resultadoOperacion = registrarReporteEnOperacion(newReport);
         
         if (resultadoOperacion.debeGenerarVenta) {
-          console.log('→ Generando venta automática');
+          console.log('💰 Generando venta automática...');
           const ventaAutomatica = crearVentaDesdeOperacion(newReport, resultadoOperacion.operacionId);
           
           if (ventaAutomatica) {
@@ -163,8 +163,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
             marcarVentaGenerada(resultadoOperacion.operacionId, ventaAutomatica.id);
             
             console.log('✓ Venta automática creada y guardada');
-            toast.success('💰 Venta automática generada', {
-              duration: 3000,
+            toast.success('💰 Venta automática generada exitosamente', {
+              duration: 4000,
               style: {
                 fontSize: '14px',
                 backgroundColor: '#059669',
@@ -173,13 +173,32 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
             });
           }
         } else if (!resultadoOperacion.esOperacionCompleta) {
-          console.log('→ Esperando reporte complementario para completar operación');
+          console.log('⏳ Operación registrada - esperando reportes complementarios');
           toast.info('⏳ Operación registrada - esperando reporte complementario', {
-            duration: 2000
+            duration: 3000,
+            style: {
+              fontSize: '14px'
+            }
           });
         }
       } catch (error) {
         console.error('Error procesando operación comercial:', error);
+      }
+    }
+
+    // PROCESAR ESCOMBRERA (mantener funcionalidad existente)
+    if (newReport.reportType === 'Recepción Escombrera') {
+      console.log('🏗 Procesando recepción de escombrera...');
+      const ventaGenerada = procesarReporteParaVenta(newReport);
+      if (ventaGenerada) {
+        toast.success('💰 Venta de escombrera generada', {
+          duration: 3000,
+          style: {
+            fontSize: '14px',
+            backgroundColor: '#059669',
+            color: 'white'
+          }
+        });
       }
     }
   };
