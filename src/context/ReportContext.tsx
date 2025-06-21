@@ -5,8 +5,7 @@ import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
 import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
-import { useOperacionesComerciales } from '@/hooks/useOperacionesComerciales';
-import { useVentaCreationEnhanced } from '@/hooks/useVentaCreationEnhanced';
+import { useVentaCreation } from '@/hooks/useVentaCreation';
 import { loadVentas, saveVentas } from '@/models/Ventas';
 import { toast } from "sonner";
 
@@ -32,8 +31,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
   const { procesarReporteParaVenta } = useAutoVentas();
   const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
-  const { registrarReporteEnOperacion, marcarVentaGenerada } = useOperacionesComerciales();
-  const { crearVentaDesdeOperacion } = useVentaCreationEnhanced();
+  const { crearVentaAutomatica } = useVentaCreation();
 
   useEffect(() => {
     const storedReports = localStorage.getItem('reports');
@@ -163,24 +161,54 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // SISTEMA DE OPERACIONES COMERCIALES (NUEVO - para evitar duplicación de ventas)
+    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS
     if (newReport.reportType === 'Viajes' && newReport.destination) {
       try {
-        console.log('💼 Procesando operación comercial...');
-        const resultadoOperacion = registrarReporteEnOperacion(newReport);
+        console.log('💼 Evaluando generación de venta con nueva lógica simplificada...');
         
-        if (resultadoOperacion.debeGenerarVenta) {
+        const esCargador = newReport.machineName.toLowerCase().includes('cargador');
+        const esVolqueta = newReport.machineName.toLowerCase().includes('volqueta') || 
+                         newReport.machineName.toLowerCase().includes('camión');
+        const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio') || false;
+        
+        console.log('📋 Análisis de máquina:');
+        console.log('- Es cargador:', esCargador);
+        console.log('- Es volqueta/camión:', esVolqueta);
+        console.log('- Origen es acopio:', origenEsAcopio);
+        
+        let debeGenerarVenta = false;
+        let razonDecision = '';
+        
+        if (esCargador) {
+          // CARGADORES: Siempre generan venta
+          debeGenerarVenta = true;
+          razonDecision = 'Cargador siempre genera venta automática';
+        } else if (esVolqueta && !origenEsAcopio) {
+          // VOLQUETAS: Solo si NO vienen del acopio
+          debeGenerarVenta = true;
+          razonDecision = 'Volqueta desde origen distinto al acopio';
+        } else if (esVolqueta && origenEsAcopio) {
+          // VOLQUETAS desde acopio: NO generar venta
+          debeGenerarVenta = false;
+          razonDecision = 'Volqueta desde acopio - no generar venta (evitar duplicación)';
+        } else {
+          // Otras máquinas: mantener lógica actual
+          debeGenerarVenta = true;
+          razonDecision = 'Otra máquina - generar venta';
+        }
+        
+        console.log('🎯 Decisión final:', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
+        console.log('📝 Razón:', razonDecision);
+        
+        if (debeGenerarVenta) {
           console.log('💰 Generando venta automática...');
-          const ventaAutomatica = crearVentaDesdeOperacion(newReport, resultadoOperacion.operacionId);
+          const ventaAutomatica = crearVentaAutomatica(newReport);
           
           if (ventaAutomatica) {
             // Guardar la venta
             const ventasExistentes = loadVentas();
             const nuevasVentas = [...ventasExistentes, ventaAutomatica];
             saveVentas(nuevasVentas);
-            
-            // Marcar operación como procesada
-            marcarVentaGenerada(resultadoOperacion.operacionId, ventaAutomatica.id);
             
             console.log('✓ Venta automática creada y guardada');
             toast.success('💰 Venta automática generada exitosamente', {
@@ -191,10 +219,12 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
                 color: 'white'
               }
             });
+          } else {
+            console.log('⚠️ No se pudo crear la venta automática');
           }
-        } else if (!resultadoOperacion.esOperacionCompleta) {
-          console.log('⏳ Operación registrada - esperando reportes complementarios');
-          toast.info('⏳ Operación registrada - esperando reporte complementario', {
+        } else {
+          console.log('ℹ️ Venta no generada por lógica de negocio');
+          toast.info(`ℹ️ ${razonDecision}`, {
             duration: 3000,
             style: {
               fontSize: '14px'
@@ -202,7 +232,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           });
         }
       } catch (error) {
-        console.error('Error procesando operación comercial:', error);
+        console.error('Error procesando venta automática:', error);
       }
     }
 

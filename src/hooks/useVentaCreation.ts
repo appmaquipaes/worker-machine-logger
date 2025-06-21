@@ -1,3 +1,4 @@
+
 import { Report } from '@/types/report';
 import { Venta, createVenta, createDetalleVenta, updateVentaTotal } from '@/models/Ventas';
 import { getClienteByName } from '@/models/Clientes';
@@ -14,14 +15,18 @@ export const useVentaCreation = () => {
 
   const crearVentaAutomatica = (report: Report): Venta | null => {
     try {
-      // Los cargadores NO generan ventas automáticas directas
-      if (report.machineName.toLowerCase().includes('cargador')) {
-        console.log('ℹ️ Cargador detectado - no se genera venta automática directa');
-        return null;
-      }
+      console.log('🔄 Creando venta automática con nueva lógica simplificada');
+      console.log('📋 Reporte:', {
+        machine: report.machineName,
+        tipo: report.reportType,
+        origen: report.origin,
+        destino: report.destination,
+        cantidad: report.cantidadM3
+      });
 
       // Procesar reportes de tipo "Viajes" y "Recepción Escombrera"
       if (report.reportType !== 'Viajes' && report.reportType !== 'Recepción Escombrera') {
+        console.log('❌ Tipo de reporte no válido para venta automática');
         return null;
       }
 
@@ -37,14 +42,14 @@ export const useVentaCreation = () => {
       }
       
       if (!cliente) {
-        console.log('No se pudo extraer cliente del reporte');
+        console.log('❌ No se pudo extraer cliente del reporte');
         return null;
       }
 
       // Verificar que el cliente existe
       const clienteData = getClienteByName(cliente);
       if (!clienteData) {
-        console.log('Cliente no encontrado en la base de datos:', cliente);
+        console.log('❌ Cliente no encontrado en la base de datos:', cliente);
         return null;
       }
 
@@ -56,6 +61,13 @@ export const useVentaCreation = () => {
         ? (report.cantidadVolquetas || 0) 
         : (report.cantidadM3 || 0);
 
+      console.log('💰 Datos para venta:', {
+        cliente,
+        tipoVenta,
+        cantidad,
+        fechaVenta
+      });
+
       // Crear la venta base
       let nuevaVenta = createVenta(
         fechaVenta,
@@ -65,7 +77,7 @@ export const useVentaCreation = () => {
         report.origin || '',
         destino,
         'Efectivo',
-        `Venta automática generada desde reporte de ${report.machineName}`
+        `Venta automática generada desde reporte de ${report.machineName} (Nueva lógica simplificada)`
       );
 
       const detalles = [];
@@ -101,7 +113,7 @@ export const useVentaCreation = () => {
             );
             detalles.push(detalleMaterial);
             
-            console.log('💰 Precio material calculado (tradicional):', {
+            console.log('💰 Precio material calculado:', {
               material: tipoMaterial,
               proveedor: report.proveedorNombre || 'Genérico',
               precio: precioMaterial
@@ -133,7 +145,7 @@ export const useVentaCreation = () => {
 
       // Solo crear la venta si tiene valor mayor a 0
       if (nuevaVenta.total_venta > 0) {
-        console.log('Venta automática creada:', {
+        console.log('✅ Venta automática creada exitosamente:', {
           cliente,
           tipo: tipoVenta,
           total: nuevaVenta.total_venta,
@@ -144,9 +156,10 @@ export const useVentaCreation = () => {
         return nuevaVenta;
       }
 
+      console.log('❌ Venta no creada - total es 0');
       return null;
     } catch (error) {
-      console.error('Error creando venta automática:', error);
+      console.error('❌ Error creando venta automática:', error);
       return null;
     }
   };
