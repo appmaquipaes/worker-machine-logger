@@ -21,12 +21,15 @@ export const useInformesPage = () => {
     setSelectedFinca,
     selectedOperator,
     setSelectedOperator,
+    selectedProveedor,
+    setSelectedProveedor,
     startDate,
     setStartDate,
     endDate,
     setEndDate,
     clientes,
     fincas,
+    proveedores,
     getFilters
   } = useInformesFilters();
 
@@ -50,6 +53,7 @@ export const useInformesPage = () => {
     operators,
     clientes,
     fincas,
+    proveedores,
     selectedMachine,
     setSelectedMachine,
     selectedReportType,
@@ -60,6 +64,8 @@ export const useInformesPage = () => {
     setSelectedFinca,
     selectedOperator,
     setSelectedOperator,
+    selectedProveedor,
+    setSelectedProveedor,
     startDate,
     setStartDate,
     endDate,

@@ -16,6 +16,7 @@ const InformesPage: React.FC = () => {
     operators,
     clientes,
     fincas,
+    proveedores,
     selectedMachine,
     setSelectedMachine,
     selectedReportType,
@@ -26,6 +27,8 @@ const InformesPage: React.FC = () => {
     setSelectedFinca,
     selectedOperator,
     setSelectedOperator,
+    selectedProveedor,
+    setSelectedProveedor,
     startDate,
     setStartDate,
     endDate,
@@ -78,6 +81,7 @@ const InformesPage: React.FC = () => {
           machines={machines}
           clientes={clientes}
           fincas={fincas}
+          proveedores={proveedores}
           selectedOperator={selectedOperator}
           setSelectedOperator={setSelectedOperator}
           selectedMachine={selectedMachine}
@@ -88,6 +92,8 @@ const InformesPage: React.FC = () => {
           setSelectedCliente={setSelectedCliente}
           selectedFinca={selectedFinca}
           setSelectedFinca={setSelectedFinca}
+          selectedProveedor={selectedProveedor}
+          setSelectedProveedor={setSelectedProveedor}
           startDate={startDate}
           setStartDate={setStartDate}
           endDate={endDate}

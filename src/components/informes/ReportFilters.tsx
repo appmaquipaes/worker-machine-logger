@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, MapPin } from 'lucide-react';
+import { BarChart3, Users, MapPin, Building2 } from 'lucide-react';
 import FilterSection from './filters/FilterSection';
 import DateRangeFilters from './filters/DateRangeFilters';
 import ActionButtons from './filters/ActionButtons';
@@ -11,6 +11,7 @@ interface ReportFiltersProps {
   machines: any[];
   clientes: any[];
   fincas: any[];
+  proveedores: any[];
   selectedOperator: string;
   setSelectedOperator: (value: string) => void;
   selectedMachine: string;
@@ -21,6 +22,8 @@ interface ReportFiltersProps {
   setSelectedCliente: (value: string) => void;
   selectedFinca: string;
   setSelectedFinca: (value: string) => void;
+  selectedProveedor: string;
+  setSelectedProveedor: (value: string) => void;
   startDate: Date;
   setStartDate: (date: Date) => void;
   endDate: Date;
@@ -35,6 +38,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
   machines,
   clientes,
   fincas,
+  proveedores,
   selectedOperator,
   setSelectedOperator,
   selectedMachine,
@@ -45,6 +49,8 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
   setSelectedCliente,
   selectedFinca,
   setSelectedFinca,
+  selectedProveedor,
+  setSelectedProveedor,
   startDate,
   setStartDate,
   endDate,
@@ -100,6 +106,14 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
     ...fincas.map(finca => ({
       value: finca.nombre_finca,
       label: `${finca.nombre_finca} - ${finca.ciudad}`
+    }))
+  ];
+
+  const proveedorOptions = [
+    { value: 'all', label: 'Todos los proveedores' },
+    ...proveedores.map(proveedor => ({
+      value: proveedor.id,
+      label: `${proveedor.nombre} - ${proveedor.ciudad}`
     }))
   ];
 
@@ -159,6 +173,15 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
             options={fincaOptions}
             icon={<MapPin size={16} />}
             disabled={selectedCliente === 'all' || fincas.length === 0}
+          />
+
+          <FilterSection
+            label="Proveedor"
+            value={selectedProveedor}
+            onValueChange={setSelectedProveedor}
+            placeholder="Todos los proveedores"
+            options={proveedorOptions}
+            icon={<Building2 size={16} />}
           />
 
           <DateRangeFilters
