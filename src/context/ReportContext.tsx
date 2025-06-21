@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
+import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
 import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
@@ -68,6 +70,13 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     console.log('📋 Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
     console.log('📍 Origen:', origin, 'Destino:', destination);
 
+    // Extraer información del proveedor si aplica
+    const { proveedorId, proveedorNombre } = extraerInfoProveedor(origin || '');
+    
+    if (proveedorId) {
+      console.log('🏭 Proveedor identificado:', proveedorNombre, '(ID:', proveedorId, ')');
+    }
+
     // Solo validar inventario para viajes con cantidad y desde acopio
     if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
       const esOrigenAcopio = origin.toLowerCase().includes('acopio');
@@ -94,7 +103,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // Crear el reporte
+    // Crear el reporte con información de proveedor mejorada
     console.log('📝 Creando reporte...');
     const newReport = createReport(
       reports,
@@ -113,6 +122,13 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       proveedor,
       kilometraje
     );
+    
+    // Agregar información del proveedor al reporte
+    if (proveedorId && proveedorNombre) {
+      newReport.proveedorId = proveedorId;
+      newReport.proveedorNombre = proveedorNombre;
+      console.log('📋 Información de proveedor agregada al reporte');
+    }
     
     console.log('✅ Reporte creado:', newReport);
     const updatedReports = [...reports, newReport];

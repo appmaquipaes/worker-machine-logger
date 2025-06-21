@@ -16,6 +16,9 @@ export const parseStoredReports = (storedReports: string): Report[] => {
     ...report,
     createdAt: new Date(report.createdAt),
     reportDate: report.reportDate ? new Date(report.reportDate) : new Date(report.createdAt),
+    // Asegurar que los nuevos campos existan en reportes existentes
+    proveedorId: report.proveedorId || undefined,
+    proveedorNombre: report.proveedorNombre || undefined,
   }));
 };
 
@@ -48,6 +51,11 @@ export const filterReports = (reports: Report[], filters: any): Report[] => {
       const reportFinca = extractFincaFromDestination(report.destination);
       return reportFinca === filters.finca;
     });
+  }
+
+  // NEW: Filter by proveedor
+  if (filters.proveedorId && filters.proveedorId !== 'all') {
+    filtered = filtered.filter(report => report.proveedorId === filters.proveedorId);
   }
   
   if (filters.startDate) {

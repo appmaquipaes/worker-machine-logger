@@ -1,3 +1,4 @@
+
 export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes' | 'Recepción Escombrera';
 
 export interface Report {
@@ -18,6 +19,9 @@ export interface Report {
   hours?: number;
   workSite?: string;
   proveedor?: string;
+  // Nuevos campos para trazabilidad mejorada
+  proveedorId?: string; // ID del proveedor cuando el origen es un proveedor
+  proveedorNombre?: string; // Nombre limpio del proveedor
   kilometraje?: number;
   detalleCalculo?: string;
   tarifaEncontrada?: boolean;
