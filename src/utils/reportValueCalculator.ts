@@ -1,105 +1,90 @@
+import { loadTarifas } from '@/models/Tarifas';
+import { calcularValorCargador } from './cargadorCalculations';
 
-import { findTarifaCliente, getTarifasByCliente, TarifaCliente } from '@/models/TarifasCliente';
-
-export interface ReportValueCalculation {
+export const calcularValorHorasTrabajadas = (
+  workSite: string,
+  finca: string | undefined,
+  machineId: string,
+  hours: number
+): {
   valorCalculado: number;
   detalleCalculo: string;
   tarifaEncontrada: boolean;
-}
+} => {
+  console.log('🔍 Calculando valor horas trabajadas:', { workSite, finca, machineId, hours });
 
-// Calcular valor para reportes de horas trabajadas (alquiler de maquinaria)
-export const calcularValorHorasTrabajadas = (
-  cliente: string,
-  finca: string | undefined,
-  machineId: string,
-  horas: number
-): ReportValueCalculation => {
-  const tarifas = getTarifasByCliente(cliente);
+  // Si es un cargador, usar lógica específica
+  if (machineId.toLowerCase().includes('cargador')) {
+    return calcularValorCargador(workSite, machineId, hours);
+  }
+
+  // Lógica existente para otras máquinas
+  const tarifas = loadTarifas();
   
-  // Buscar tarifa de alquiler para esta máquina
-  const tarifaAlquiler = tarifas.find(t => 
-    t.tipo_servicio === 'alquiler_maquina' && 
-    t.maquina_id === machineId &&
-    (t.finca === finca || !t.finca) // Priorizar finca específica, luego general
+  // Buscar tarifa específica
+  let tarifa = tarifas.find(t => 
+    t.origen.toLowerCase().includes(workSite.toLowerCase()) ||
+    t.destino.toLowerCase().includes(workSite.toLowerCase())
   );
-  
-  if (!tarifaAlquiler) {
+
+  if (tarifa && tarifa.valor_por_hora > 0) {
+    const valorCalculado = tarifa.valor_por_hora * hours;
     return {
-      valorCalculado: 0,
-      detalleCalculo: 'No se encontró tarifa de alquiler para esta máquina y cliente',
-      tarifaEncontrada: false
+      valorCalculado,
+      detalleCalculo: `${hours} horas × $${tarifa.valor_por_hora.toLocaleString()}/hora = $${valorCalculado.toLocaleString()}`,
+      tarifaEncontrada: true
     };
   }
-  
-  // Calcular valor basado en horas
-  let valorPorHora = tarifaAlquiler.valor_por_hora || 0;
-  
-  // Si no hay tarifa por hora, intentar convertir desde día (asumiendo 8 horas/día)
-  if (!valorPorHora && tarifaAlquiler.valor_por_dia) {
-    valorPorHora = tarifaAlquiler.valor_por_dia / 8;
-  }
-  
-  // Si no hay tarifa por hora ni día, intentar desde mes (asumiendo 22 días laborales)
-  if (!valorPorHora && tarifaAlquiler.valor_por_mes) {
-    valorPorHora = tarifaAlquiler.valor_por_mes / (22 * 8);
-  }
-  
-  const valorCalculado = horas * valorPorHora;
-  
+
   return {
-    valorCalculado,
-    detalleCalculo: `${horas} horas × $${valorPorHora.toLocaleString()}/hora = $${valorCalculado.toLocaleString()}`,
-    tarifaEncontrada: true
+    valorCalculado: 0,
+    detalleCalculo: 'No se encontró tarifa específica para este trabajo',
+    tarifaEncontrada: false
   };
 };
 
-// Calcular valor para reportes de viajes (transporte)
 export const calcularValorViajes = (
   cliente: string,
-  finca: string | undefined,
-  origen: string,
-  destino: string,
+  finca: string,
+  origin: string,
+  destination: string,
   cantidadM3: number
-): ReportValueCalculation => {
-  // Extraer cliente y finca del destino si viene en formato "Cliente - Finca"
-  const clienteDestino = destino?.split(' - ')[0] || cliente;
-  const fincaDestino = destino?.split(' - ')[1] || finca;
-  
-  const tarifa = findTarifaCliente(clienteDestino, fincaDestino, origen, clienteDestino);
-  
-  if (!tarifa || tarifa.tipo_servicio !== 'transporte') {
+): {
+  valorCalculado: number;
+  detalleCalculo: string;
+  tarifaEncontrada: boolean;
+} => {
+  console.log('Calculando valor viajes:', { cliente, finca, origin, destination, cantidadM3 });
+
+  const tarifas = loadTarifas();
+
+  // Buscar tarifa que coincida exactamente con origen y destino
+  let tarifa = tarifas.find(
+    t =>
+      t.origen.toLowerCase() === origin.toLowerCase() &&
+      t.destino.toLowerCase() === destination.toLowerCase()
+  );
+
+  // Si no se encuentra tarifa exacta, buscar tarifa que incluya el cliente y finca en el destino
+  if (!tarifa) {
+    tarifa = tarifas.find(t =>
+      t.destino.toLowerCase().includes(cliente.toLowerCase()) &&
+      t.destino.toLowerCase().includes(finca.toLowerCase())
+    );
+  }
+
+  if (tarifa && tarifa.valor_por_m3 > 0) {
+    const valorCalculado = tarifa.valor_por_m3 * cantidadM3;
     return {
-      valorCalculado: 0,
-      detalleCalculo: 'No se encontró tarifa de transporte para esta ruta y cliente',
-      tarifaEncontrada: false
+      valorCalculado,
+      detalleCalculo: `${cantidadM3} m³ × $${tarifa.valor_por_m3.toLocaleString()}/m³ = $${valorCalculado.toLocaleString()}`,
+      tarifaEncontrada: true
     };
   }
-  
-  let valorTotal = 0;
-  let detalleCalculo = '';
-  
-  // Calcular valor del flete
-  if (tarifa.valor_flete_m3) {
-    const valorFlete = cantidadM3 * tarifa.valor_flete_m3;
-    valorTotal += valorFlete;
-    detalleCalculo += `Flete: ${cantidadM3} m³ × $${tarifa.valor_flete_m3.toLocaleString()}/m³ = $${valorFlete.toLocaleString()}`;
-  }
-  
-  // Calcular valor del material (si aplica)
-  if (tarifa.valor_material_cliente_m3) {
-    const valorMaterial = cantidadM3 * tarifa.valor_material_cliente_m3;
-    valorTotal += valorMaterial;
-    if (detalleCalculo) detalleCalculo += ' + ';
-    detalleCalculo += `Material: ${cantidadM3} m³ × $${tarifa.valor_material_cliente_m3.toLocaleString()}/m³ = $${valorMaterial.toLocaleString()}`;
-  }
-  
-  if (detalleCalculo) {
-    detalleCalculo += ` = $${valorTotal.toLocaleString()} total`;
-  }
-  
+
   return {
-    valorCalculado: valorTotal,
-    detalleCalculo: detalleCalculo || `${cantidadM3} m³ sin valores de tarifa definidos`,
-    tarifaEncontrada: valorTotal > 0
+    valorCalculado: 0,
+    detalleCalculo: 'No se encontró tarifa para este viaje',
+    tarifaEncontrada: false
   };
 };

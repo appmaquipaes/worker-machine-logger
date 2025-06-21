@@ -33,46 +33,55 @@ const ReportDataTable: React.FC<ReportDataTableProps> = ({
       <CardContent>
         <div className="rounded-xl border-2 overflow-hidden overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-semibold">Fecha</TableHead>
-                <TableHead className="font-semibold">Usuario</TableHead>
-                <TableHead className="font-semibold">Máquina</TableHead>
-                <TableHead className="font-semibold">Tipo</TableHead>
-                <TableHead className="font-semibold">Cliente</TableHead>
-                <TableHead className="font-semibold">Finca</TableHead>
-                <TableHead className="font-semibold">Horas</TableHead>
-                <TableHead className="font-semibold">Viajes</TableHead>
-                <TableHead className="font-semibold">M³</TableHead>
-                <TableHead className="font-semibold">Valor</TableHead>
-                <TableHead className="font-semibold">Comisión</TableHead>
-                <TableHead className="font-semibold">Cálculo</TableHead>
-                <TableHead className="font-semibold w-48">Novedades</TableHead>
+            <TableHeader className="bg-gradient-to-r from-slate-100 to-slate-200">
+              <TableRow className="border-b-2 border-slate-300">
+                <TableHead className="font-bold text-slate-800 text-sm">Fecha</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Usuario</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Máquina</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Tipo</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Cliente</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Finca</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Horas</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Viajes</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">M³</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Valor</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Comisión</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm">Cálculo</TableHead>
+                <TableHead className="font-bold text-slate-800 text-sm w-48">Novedades</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reportData.map((report) => (
-                <TableRow key={report.id} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{report.reportDate.toLocaleDateString()}</TableCell>
-                  <TableCell>{report.userName}</TableCell>
-                  <TableCell>{report.machineName}</TableCell>
+              {reportData.map((report, index) => (
+                <TableRow 
+                  key={report.id} 
+                  className={`hover:bg-slate-50 transition-colors ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-slate-25'
+                  }`}
+                >
+                  <TableCell className="font-medium text-slate-700">{report.reportDate.toLocaleDateString()}</TableCell>
+                  <TableCell className="text-slate-600">{report.userName}</TableCell>
+                  <TableCell className="text-slate-600">{report.machineName}</TableCell>
                   <TableCell>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                       {report.reportType}
                     </span>
                   </TableCell>
-                  <TableCell>{report.workSite || extractClienteFromDestination(report.destination) || '-'}</TableCell>
-                  <TableCell>{extractFincaFromDestination(report.destination) || '-'}</TableCell>
-                  <TableCell>{report.hours || '-'}</TableCell>
-                  <TableCell>{report.trips || '-'}</TableCell>
-                  <TableCell>{report.cantidadM3 || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{report.workSite || extractClienteFromDestination(report.destination) || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{extractFincaFromDestination(report.destination) || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{report.hours || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{report.trips || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{report.cantidadM3 || '-'}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className={report.value ? 'font-semibold text-green-600' : 'text-slate-400'}>
+                      <span className={report.value ? 'font-semibold text-green-700' : 'text-slate-400'}>
                         {report.value ? `$${report.value.toLocaleString()}` : '-'}
                       </span>
                       {report.tarifaEncontrada !== undefined && (
-                        <span className={`text-xs ${report.tarifaEncontrada ? 'text-green-600' : 'text-orange-600'}`}>
+                        <span className={`text-xs font-medium ${
+                          report.tarifaEncontrada 
+                            ? 'text-green-700 bg-green-100 px-2 py-0.5 rounded' 
+                            : 'text-amber-700 bg-amber-100 px-2 py-0.5 rounded'
+                        }`}>
                           {report.tarifaEncontrada ? '✓ Con tarifa' : '⚠ Sin tarifa'}
                         </span>
                       )}
@@ -91,12 +100,12 @@ const ReportDataTable: React.FC<ReportDataTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="w-48 max-w-48">
-                    <div className="truncate text-sm" title={report.detalleCalculo || ''}>
+                    <div className="truncate text-sm text-slate-600" title={report.detalleCalculo || ''}>
                       {report.detalleCalculo || '-'}
                     </div>
                   </TableCell>
                   <TableCell className="w-48 max-w-48">
-                    <div className="truncate text-sm" title={report.reportType === 'Novedades' ? report.description : ''}>
+                    <div className="truncate text-sm text-slate-600" title={report.reportType === 'Novedades' ? report.description : ''}>
                       {report.reportType === 'Novedades' ? report.description : '-'}
                     </div>
                   </TableCell>

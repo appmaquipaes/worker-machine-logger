@@ -1,4 +1,3 @@
-
 import { Report } from '@/types/report';
 import { Venta, createVenta, createDetalleVenta, updateVentaTotal } from '@/models/Ventas';
 import { getClienteByName } from '@/models/Clientes';
@@ -15,6 +14,12 @@ export const useVentaCreation = () => {
 
   const crearVentaAutomatica = (report: Report): Venta | null => {
     try {
+      // Los cargadores NO generan ventas automáticas directas
+      if (report.machineName.toLowerCase().includes('cargador')) {
+        console.log('ℹ️ Cargador detectado - no se genera venta automática directa');
+        return null;
+      }
+
       // Procesar reportes de tipo "Viajes" y "Recepción Escombrera"
       if (report.reportType !== 'Viajes' && report.reportType !== 'Recepción Escombrera') {
         return null;
@@ -85,7 +90,6 @@ export const useVentaCreation = () => {
         // Si incluye material, agregar detalle de material
         if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
           const tipoMaterial = extraerTipoMaterial(report);
-          // MEJORA: Usar proveedorId del reporte para calcular precio específico
           const precioMaterial = calcularPrecioMaterial(tipoMaterial, report.proveedorId);
           
           if (precioMaterial > 0 && cantidad > 0) {

@@ -22,8 +22,11 @@ export const useVentaCalculations = () => {
       return 'Solo transporte';
     }
     
-    // Cargador siempre es "Solo material" desde Acopio
+    // IMPORTANTE: Cargadores NO generan ventas directas
+    // Solo son parte de operaciones que se completan con volquetas
     if (report.machineName.toLowerCase().includes('cargador')) {
+      // Los cargadores no deberían llegar aquí en ventas automáticas
+      console.log('⚠️ Cargador detectado en venta automática - esto no debería pasar');
       return 'Solo material';
     }
     
