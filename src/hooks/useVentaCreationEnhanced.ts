@@ -71,7 +71,8 @@ export const useVentaCreationEnhanced = () => {
 
       // Agregar detalles según el tipo de venta
       if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
-        const precioMaterial = calcularPrecioMaterial(tipoMaterial);
+        // MEJORA: Usar proveedorId del reporte para calcular precio específico
+        const precioMaterial = calcularPrecioMaterial(tipoMaterial, report.proveedorId);
         if (precioMaterial > 0) {
           const detalleMaterial = createDetalleVenta(
             'Material',
@@ -80,6 +81,12 @@ export const useVentaCreationEnhanced = () => {
             precioMaterial
           );
           detalles.push(detalleMaterial);
+          
+          console.log('💰 Precio material calculado:', {
+            material: tipoMaterial,
+            proveedor: report.proveedorNombre || 'Genérico',
+            precio: precioMaterial
+          });
         }
       }
 
@@ -106,7 +113,8 @@ export const useVentaCreationEnhanced = () => {
           tipo: tipoVenta,
           total: nuevaVenta.total_venta,
           detalles: detalles.length,
-          operacionId
+          operacionId,
+          proveedorUsado: report.proveedorNombre || 'No específico'
         });
         
         return nuevaVenta;

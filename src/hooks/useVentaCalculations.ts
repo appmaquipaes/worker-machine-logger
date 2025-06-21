@@ -2,6 +2,7 @@
 import { Report } from '@/types/report';
 import { getPrecioVentaMaterial } from '@/models/Materiales';
 import { loadTarifas } from '@/models/Tarifas';
+import { loadProductosProveedores } from '@/models/Proveedores';
 
 export const useVentaCalculations = () => {
   
@@ -60,8 +61,30 @@ export const useVentaCalculations = () => {
     return 'Material'; // Por defecto
   };
 
-  const calcularPrecioMaterial = (tipoMaterial: string): number => {
-    return getPrecioVentaMaterial(tipoMaterial);
+  const calcularPrecioMaterial = (tipoMaterial: string, proveedorId?: string): number => {
+    console.log('🔍 Calculando precio material:', { tipoMaterial, proveedorId });
+    
+    // Si tenemos proveedor, buscar precio específico del proveedor
+    if (proveedorId) {
+      const productosProveedores = loadProductosProveedores();
+      const productoProveedor = productosProveedores.find(producto => 
+        producto.proveedor_id === proveedorId && 
+        producto.tipo_insumo === 'Material' &&
+        producto.nombre_producto.toLowerCase().includes(tipoMaterial.toLowerCase())
+      );
+      
+      if (productoProveedor && productoProveedor.precio_unitario > 0) {
+        console.log('✅ Precio específico de proveedor encontrado:', productoProveedor.precio_unitario);
+        return productoProveedor.precio_unitario;
+      } else {
+        console.log('⚠️ No se encontró precio específico del proveedor para:', tipoMaterial);
+      }
+    }
+    
+    // Fallback: usar precio genérico de materiales
+    const precioGenerico = getPrecioVentaMaterial(tipoMaterial);
+    console.log('📋 Usando precio genérico:', precioGenerico);
+    return precioGenerico;
   };
 
   const calcularPrecioFlete = (report: Report, cantidad: number): number => {
