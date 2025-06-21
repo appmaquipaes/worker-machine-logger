@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { MovimientoInventario, TipoMovimientoInventario, ValidacionInventario, ResultadoOperacionInventario } from '@/types/inventario';
 import { InventarioAcopio, loadInventarioAcopio, saveInventarioAcopio } from '@/models/InventarioAcopio';
@@ -43,6 +42,12 @@ export const useInventarioOperations = () => {
     
     console.log('📍 Resultado esAcopio:', esAcopioResult);
     return esAcopioResult;
+  }, []);
+
+  // Función para detectar si una máquina es cargador
+  const esCargador = useCallback((machineName?: string): boolean => {
+    if (!machineName) return false;
+    return machineName.toLowerCase().includes('cargador');
   }, []);
 
   // Validar si una operación es válida
@@ -267,7 +272,7 @@ export const useInventarioOperations = () => {
     }
   }, [validarOperacion, saveMovimiento]);
 
-  // Detectar y procesar automáticamente según el reporte (MEJORADA)
+  // Detectar y procesar automáticamente según el reporte (MEJORADA CON LÓGICA DE CARGADOR)
   const procesarReporteInventario = useCallback((report: Report): ResultadoOperacionInventario => {
     console.log('=== PROCESANDO REPORTE PARA INVENTARIO ===');
     console.log('🚛 Reporte completo:', report);
@@ -276,6 +281,7 @@ export const useInventarioOperations = () => {
     console.log('📍 Destino:', report.destination);
     console.log('📦 Cantidad M3:', report.cantidadM3);
     console.log('🔨 Material:', report.description);
+    console.log('🚜 Máquina:', report.machineName);
 
     // Solo procesar reportes de viajes con cantidad de m³
     if (report.reportType !== 'Viajes' || !report.cantidadM3 || report.cantidadM3 <= 0) {
@@ -285,19 +291,52 @@ export const useInventarioOperations = () => {
 
     const esOrigenAcopio = esAcopio(report.origin);
     const esDestinoAcopio = esAcopio(report.destination);
+    const esMaquinaCargador = esCargador(report.machineName);
     
-    console.log('🔍 Análisis detallado de ubicaciones:');
+    console.log('🔍 Análisis detallado de ubicaciones y máquina:');
     console.log('- Origen original:', report.origin);
     console.log('- Destino original:', report.destination);
     console.log('- ¿Origen es acopio?:', esOrigenAcopio);
     console.log('- ¿Destino es acopio?:', esDestinoAcopio);
+    console.log('- ¿Es cargador?:', esMaquinaCargador);
 
     // Determinar el material a procesar
     const material = report.description || 'Material sin especificar';
     console.log('📦 Material a procesar:', material);
 
-    if (esDestinoAcopio && !esOrigenAcopio) {
-      // ENTRADA: El destino es acopio
+    // NUEVA LÓGICA: Solo cargadores pueden descontar inventario
+    if (esOrigenAcopio && !esDestinoAcopio) {
+      // SALIDA: El origen es acopio, pero solo si es un cargador
+      if (esMaquinaCargador) {
+        console.log('✅ CARGADOR procesando SALIDA del acopio');
+        console.log('📤 Parámetros de salida confirmados:');
+        console.log('- Material:', material);
+        console.log('- Cantidad:', report.cantidadM3);
+        console.log('- Destino:', report.destination);
+        
+        const resultado = procesarSalida(
+          material,
+          report.cantidadM3,
+          report.destination || 'Destino no especificado',
+          report.id,
+          report.machineId,
+          report.machineName,
+          report.userName
+        );
+        
+        console.log('📋 Resultado del procesamiento de salida:', resultado);
+        return resultado;
+      } else {
+        console.log('⚠️ VOLQUETA u otra máquina desde acopio - NO descontar inventario');
+        console.log('- Motivo: Solo los cargadores pueden descontar inventario');
+        console.log('- Máquina actual:', report.machineName);
+        return { 
+          exito: false, 
+          mensaje: 'Solo los cargadores pueden descontar del inventario' 
+        };
+      }
+    } else if (esDestinoAcopio && !esOrigenAcopio) {
+      // ENTRADA: El destino es acopio (cualquier máquina puede agregar)
       console.log('➡️ Procesando ENTRADA al acopio');
       return procesarEntrada(
         material,
@@ -308,34 +347,15 @@ export const useInventarioOperations = () => {
         report.machineName,
         report.userName
       );
-    } else if (esOrigenAcopio && !esDestinoAcopio) {
-      // SALIDA: El origen es acopio
-      console.log('⬅️ Procesando SALIDA del acopio');
-      console.log('📤 Parámetros de salida confirmados:');
-      console.log('- Material:', material);
-      console.log('- Cantidad:', report.cantidadM3);
-      console.log('- Destino:', report.destination);
-      
-      const resultado = procesarSalida(
-        material,
-        report.cantidadM3,
-        report.destination || 'Destino no especificado',
-        report.id,
-        report.machineId,
-        report.machineName,
-        report.userName
-      );
-      
-      console.log('📋 Resultado del procesamiento de salida:', resultado);
-      return resultado;
     } else {
       console.log('⚠️ No aplica para inventario:');
       console.log('- Motivo: No representa movimiento de inventario válido');
       console.log('- Es origen acopio:', esOrigenAcopio);
       console.log('- Es destino acopio:', esDestinoAcopio);
+      console.log('- Es cargador:', esMaquinaCargador);
       return { exito: false, mensaje: 'El reporte no representa movimiento de inventario válido' };
     }
-  }, [esAcopio, procesarEntrada, procesarSalida]);
+  }, [esAcopio, esCargador, procesarEntrada, procesarSalida]);
 
   return {
     // Estados
@@ -352,6 +372,7 @@ export const useInventarioOperations = () => {
     saveMovimiento,
     
     // Funciones auxiliares
-    isAcopio: esAcopio
+    isAcopio: esAcopio,
+    esCargador
   };
 };

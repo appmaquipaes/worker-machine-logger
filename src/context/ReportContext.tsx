@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
@@ -77,16 +76,19 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       console.log('🏭 Proveedor identificado:', proveedorNombre, '(ID:', proveedorId, ')');
     }
 
-    // Solo validar inventario para viajes con cantidad y desde acopio
+    // VALIDACIÓN DE INVENTARIO MEJORADA: Solo para cargadores
     if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
       const esOrigenAcopio = origin.toLowerCase().includes('acopio');
+      const esCargador = machineName.toLowerCase().includes('cargador');
       
       console.log('🔍 Validando inventario:');
       console.log('- Es origen acopio:', esOrigenAcopio);
+      console.log('- Es cargador:', esCargador);
       console.log('- Origen original:', origin);
       
-      if (esOrigenAcopio) {
-        console.log('→ Validando stock para salida desde acopio');
+      // Solo validar stock si es cargador saliendo del acopio
+      if (esOrigenAcopio && esCargador) {
+        console.log('→ Validando stock para cargador saliendo del acopio');
         const validacion = validarOperacion(description, cantidadM3, 'salida');
         if (!validacion.esValida) {
           console.log('❌ Validación de stock fallida:', validacion.mensaje);
@@ -99,7 +101,9 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           });
           return;
         }
-        console.log('✅ Validación de stock exitosa');
+        console.log('✅ Validación de stock exitosa para cargador');
+      } else if (esOrigenAcopio && !esCargador) {
+        console.log('ℹ️ Volqueta desde acopio - sin validación de stock (no descuenta inventario)');
       }
     }
 
