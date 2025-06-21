@@ -9,6 +9,7 @@ import { Machine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { ReportType } from '@/types/report';
 import { loadInventarioAcopio } from '@/models/InventarioAcopio';
+import { esAcopio } from '@/utils/inventarioDetection';
 
 interface MaterialInputsProps {
   reportType: ReportType;
@@ -55,9 +56,21 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   console.log('MaterialInputs - isCargador:', isCargador(selectedMachine));
   console.log('MaterialInputs - origin:', origin);
 
-  // Para Cargadores, siempre mostrar materiales del inventario
-  const shouldShowInventoryMaterialSelect = isCargador(selectedMachine) || origin === 'Acopio Maquipaes';
-  const shouldShowTipoMateriaInput = !isCargador(selectedMachine) && origin !== 'Acopio Maquipaes';
+  // LÓGICA CORREGIDA: Determinar qué selector mostrar
+  const origenEsAcopio = esAcopio(origin);
+  const esCargadorMachine = isCargador(selectedMachine);
+  
+  // Mostrar selector de inventario solo para:
+  // 1. Cargadores (siempre usan materiales del acopio)
+  // 2. Cualquier máquina cuyo origen sea el acopio
+  const shouldShowInventoryMaterialSelect = esCargadorMachine || origenEsAcopio;
+  
+  // Mostrar selector estándar para volquetas/camiones que NO vienen del acopio
+  const shouldShowTipoMateriaInput = !esCargadorMachine && !origenEsAcopio && origin.trim() !== '';
+  
+  console.log('MaterialInputs - origenEsAcopio:', origenEsAcopio);
+  console.log('MaterialInputs - shouldShowInventoryMaterialSelect:', shouldShowInventoryMaterialSelect);
+  console.log('MaterialInputs - shouldShowTipoMateriaInput:', shouldShowTipoMateriaInput);
   
   // Obtener stock disponible del material seleccionado usando el inventario actual
   const materialSeleccionado = inventarioActual.find(item => item.tipo_material === tipoMateria);
@@ -76,14 +89,14 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <Wrench size={24} />
             <Label htmlFor="material-inventario" className="text-lg">
-              {isCargador(selectedMachine) 
+              {esCargadorMachine 
                 ? 'Material a Cargar (del Acopio)' 
                 : 'Material del Inventario'
               }
             </Label>
           </div>
           
-          {isCargador(selectedMachine) && (
+          {esCargadorMachine && (
             <Alert className="border-green-200 bg-green-50 mb-3">
               <Info className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
@@ -132,45 +145,47 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
         </div>
       )}
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Truck size={24} />
-          <Label htmlFor="cantidad-m3" className="text-lg">
-            {isCargador(selectedMachine) 
-              ? 'Cantidad de m³ Cargados'
-              : 'Cantidad de m³ Transportados'
-            }
-            {shouldShowInventoryMaterialSelect && tipoMateria && (
-              <span className={`text-sm ml-2 font-medium ${stockDisponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                (Disponibles: {stockDisponible} m³)
-              </span>
-            )}
-          </Label>
+      {(shouldShowInventoryMaterialSelect || shouldShowTipoMateriaInput) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Truck size={24} />
+            <Label htmlFor="cantidad-m3" className="text-lg">
+              {esCargadorMachine 
+                ? 'Cantidad de m³ Cargados'
+                : 'Cantidad de m³ Transportados'
+              }
+              {shouldShowInventoryMaterialSelect && tipoMateria && (
+                <span className={`text-sm ml-2 font-medium ${stockDisponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  (Disponibles: {stockDisponible} m³)
+                </span>
+              )}
+            </Label>
+          </div>
+          
+          {stockInsuficiente && shouldShowInventoryMaterialSelect && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-700 font-medium">
+                <strong>Stock insuficiente:</strong> Cantidad solicitada ({cantidadM3} m³) supera 
+                el stock disponible ({stockDisponible} m³)
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <Input 
+            id="cantidad-m3"
+            type="number"
+            min="0.1"
+            step="0.1"
+            max={shouldShowInventoryMaterialSelect && tipoMateria ? stockDisponible : undefined}
+            placeholder={esCargadorMachine ? "Ej: 6 (cantidad cargada)" : "Ej: 6"}
+            value={cantidadM3 === undefined ? '' : cantidadM3}
+            onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
+            className={`text-lg p-6 ${stockInsuficiente && shouldShowInventoryMaterialSelect ? 'border-red-300 focus:border-red-500' : ''}`}
+            required
+          />
         </div>
-        
-        {stockInsuficiente && shouldShowInventoryMaterialSelect && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700 font-medium">
-              <strong>Stock insuficiente:</strong> Cantidad solicitada ({cantidadM3} m³) supera 
-              el stock disponible ({stockDisponible} m³)
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <Input 
-          id="cantidad-m3"
-          type="number"
-          min="0.1"
-          step="0.1"
-          max={shouldShowInventoryMaterialSelect && tipoMateria ? stockDisponible : undefined}
-          placeholder={isCargador(selectedMachine) ? "Ej: 6 (cantidad cargada)" : "Ej: 6"}
-          value={cantidadM3 === undefined ? '' : cantidadM3}
-          onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
-          className={`text-lg p-6 ${stockInsuficiente && shouldShowInventoryMaterialSelect ? 'border-red-300 focus:border-red-500' : ''}`}
-          required
-        />
-      </div>
+      )}
     </>
   );
 };
