@@ -3,7 +3,7 @@ import { Report } from '@/types/report';
 import { getPrecioVentaMaterial } from '@/models/Materiales';
 import { loadTarifas } from '@/models/Tarifas';
 import { loadProductosProveedores } from '@/models/Proveedores';
-import { findTarifaCliente } from '@/models/TarifasCliente';
+import { findTarifaCliente, loadTarifasCliente } from '@/models/TarifasCliente';
 
 export const useVentaCalculations = () => {
   
@@ -14,7 +14,9 @@ export const useVentaCalculations = () => {
 
   const extractFincaFromDestination = (destination: string): string => {
     if (!destination) return '';
-    return destination.split(' - ')[1] || '';
+    const parts = destination.split(' - ');
+    // Si hay más de 2 partes, tomar desde la segunda hasta la última
+    return parts.slice(1).join(' - ') || '';
   };
 
   const determinarTipoVenta = (report: Report): 'Solo material' | 'Solo transporte' | 'Material + transporte' => {
@@ -73,12 +75,35 @@ export const useVentaCalculations = () => {
     // 1. PRIORIDAD MÁXIMA: Tarifa específica del cliente
     if (clienteNombre && origen) {
       console.log('🎯 Buscando tarifa específica del cliente...');
-      const tarifaCliente = findTarifaCliente(clienteNombre, finca, origen, `${clienteNombre} - ${finca || ''}`);
+      console.log('📋 Parámetros de búsqueda:', {
+        cliente: clienteNombre,
+        finca: finca,
+        origen: origen,
+        destino: `${clienteNombre}${finca ? ' - ' + finca : ''}`
+      });
       
-      if (tarifaCliente && tarifaCliente.valor_material_cliente_m3 && tarifaCliente.valor_material_cliente_m3 > 0) {
-        console.log('✅ Precio específico de cliente encontrado:', tarifaCliente.valor_material_cliente_m3);
-        console.log('📋 Tarifa utilizada:', tarifaCliente);
-        return tarifaCliente.valor_material_cliente_m3;
+      // Cargar todas las tarifas para debug
+      const todasLasTarifas = loadTarifasCliente();
+      console.log('📋 Total tarifas cliente en sistema:', todasLasTarifas.length);
+      console.log('📋 Tarifas disponibles:', todasLasTarifas.map(t => ({
+        cliente: t.cliente,
+        finca: t.finca,
+        origen: t.origen,
+        destino: t.destino,
+        tipo_servicio: t.tipo_servicio,
+        valor_material_cliente_m3: t.valor_material_cliente_m3
+      })));
+      
+      const tarifaCliente = findTarifaCliente(clienteNombre, finca, origen, `${clienteNombre}${finca ? ' - ' + finca : ''}`);
+      
+      if (tarifaCliente) {
+        console.log('✅ Tarifa específica encontrada:', tarifaCliente);
+        if (tarifaCliente.valor_material_cliente_m3 && tarifaCliente.valor_material_cliente_m3 > 0) {
+          console.log('✅ Precio específico de cliente encontrado:', tarifaCliente.valor_material_cliente_m3);
+          return tarifaCliente.valor_material_cliente_m3;
+        } else {
+          console.log('⚠️ Tarifa encontrada pero sin valor_material_cliente_m3');
+        }
       } else {
         console.log('⚠️ No se encontró tarifa específica del cliente');
       }
@@ -117,12 +142,23 @@ export const useVentaCalculations = () => {
     // 1. PRIORIDAD: Tarifa específica del cliente
     if (clienteNombre && report.origin && report.destination) {
       console.log('🎯 Buscando tarifa de flete específica del cliente...');
+      console.log('📋 Parámetros de búsqueda flete:', {
+        cliente: clienteNombre,
+        finca: finca,
+        origen: report.origin,
+        destino: report.destination
+      });
+      
       const tarifaCliente = findTarifaCliente(clienteNombre, finca, report.origin, report.destination);
       
-      if (tarifaCliente && tarifaCliente.valor_flete_m3 && tarifaCliente.valor_flete_m3 > 0) {
-        console.log('✅ Tarifa de flete específica encontrada:', tarifaCliente.valor_flete_m3);
-        console.log('📋 Tarifa utilizada:', tarifaCliente);
-        return tarifaCliente.valor_flete_m3;
+      if (tarifaCliente) {
+        console.log('✅ Tarifa de cliente encontrada para flete:', tarifaCliente);
+        if (tarifaCliente.valor_flete_m3 && tarifaCliente.valor_flete_m3 > 0) {
+          console.log('✅ Tarifa de flete específica encontrada:', tarifaCliente.valor_flete_m3);
+          return tarifaCliente.valor_flete_m3;
+        } else {
+          console.log('⚠️ Tarifa encontrada pero sin valor_flete_m3');
+        }
       } else {
         console.log('⚠️ No se encontró tarifa de flete específica del cliente');
       }

@@ -16,44 +16,70 @@ export const useVentaValidation = () => {
 
     console.log('🔍 Buscando cliente:', cliente);
     
-    // Primero búsqueda exacta
-    let clienteData = getClienteByName(cliente);
+    // Normalizar el nombre del cliente para búsqueda más flexible
+    const clienteNormalizado = cliente.toLowerCase().trim();
+    console.log('🔍 Cliente normalizado:', clienteNormalizado);
     
-    // Si no encuentra, buscar case-insensitive
-    if (!clienteData) {
-      console.log('🔍 Búsqueda exacta fallida, intentando case-insensitive...');
-      const todosClientes = loadClientes();
-      clienteData = todosClientes.find(c => 
-        c.nombre_cliente.toLowerCase() === cliente.toLowerCase()
-      );
-      
-      if (clienteData) {
-        console.log('✅ Cliente encontrado con búsqueda case-insensitive:', clienteData.nombre_cliente);
-      }
+    // Cargar todos los clientes
+    const todosClientes = loadClientes();
+    console.log('📋 Total clientes en sistema:', todosClientes.length);
+    console.log('📋 Nombres de clientes disponibles:', todosClientes.map(c => c.nombre_cliente));
+    
+    // 1. Búsqueda exacta
+    let clienteData = todosClientes.find(c => c.nombre_cliente === cliente);
+    
+    if (clienteData) {
+      console.log('✅ Cliente encontrado con búsqueda exacta:', clienteData.nombre_cliente);
+      return clienteData;
     }
     
-    // Si aún no encuentra, buscar por similitud parcial
-    if (!clienteData) {
-      console.log('🔍 Búsqueda case-insensitive fallida, intentando búsqueda parcial...');
-      const todosClientes = loadClientes();
-      clienteData = todosClientes.find(c => 
-        c.nombre_cliente.toLowerCase().includes(cliente.toLowerCase()) ||
-        cliente.toLowerCase().includes(c.nombre_cliente.toLowerCase())
-      );
-      
-      if (clienteData) {
-        console.log('✅ Cliente encontrado con búsqueda parcial:', clienteData.nombre_cliente);
-      }
+    // 2. Búsqueda case-insensitive
+    console.log('🔍 Búsqueda exacta fallida, intentando case-insensitive...');
+    clienteData = todosClientes.find(c => 
+      c.nombre_cliente.toLowerCase().trim() === clienteNormalizado
+    );
+    
+    if (clienteData) {
+      console.log('✅ Cliente encontrado con búsqueda case-insensitive:', clienteData.nombre_cliente);
+      return clienteData;
+    }
+    
+    // 3. Búsqueda parcial (contiene)
+    console.log('🔍 Búsqueda case-insensitive fallida, intentando búsqueda parcial...');
+    clienteData = todosClientes.find(c => {
+      const nombreClienteNormalizado = c.nombre_cliente.toLowerCase().trim();
+      return nombreClienteNormalizado.includes(clienteNormalizado) ||
+             clienteNormalizado.includes(nombreClienteNormalizado);
+    });
+    
+    if (clienteData) {
+      console.log('✅ Cliente encontrado con búsqueda parcial:', clienteData.nombre_cliente);
+      return clienteData;
     }
 
-    if (!clienteData) {
-      console.log('❌ Cliente no encontrado en la base de datos:', cliente);
-      console.log('📋 Clientes disponibles:', loadClientes().map(c => c.nombre_cliente));
-      return null;
+    // 4. Búsqueda por palabras clave
+    console.log('🔍 Búsqueda parcial fallida, intentando por palabras clave...');
+    const palabrasCliente = clienteNormalizado.split(/\s+/).filter(p => p.length > 2);
+    console.log('🔍 Palabras del cliente:', palabrasCliente);
+    
+    clienteData = todosClientes.find(c => {
+      const nombreClienteNormalizado = c.nombre_cliente.toLowerCase().trim();
+      return palabrasCliente.some(palabra => nombreClienteNormalizado.includes(palabra));
+    });
+    
+    if (clienteData) {
+      console.log('✅ Cliente encontrado con búsqueda por palabras clave:', clienteData.nombre_cliente);
+      return clienteData;
     }
 
-    console.log('✅ Cliente validado exitosamente:', clienteData);
-    return clienteData;
+    console.log('❌ Cliente no encontrado con ningún método de búsqueda');
+    console.log('📋 Búsquedas realizadas:');
+    console.log('  1. Exacta:', cliente);
+    console.log('  2. Case-insensitive:', clienteNormalizado);
+    console.log('  3. Parcial: contiene o está contenido');
+    console.log('  4. Palabras clave:', palabrasCliente.join(', '));
+    
+    return null;
   };
 
   const extractClienteInfo = (report: Report): { cliente: string; destino: string } => {
@@ -80,7 +106,11 @@ export const useVentaValidation = () => {
 
   const extractClienteFromDestination = (destination: string): string => {
     if (!destination) return '';
-    return destination.split(' - ')[0] || '';
+    // Extraer la primera parte antes del primer " - "
+    const parts = destination.split(' - ');
+    const cliente = parts[0] || '';
+    console.log('🔍 Extrayendo cliente de destino:', destination, '→', cliente);
+    return cliente.trim();
   };
 
   return {
