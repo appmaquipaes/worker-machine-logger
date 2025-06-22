@@ -13,6 +13,17 @@ export const useAutomaticSalesProcessing = () => {
     if (tiposQueGeneranVenta.includes(report.reportType)) {
       try {
         console.log('💼 Evaluando generación de venta automática para:', report.reportType);
+        console.log('📋 Datos del reporte completos:', {
+          tipo: report.reportType,
+          maquina: report.machineName,
+          origen: report.origin,
+          destino: report.destination,
+          descripcion: report.description,
+          cantidad: report.cantidadM3,
+          valor: report.value,
+          proveedor: report.proveedorNombre,
+          proveedorId: report.proveedorId
+        });
         
         let debeGenerarVenta = false;
         let razonDecision = '';
@@ -31,7 +42,7 @@ export const useAutomaticSalesProcessing = () => {
                                    report.machineName.toLowerCase().includes('camión');
           const origenEsAcopio = report.origin?.toLowerCase().includes('acopio maquipaes') || false;
           
-          console.log('📋 Análisis de máquina para nueva lógica:');
+          console.log('📋 Análisis de máquina para lógica de ventas:');
           console.log('- Es cargador:', esCargador);
           console.log('- Es volqueta/camión:', esVolquetaOCamion);
           console.log('- Origen es Acopio Maquipaes:', origenEsAcopio);
@@ -60,6 +71,14 @@ export const useAutomaticSalesProcessing = () => {
           
           if (ventaAutomatica) {
             console.log('💾 Guardando venta en localStorage...');
+            console.log('📋 Venta generada exitosamente:', {
+              id: ventaAutomatica.id,
+              cliente: ventaAutomatica.cliente,
+              tipo: ventaAutomatica.tipo_venta,
+              total: ventaAutomatica.total_venta,
+              detalles: ventaAutomatica.detalles.length
+            });
+            
             try {
               const ventasExistentes = loadVentas();
               console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
@@ -104,12 +123,17 @@ export const useAutomaticSalesProcessing = () => {
               }
             } catch (error) {
               console.error('❌ Error guardando venta:', error);
-              toast.error('❌ Error guardando la venta automática');
+              toast.error('❌ Error guardando la venta automática: ' + error.message);
             }
           } else {
             console.log('⚠️ No se pudo crear la venta automática');
-            toast.warning('⚠️ No se pudo generar la venta automática - revisa los datos', {
-              duration: 4000
+            console.log('💡 Posibles causas:');
+            console.log('- Cliente no encontrado en base de datos');
+            console.log('- Falta información de precios/tarifas');
+            console.log('- Error en validación de datos');
+            
+            toast.warning('⚠️ No se pudo generar la venta automática - revisa que el cliente exista y tenga tarifas configuradas', {
+              duration: 6000
             });
           }
         } else {
@@ -123,6 +147,7 @@ export const useAutomaticSalesProcessing = () => {
         }
       } catch (error) {
         console.error('❌ Error procesando venta automática:', error);
+        console.error('📋 Stack trace:', error.stack);
         toast.error('❌ Error procesando venta automática: ' + error.message);
       }
     }

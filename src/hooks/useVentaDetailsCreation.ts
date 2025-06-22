@@ -2,14 +2,18 @@
 import { Report } from '@/types/report';
 import { createDetalleVenta, DetalleVenta } from '@/models/Ventas';
 import { useVentaCalculations } from './useVentaCalculations';
+import { useVentaValidation } from './useVentaValidation';
 
 export const useVentaDetailsCreation = () => {
   const {
     determinarTipoVenta,
     extraerTipoMaterial,
     calcularPrecioMaterial,
-    calcularPrecioFlete
+    calcularPrecioFlete,
+    extractFincaFromDestination
   } = useVentaCalculations();
+  
+  const { extractClienteInfo } = useVentaValidation();
 
   const createEscombreraDetails = (report: Report): DetalleVenta[] => {
     const detalles = [];
@@ -63,14 +67,24 @@ export const useVentaDetailsCreation = () => {
     const tipoVenta = determinarTipoVenta(report);
     const cantidad = report.cantidadM3 || 0;
     
-    console.log('🚛 Procesando viaje - Tipo de venta:', tipoVenta);
+    // Extraer información del cliente para tarifas específicas
+    const { cliente } = extractClienteInfo(report);
+    const finca = extractFincaFromDestination(report.destination || '');
+    
+    console.log('🚛 Procesando viaje - Información del cliente:', { cliente, finca, tipoVenta });
     
     // Crear detalle de material si aplica
     if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
       const tipoMaterial = extraerTipoMaterial(report);
-      const precioMaterial = calcularPrecioMaterial(tipoMaterial, report.proveedorId);
+      const precioMaterial = calcularPrecioMaterial(
+        tipoMaterial, 
+        report.proveedorId, 
+        cliente, 
+        finca, 
+        report.origin
+      );
       
-      console.log('📦 Material:', { tipoMaterial, precioMaterial, cantidad });
+      console.log('📦 Material:', { tipoMaterial, precioMaterial, cantidad, fuente: 'cliente/proveedor/genérico' });
       
       if (precioMaterial > 0 && cantidad > 0) {
         const detalleMaterial = createDetalleVenta(
@@ -81,14 +95,16 @@ export const useVentaDetailsCreation = () => {
         );
         detalles.push(detalleMaterial);
         console.log('💰 Detalle material creado:', detalleMaterial);
+      } else {
+        console.log('⚠️ Material no agregado - precio o cantidad es 0');
       }
     }
 
     // Crear detalle de flete si aplica
     if (tipoVenta === 'Solo transporte' || tipoVenta === 'Material + transporte') {
-      const precioFlete = calcularPrecioFlete(report, cantidad);
+      const precioFlete = calcularPrecioFlete(report, cantidad, cliente, finca);
       
-      console.log('🚚 Flete:', { precioFlete, cantidad });
+      console.log('🚚 Flete:', { precioFlete, cantidad, fuente: 'cliente/genérico' });
 
       if (precioFlete > 0 && cantidad > 0) {
         const detalleFlete = createDetalleVenta(
@@ -99,6 +115,8 @@ export const useVentaDetailsCreation = () => {
         );
         detalles.push(detalleFlete);
         console.log('🚚 Detalle flete creado:', detalleFlete);
+      } else {
+        console.log('⚠️ Flete no agregado - precio o cantidad es 0');
       }
     }
     
@@ -106,6 +124,15 @@ export const useVentaDetailsCreation = () => {
   };
 
   const createVentaDetails = (report: Report): DetalleVenta[] => {
+    console.log('📋 Creando detalles de venta para reporte:', {
+      tipo: report.reportType,
+      maquina: report.machineName,
+      origen: report.origin,
+      destino: report.destination,
+      descripcion: report.description,
+      cantidad: report.cantidadM3
+    });
+
     if (report.reportType === 'Recepción Escombrera') {
       return createEscombreraDetails(report);
     } else if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
