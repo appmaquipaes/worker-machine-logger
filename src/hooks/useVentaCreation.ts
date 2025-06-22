@@ -15,17 +15,20 @@ export const useVentaCreation = () => {
 
   const crearVentaAutomatica = (report: Report): Venta | null => {
     try {
-      console.log('🔄 Creando venta automática con nueva lógica simplificada');
+      console.log('🔄 Creando venta automática con lógica ampliada');
       console.log('📋 Reporte:', {
         machine: report.machineName,
         tipo: report.reportType,
         origen: report.origin,
         destino: report.destination,
-        cantidad: report.cantidadM3
+        cantidad: report.cantidadM3,
+        horas: report.hours,
+        workSite: report.workSite
       });
 
-      // Procesar reportes de tipo "Viajes" y "Recepción Escombrera"
-      if (report.reportType !== 'Viajes' && report.reportType !== 'Recepción Escombrera') {
+      // Procesar reportes de tipo "Viajes", "Recepción Escombrera", "Horas Trabajadas" y "Horas Extras"
+      const tiposValidos = ['Viajes', 'Recepción Escombrera', 'Horas Trabajadas', 'Horas Extras'];
+      if (!tiposValidos.includes(report.reportType)) {
         console.log('❌ Tipo de reporte no válido para venta automática');
         return null;
       }
@@ -36,6 +39,10 @@ export const useVentaCreation = () => {
       if (report.reportType === 'Recepción Escombrera') {
         cliente = report.clienteEscombrera || report.destination || '';
         destino = 'Escombrera MAQUIPAES';
+      } else if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
+        // Para horas trabajadas, extraer cliente del workSite
+        cliente = extractClienteFromDestination(report.workSite || '');
+        destino = report.workSite || '';
       } else {
         cliente = extractClienteFromDestination(report.destination || '');
         destino = report.destination || '';
@@ -53,19 +60,29 @@ export const useVentaCreation = () => {
         return null;
       }
 
-      const tipoVenta = determinarTipoVenta(report);
+      let tipoVenta = '';
       const fechaVenta = report.reportDate;
       
-      // Para escombrera, usar cantidad de volquetas como cantidad
-      const cantidad = report.reportType === 'Recepción Escombrera' 
-        ? (report.cantidadVolquetas || 0) 
-        : (report.cantidadM3 || 0);
+      // Determinar tipo de venta según el tipo de reporte
+      if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
+        tipoVenta = 'Solo transporte'; // Las horas se cobran como servicio de transporte
+      } else {
+        tipoVenta = determinarTipoVenta(report);
+      }
+      
+      // Para horas trabajadas, usar las horas como cantidad
+      const cantidad = (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') 
+        ? (report.hours || 0)
+        : report.reportType === 'Recepción Escombrera' 
+          ? (report.cantidadVolquetas || 0) 
+          : (report.cantidadM3 || 0);
 
       console.log('💰 Datos para venta:', {
         cliente,
         tipoVenta,
         cantidad,
-        fechaVenta
+        fechaVenta,
+        tipoReporte: report.reportType
       });
 
       // Crear la venta base
@@ -77,12 +94,12 @@ export const useVentaCreation = () => {
         report.origin || '',
         destino,
         'Efectivo',
-        `Venta automática generada desde reporte de ${report.machineName} (Nueva lógica simplificada)`
+        `Venta automática generada desde reporte de ${report.machineName} - ${report.reportType}`
       );
 
       const detalles = [];
 
-      // Para escombrera, solo agregar servicio de recepción
+      // Procesar según el tipo de reporte
       if (report.reportType === 'Recepción Escombrera') {
         const tipoVolqueta = report.tipoVolqueta || 'Sencilla';
         const cantidadVolquetas = report.cantidadVolquetas || 0;
@@ -98,8 +115,30 @@ export const useVentaCreation = () => {
           );
           detalles.push(detalleRecepcion);
         }
+      } else if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
+        // Generar detalle de venta para horas trabajadas
+        if (report.hours && report.hours > 0) {
+          // Usar el valor calculado del reporte o una tarifa base
+          const valorPorHora = report.value && report.value > 0 
+            ? report.value / report.hours 
+            : 50000; // Valor por defecto si no hay tarifa
+          
+          const detalleHoras = createDetalleVenta(
+            'Flete',
+            `${report.reportType} - ${report.machineName}`,
+            report.hours,
+            valorPorHora
+          );
+          detalles.push(detalleHoras);
+          
+          console.log('⏰ Detalle de horas creado:', {
+            horas: report.hours,
+            valorPorHora,
+            subtotal: detalleHoras.subtotal
+          });
+        }
       } else {
-        // Si incluye material, agregar detalle de material
+        // Lógica existente para viajes
         if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
           const tipoMaterial = extraerTipoMaterial(report);
           const precioMaterial = calcularPrecioMaterial(tipoMaterial, report.proveedorId);
@@ -121,7 +160,6 @@ export const useVentaCreation = () => {
           }
         }
 
-        // Si incluye transporte, agregar detalle de flete
         if (tipoVenta === 'Solo transporte' || tipoVenta === 'Material + transporte') {
           const precioFlete = calcularPrecioFlete(report, cantidad);
 
@@ -150,7 +188,7 @@ export const useVentaCreation = () => {
           tipo: tipoVenta,
           total: nuevaVenta.total_venta,
           detalles: detalles.length,
-          proveedorUsado: report.proveedorNombre || 'No específico'
+          tipoReporte: report.reportType
         });
         
         console.log('💾 Guardando venta en localStorage...');

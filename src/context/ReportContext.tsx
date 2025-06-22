@@ -161,40 +161,54 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS
-    if (newReport.reportType === 'Viajes' && newReport.destination) {
+    // LÓGICA DE GENERACIÓN DE VENTAS AMPLIADA - INCLUYE HORAS TRABAJADAS
+    const tiposQueGeneranVenta = ['Viajes', 'Horas Trabajadas', 'Horas Extras'];
+    
+    if (tiposQueGeneranVenta.includes(newReport.reportType)) {
       try {
-        console.log('💼 Evaluando generación de venta con nueva lógica simplificada...');
-        
-        const esCargador = newReport.machineName.toLowerCase().includes('cargador');
-        const esVolqueta = newReport.machineName.toLowerCase().includes('volqueta') || 
-                         newReport.machineName.toLowerCase().includes('camión');
-        const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio') || false;
-        
-        console.log('📋 Análisis de máquina:');
-        console.log('- Es cargador:', esCargador);
-        console.log('- Es volqueta/camión:', esVolqueta);
-        console.log('- Origen es acopio:', origenEsAcopio);
+        console.log('💼 Evaluando generación de venta automática para:', newReport.reportType);
         
         let debeGenerarVenta = false;
         let razonDecision = '';
         
-        if (esCargador) {
-          // CARGADORES: Siempre generan venta
-          debeGenerarVenta = true;
-          razonDecision = 'Cargador siempre genera venta automática';
-        } else if (esVolqueta && !origenEsAcopio) {
-          // VOLQUETAS: Solo si NO vienen del acopio
-          debeGenerarVenta = true;
-          razonDecision = 'Volqueta desde origen distinto al acopio';
-        } else if (esVolqueta && origenEsAcopio) {
-          // VOLQUETAS desde acopio: NO generar venta
-          debeGenerarVenta = false;
-          razonDecision = 'Volqueta desde acopio - no generar venta (evitar duplicación)';
-        } else {
-          // Otras máquinas: mantener lógica actual
-          debeGenerarVenta = true;
-          razonDecision = 'Otra máquina - generar venta';
+        if (newReport.reportType === 'Horas Trabajadas' || newReport.reportType === 'Horas Extras') {
+          // HORAS TRABAJADAS/EXTRAS: Siempre generar venta si hay cliente
+          if (newReport.workSite || newReport.destination) {
+            debeGenerarVenta = true;
+            razonDecision = `${newReport.reportType} - generar venta automática por horas`;
+          } else {
+            debeGenerarVenta = false;
+            razonDecision = `${newReport.reportType} - falta información del cliente`;
+          }
+        } else if (newReport.reportType === 'Viajes' && newReport.destination) {
+          // VIAJES: Lógica existente
+          const esCargador = newReport.machineName.toLowerCase().includes('cargador');
+          const esVolqueta = newReport.machineName.toLowerCase().includes('volqueta') || 
+                           newReport.machineName.toLowerCase().includes('camión');
+          const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio') || false;
+          
+          console.log('📋 Análisis de máquina:');
+          console.log('- Es cargador:', esCargador);
+          console.log('- Es volqueta/camión:', esVolqueta);
+          console.log('- Origen es acopio:', origenEsAcopio);
+          
+          if (esCargador) {
+            // CARGADORES: Siempre generan venta
+            debeGenerarVenta = true;
+            razonDecision = 'Cargador siempre genera venta automática';
+          } else if (esVolqueta && !origenEsAcopio) {
+            // VOLQUETAS: Solo si NO vienen del acopio
+            debeGenerarVenta = true;
+            razonDecision = 'Volqueta desde origen distinto al acopio';
+          } else if (esVolqueta && origenEsAcopio) {
+            // VOLQUETAS desde acopio: NO generar venta
+            debeGenerarVenta = false;
+            razonDecision = 'Volqueta desde acopio - no generar venta (evitar duplicación)';
+          } else {
+            // Otras máquinas: mantener lógica actual
+            debeGenerarVenta = true;
+            razonDecision = 'Otra máquina - generar venta';
+          }
         }
         
         console.log('🎯 Decisión final:', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
