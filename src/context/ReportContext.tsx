@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { parseStoredReports, filterReports } from '@/utils/reportUtils';
@@ -161,7 +162,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // LÓGICA DE GENERACIÓN DE VENTAS SIMPLIFICADA Y MEJORADA
+    // LÓGICA DE GENERACIÓN DE VENTAS CORREGIDA
     const tiposQueGeneranVenta = ['Viajes', 'Horas Trabajadas', 'Horas Extras'];
     
     if (tiposQueGeneranVenta.includes(newReport.reportType)) {
@@ -222,37 +223,60 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           const ventaAutomatica = crearVentaAutomatica(newReport);
           
           if (ventaAutomatica) {
-            // ASEGURAR GUARDADO DE LA VENTA
             console.log('💾 Guardando venta en localStorage...');
             try {
               const ventasExistentes = loadVentas();
               console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
               
-              const nuevasVentas = [...ventasExistentes, ventaAutomatica];
-              console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
-              
-              saveVentas(nuevasVentas);
-              console.log('✅ Venta guardada exitosamente en localStorage');
-              
-              // Verificar que se guardó correctamente
-              const ventasVerificacion = loadVentas();
-              console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
-              
-              console.log('✓ Venta automática creada y guardada');
-              toast.success('💰 Venta automática generada exitosamente', {
-                duration: 4000,
-                style: {
-                  fontSize: '14px',
-                  backgroundColor: '#059669',
-                  color: 'white'
+              // CORRECCIÓN: Verificar duplicados antes de agregar
+              const ventaExistente = ventasExistentes.find(v => 
+                v.cliente === ventaAutomatica.cliente &&
+                new Date(v.fecha).toDateString() === new Date(ventaAutomatica.fecha).toDateString() &&
+                v.observaciones?.includes('Venta automática') &&
+                Math.abs(v.total_venta - ventaAutomatica.total_venta) < 100 // Tolerancia de $100
+              );
+
+              if (ventaExistente) {
+                console.log('⚠️ Venta similar ya existe, no se duplica:', ventaExistente);
+                toast.info('ℹ️ Venta similar ya registrada, no se duplicó', {
+                  duration: 3000
+                });
+              } else {
+                const nuevasVentas = [...ventasExistentes, ventaAutomatica];
+                console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
+                
+                saveVentas(nuevasVentas);
+                console.log('✅ Venta guardada exitosamente en localStorage');
+                
+                // Verificar que se guardó correctamente
+                const ventasVerificacion = loadVentas();
+                console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
+                
+                const ventaGuardada = ventasVerificacion.find(v => v.id === ventaAutomatica.id);
+                if (ventaGuardada) {
+                  console.log('✓ Venta automática creada y guardada exitosamente');
+                  toast.success('💰 Venta automática generada y guardada exitosamente', {
+                    duration: 5000,
+                    style: {
+                      fontSize: '14px',
+                      backgroundColor: '#059669',
+                      color: 'white'
+                    }
+                  });
+                } else {
+                  console.error('❌ Error: Venta no se encontró después del guardado');
+                  toast.error('❌ Error guardando la venta automática');
                 }
-              });
+              }
             } catch (error) {
               console.error('❌ Error guardando venta:', error);
-              toast.error('Error guardando la venta automática');
+              toast.error('❌ Error guardando la venta automática');
             }
           } else {
             console.log('⚠️ No se pudo crear la venta automática');
+            toast.warning('⚠️ No se pudo generar la venta automática - revisa los datos', {
+              duration: 4000
+            });
           }
         } else {
           console.log('ℹ️ Venta no generada por lógica de negocio');
@@ -264,7 +288,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           });
         }
       } catch (error) {
-        console.error('Error procesando venta automática:', error);
+        console.error('❌ Error procesando venta automática:', error);
+        toast.error('❌ Error procesando venta automática: ' + error.message);
       }
     }
 

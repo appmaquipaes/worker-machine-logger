@@ -48,6 +48,9 @@ export const useVentaCreation = () => {
         destino = report.destination || '';
       }
       
+      console.log('👤 Cliente extraído:', cliente);
+      console.log('📍 Destino asignado:', destino);
+      
       if (!cliente) {
         console.log('❌ No se pudo extraer cliente del reporte');
         return null;
@@ -59,6 +62,8 @@ export const useVentaCreation = () => {
         console.log('❌ Cliente no encontrado en la base de datos:', cliente);
         return null;
       }
+
+      console.log('✅ Cliente encontrado:', clienteData);
 
       let tipoVenta = '';
       const fechaVenta = report.reportDate;
@@ -97,6 +102,8 @@ export const useVentaCreation = () => {
         `Venta automática generada desde reporte de ${report.machineName} - ${report.reportType}`
       );
 
+      console.log('📋 Venta base creada:', nuevaVenta);
+
       const detalles = [];
 
       // Procesar según el tipo de reporte
@@ -114,6 +121,7 @@ export const useVentaCreation = () => {
             valorUnitario
           );
           detalles.push(detalleRecepcion);
+          console.log('🏗 Detalle escombrera creado:', detalleRecepcion);
         }
       } else if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
         // Generar detalle de venta para horas trabajadas
@@ -139,9 +147,13 @@ export const useVentaCreation = () => {
         }
       } else {
         // Lógica existente para viajes
+        console.log('🚛 Procesando viaje - Tipo de venta:', tipoVenta);
+        
         if (tipoVenta === 'Solo material' || tipoVenta === 'Material + transporte') {
           const tipoMaterial = extraerTipoMaterial(report);
           const precioMaterial = calcularPrecioMaterial(tipoMaterial, report.proveedorId);
+          
+          console.log('📦 Material:', { tipoMaterial, precioMaterial, cantidad });
           
           if (precioMaterial > 0 && cantidad > 0) {
             const detalleMaterial = createDetalleVenta(
@@ -152,16 +164,14 @@ export const useVentaCreation = () => {
             );
             detalles.push(detalleMaterial);
             
-            console.log('💰 Precio material calculado:', {
-              material: tipoMaterial,
-              proveedor: report.proveedorNombre || 'Genérico',
-              precio: precioMaterial
-            });
+            console.log('💰 Detalle material creado:', detalleMaterial);
           }
         }
 
         if (tipoVenta === 'Solo transporte' || tipoVenta === 'Material + transporte') {
           const precioFlete = calcularPrecioFlete(report, cantidad);
+          
+          console.log('🚚 Flete:', { precioFlete, cantidad });
 
           if (precioFlete > 0 && cantidad > 0) {
             const detalleFlete = createDetalleVenta(
@@ -171,6 +181,8 @@ export const useVentaCreation = () => {
               precioFlete
             );
             detalles.push(detalleFlete);
+            
+            console.log('🚚 Detalle flete creado:', detalleFlete);
           }
         }
       }
@@ -178,12 +190,17 @@ export const useVentaCreation = () => {
       // Agregar detalles a la venta
       nuevaVenta.detalles = detalles;
       
+      console.log('📋 Detalles agregados a la venta:', detalles.length);
+
       // Calcular total
       nuevaVenta = updateVentaTotal(nuevaVenta);
+
+      console.log('💰 Total calculado:', nuevaVenta.total_venta);
 
       // Solo crear la venta si tiene valor mayor a 0
       if (nuevaVenta.total_venta > 0) {
         console.log('✅ Venta automática creada exitosamente:', {
+          id: nuevaVenta.id,
           cliente,
           tipo: tipoVenta,
           total: nuevaVenta.total_venta,
@@ -191,7 +208,6 @@ export const useVentaCreation = () => {
           tipoReporte: report.reportType
         });
         
-        console.log('💾 Guardando venta en localStorage...');
         return nuevaVenta;
       }
 
