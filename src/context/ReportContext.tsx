@@ -161,7 +161,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // LÓGICA DE GENERACIÓN DE VENTAS CORREGIDA
+    // LÓGICA DE GENERACIÓN DE VENTAS SIMPLIFICADA Y MEJORADA
     const tiposQueGeneranVenta = ['Viajes', 'Horas Trabajadas', 'Horas Extras'];
     
     if (tiposQueGeneranVenta.includes(newReport.reportType)) {
@@ -181,26 +181,36 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
             razonDecision = `${newReport.reportType} - falta información del cliente`;
           }
         } else if (newReport.reportType === 'Viajes' && newReport.destination) {
-          // VIAJES: Lógica corregida - TODOS los viajes con destino generan venta
+          // VIAJES: LÓGICA SIMPLIFICADA Y MEJORADA
           const esCargador = newReport.machineName.toLowerCase().includes('cargador');
+          const esVolquetaOCamion = newReport.machineName.toLowerCase().includes('volqueta') || 
+                                   newReport.machineName.toLowerCase().includes('camión');
+          const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio maquipaes') || false;
           
-          console.log('📋 Análisis de máquina:');
+          console.log('📋 Análisis de máquina para nueva lógica:');
           console.log('- Es cargador:', esCargador);
+          console.log('- Es volqueta/camión:', esVolquetaOCamion);
+          console.log('- Origen es Acopio Maquipaes:', origenEsAcopio);
           console.log('- Máquina:', newReport.machineName);
           console.log('- Origen:', newReport.origin);
           console.log('- Destino:', newReport.destination);
           
-          // LÓGICA CORREGIDA: Todos los viajes con destino válido generan venta
-          if (newReport.destination && newReport.destination.trim() !== '') {
+          if (esCargador) {
+            // CARGADORES: Siempre generan venta
             debeGenerarVenta = true;
-            if (esCargador) {
-              razonDecision = 'Cargador - generar venta automática';
-            } else {
-              razonDecision = 'Viaje con destino válido - generar venta automática';
-            }
-          } else {
+            razonDecision = 'Cargador - siempre genera venta automática';
+          } else if (esVolquetaOCamion && origenEsAcopio) {
+            // VOLQUETAS/CAMIONES desde Acopio Maquipaes: NO generar venta
             debeGenerarVenta = false;
-            razonDecision = 'Viaje sin destino válido - no generar venta';
+            razonDecision = 'Volqueta/Camión desde Acopio Maquipaes - NO generar venta (evitar duplicación)';
+          } else if (esVolquetaOCamion && !origenEsAcopio) {
+            // VOLQUETAS/CAMIONES desde otro origen: SÍ generar venta
+            debeGenerarVenta = true;
+            razonDecision = 'Volqueta/Camión desde origen distinto a Acopio Maquipaes - generar venta automática';
+          } else {
+            // Otras máquinas: generar venta si hay destino válido
+            debeGenerarVenta = true;
+            razonDecision = 'Otra máquina con destino válido - generar venta automática';
           }
         }
         
