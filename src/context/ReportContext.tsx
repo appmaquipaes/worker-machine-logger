@@ -205,20 +205,35 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
           const ventaAutomatica = crearVentaAutomatica(newReport);
           
           if (ventaAutomatica) {
-            // Guardar la venta
-            const ventasExistentes = loadVentas();
-            const nuevasVentas = [...ventasExistentes, ventaAutomatica];
-            saveVentas(nuevasVentas);
-            
-            console.log('✓ Venta automática creada y guardada');
-            toast.success('💰 Venta automática generada exitosamente', {
-              duration: 4000,
-              style: {
-                fontSize: '14px',
-                backgroundColor: '#059669',
-                color: 'white'
-              }
-            });
+            // ASEGURAR GUARDADO DE LA VENTA
+            console.log('💾 Guardando venta en localStorage...');
+            try {
+              const ventasExistentes = loadVentas();
+              console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
+              
+              const nuevasVentas = [...ventasExistentes, ventaAutomatica];
+              console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
+              
+              saveVentas(nuevasVentas);
+              console.log('✅ Venta guardada exitosamente en localStorage');
+              
+              // Verificar que se guardó correctamente
+              const ventasVerificacion = loadVentas();
+              console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
+              
+              console.log('✓ Venta automática creada y guardada');
+              toast.success('💰 Venta automática generada exitosamente', {
+                duration: 4000,
+                style: {
+                  fontSize: '14px',
+                  backgroundColor: '#059669',
+                  color: 'white'
+                }
+              });
+            } catch (error) {
+              console.error('❌ Error guardando venta:', error);
+              toast.error('Error guardando la venta automática');
+            }
           } else {
             console.log('⚠️ No se pudo crear la venta automática');
           }

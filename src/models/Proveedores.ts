@@ -1,4 +1,3 @@
-
 // Model for material providers and their associated products
 
 export interface Proveedor {
@@ -24,43 +23,92 @@ export interface ProductoProveedor {
   observaciones?: string;
 }
 
-// Load providers from localStorage
+// Load providers from localStorage with enhanced error handling
 export const loadProveedores = (): Proveedor[] => {
-  const proveedoresString = localStorage.getItem('proveedores');
-  if (!proveedoresString) return [];
-
   try {
-    return JSON.parse(proveedoresString).map((proveedor: any) => ({
+    console.log('📂 Cargando proveedores...');
+    const proveedoresString = localStorage.getItem('proveedores');
+    
+    if (!proveedoresString) {
+      console.log('ℹ️ No hay proveedores almacenados');
+      return [];
+    }
+
+    const parsedProveedores = JSON.parse(proveedoresString).map((proveedor: any) => ({
       ...proveedor,
       fecha_registro: new Date(proveedor.fecha_registro)
     }));
+    
+    console.log('✅ Proveedores cargados exitosamente:', parsedProveedores.length);
+    return parsedProveedores;
   } catch (error) {
-    console.error('Error loading providers:', error);
+    console.error('❌ Error loading providers:', error);
     return [];
   }
 };
 
-// Save providers to localStorage
-export const saveProveedores = (proveedores: Proveedor[]): void => {
-  localStorage.setItem('proveedores', JSON.stringify(proveedores));
-};
-
-// Load products from localStorage
-export const loadProductosProveedores = (): ProductoProveedor[] => {
-  const productosString = localStorage.getItem('productos_proveedores');
-  if (!productosString) return [];
-
+// Save providers to localStorage with enhanced error handling
+export const saveProveedores = (proveedores: Proveedor[]): boolean => {
   try {
-    return JSON.parse(productosString);
+    console.log('💾 Guardando proveedores...', proveedores.length);
+    const serializedData = JSON.stringify(proveedores);
+    localStorage.setItem('proveedores', serializedData);
+    
+    // Verificar que se guardó correctamente
+    const verificacion = localStorage.getItem('proveedores');
+    if (verificacion) {
+      console.log('✅ Proveedores guardados exitosamente');
+      return true;
+    } else {
+      console.error('❌ Error: No se pudo verificar el guardado de proveedores');
+      return false;
+    }
   } catch (error) {
-    console.error('Error loading provider products:', error);
+    console.error('❌ Error saving providers:', error);
+    return false;
+  }
+};
+
+// Load products from localStorage with enhanced error handling
+export const loadProductosProveedores = (): ProductoProveedor[] => {
+  try {
+    console.log('📂 Cargando productos de proveedores...');
+    const productosString = localStorage.getItem('productos_proveedores');
+    
+    if (!productosString) {
+      console.log('ℹ️ No hay productos de proveedores almacenados');
+      return [];
+    }
+
+    const parsedProductos = JSON.parse(productosString);
+    console.log('✅ Productos de proveedores cargados exitosamente:', parsedProductos.length);
+    return parsedProductos;
+  } catch (error) {
+    console.error('❌ Error loading provider products:', error);
     return [];
   }
 };
 
-// Save products to localStorage
-export const saveProductosProveedores = (productos: ProductoProveedor[]): void => {
-  localStorage.setItem('productos_proveedores', JSON.stringify(productos));
+// Save products to localStorage with enhanced error handling
+export const saveProductosProveedores = (productos: ProductoProveedor[]): boolean => {
+  try {
+    console.log('💾 Guardando productos de proveedores...', productos.length);
+    const serializedData = JSON.stringify(productos);
+    localStorage.setItem('productos_proveedores', serializedData);
+    
+    // Verificar que se guardó correctamente
+    const verificacion = localStorage.getItem('productos_proveedores');
+    if (verificacion) {
+      console.log('✅ Productos de proveedores guardados exitosamente');
+      return true;
+    } else {
+      console.error('❌ Error: No se pudo verificar el guardado de productos');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error saving provider products:', error);
+    return false;
+  }
 };
 
 // Create a new provider

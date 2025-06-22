@@ -153,6 +153,7 @@ export const useVentaCreation = () => {
           proveedorUsado: report.proveedorNombre || 'No específico'
         });
         
+        console.log('💾 Guardando venta en localStorage...');
         return nuevaVenta;
       }
 
