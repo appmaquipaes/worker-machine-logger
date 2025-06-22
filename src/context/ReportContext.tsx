@@ -1,14 +1,9 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
-import { parseStoredReports, filterReports } from '@/utils/reportUtils';
 import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
-import { useAutoVentas } from '@/hooks/useAutoVentas';
-import { useInventarioOperations } from '@/hooks/useInventarioOperations';
-import { useVentaCreation } from '@/hooks/useVentaCreation';
-import { loadVentas, saveVentas } from '@/models/Ventas';
-import { toast } from "sonner";
+import { useReportPersistence } from '@/hooks/useReportPersistence';
+import { useReportAutoProcessing } from '@/hooks/useReportAutoProcessing';
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
@@ -28,24 +23,14 @@ interface ReportProviderProps {
 }
 
 export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
-  const [reports, setReports] = useState<Report[]>([]);
+  const { reports, saveReports, updateReport, deleteReport, getFilteredReports } = useReportPersistence();
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
-  const { procesarReporteParaVenta } = useAutoVentas();
-  const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
-  const { crearVentaAutomatica } = useVentaCreation();
-
-  useEffect(() => {
-    const storedReports = localStorage.getItem('reports');
-    if (storedReports) {
-      const parsedReports = parseStoredReports(storedReports);
-      setReports(parsedReports);
-    }
-  }, []);
-
-  const saveReports = (newReports: Report[]) => {
-    setReports(newReports);
-    localStorage.setItem('reports', JSON.stringify(newReports));
-  };
+  const { 
+    processInventoryUpdate, 
+    processAutomaticSales, 
+    processEscombreraReport, 
+    validateInventoryOperation 
+  } = useReportAutoProcessing();
 
   const addReport = (
     machineId: string,
@@ -75,35 +60,9 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       console.log('🏭 Proveedor identificado:', proveedorNombre, '(ID:', proveedorId, ')');
     }
 
-    // VALIDACIÓN DE INVENTARIO MEJORADA: Solo para cargadores
-    if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
-      const esOrigenAcopio = origin.toLowerCase().includes('acopio');
-      const esCargador = machineName.toLowerCase().includes('cargador');
-      
-      console.log('🔍 Validando inventario:');
-      console.log('- Es origen acopio:', esOrigenAcopio);
-      console.log('- Es cargador:', esCargador);
-      console.log('- Origen original:', origin);
-      
-      // Solo validar stock si es cargador saliendo del acopio
-      if (esOrigenAcopio && esCargador) {
-        console.log('→ Validando stock para cargador saliendo del acopio');
-        const validacion = validarOperacion(description, cantidadM3, 'salida');
-        if (!validacion.esValida) {
-          console.log('❌ Validación de stock fallida:', validacion.mensaje);
-          toast.error(`❌ ${validacion.mensaje}`, {
-            duration: 6000,
-            style: {
-              fontSize: '16px',
-              fontWeight: 'bold',
-            }
-          });
-          return;
-        }
-        console.log('✅ Validación de stock exitosa para cargador');
-      } else if (esOrigenAcopio && !esCargador) {
-        console.log('ℹ️ Volqueta desde acopio - sin validación de stock (no descuenta inventario)');
-      }
+    // Validar inventario antes de crear el reporte
+    if (!validateInventoryOperation(reportType, origin, destination, cantidadM3, description, machineName)) {
+      return;
     }
 
     // Crear el reporte con información de proveedor mejorada
@@ -137,193 +96,14 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
 
-    // PROCESAR INVENTARIO PRIMERO (para todas las máquinas)
-    if (newReport.reportType === 'Viajes' && (newReport.origin || newReport.destination)) {
-      console.log('🏭 Iniciando procesamiento de inventario...');
-      try {
-        const resultadoInventario = procesarReporteInventario(newReport);
-        console.log('📊 Resultado procesamiento inventario:', resultadoInventario);
-        
-        if (resultadoInventario.exito) {
-          console.log('✅ Inventario actualizado exitosamente');
-          toast.success(`✅ Inventario actualizado: ${resultadoInventario.mensaje}`, {
-            duration: 4000,
-            style: {
-              fontSize: '14px',
-              backgroundColor: '#22c55e',
-              color: 'white'
-            }
-          });
-        } else {
-          console.log('⚠ No se procesó inventario:', resultadoInventario.mensaje);
-        }
-      } catch (error) {
-        console.error('❌ Error procesando inventario:', error);
-      }
-    }
+    // Procesar inventario
+    processInventoryUpdate(newReport);
 
-    // LÓGICA DE GENERACIÓN DE VENTAS CORREGIDA
-    const tiposQueGeneranVenta = ['Viajes', 'Horas Trabajadas', 'Horas Extras'];
-    
-    if (tiposQueGeneranVenta.includes(newReport.reportType)) {
-      try {
-        console.log('💼 Evaluando generación de venta automática para:', newReport.reportType);
-        
-        let debeGenerarVenta = false;
-        let razonDecision = '';
-        
-        if (newReport.reportType === 'Horas Trabajadas' || newReport.reportType === 'Horas Extras') {
-          // HORAS TRABAJADAS/EXTRAS: Siempre generar venta si hay cliente
-          if (newReport.workSite || newReport.destination) {
-            debeGenerarVenta = true;
-            razonDecision = `${newReport.reportType} - generar venta automática por horas`;
-          } else {
-            debeGenerarVenta = false;
-            razonDecision = `${newReport.reportType} - falta información del cliente`;
-          }
-        } else if (newReport.reportType === 'Viajes' && newReport.destination) {
-          // VIAJES: LÓGICA SIMPLIFICADA Y MEJORADA
-          const esCargador = newReport.machineName.toLowerCase().includes('cargador');
-          const esVolquetaOCamion = newReport.machineName.toLowerCase().includes('volqueta') || 
-                                   newReport.machineName.toLowerCase().includes('camión');
-          const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio maquipaes') || false;
-          
-          console.log('📋 Análisis de máquina para nueva lógica:');
-          console.log('- Es cargador:', esCargador);
-          console.log('- Es volqueta/camión:', esVolquetaOCamion);
-          console.log('- Origen es Acopio Maquipaes:', origenEsAcopio);
-          console.log('- Máquina:', newReport.machineName);
-          console.log('- Origen:', newReport.origin);
-          console.log('- Destino:', newReport.destination);
-          
-          if (esCargador) {
-            // CARGADORES: Siempre generan venta
-            debeGenerarVenta = true;
-            razonDecision = 'Cargador - siempre genera venta automática';
-          } else if (esVolquetaOCamion && origenEsAcopio) {
-            // VOLQUETAS/CAMIONES desde Acopio Maquipaes: NO generar venta
-            debeGenerarVenta = false;
-            razonDecision = 'Volqueta/Camión desde Acopio Maquipaes - NO generar venta (evitar duplicación)';
-          } else if (esVolquetaOCamion && !origenEsAcopio) {
-            // VOLQUETAS/CAMIONES desde otro origen: SÍ generar venta
-            debeGenerarVenta = true;
-            razonDecision = 'Volqueta/Camión desde origen distinto a Acopio Maquipaes - generar venta automática';
-          } else {
-            // Otras máquinas: generar venta si hay destino válido
-            debeGenerarVenta = true;
-            razonDecision = 'Otra máquina con destino válido - generar venta automática';
-          }
-        }
-        
-        console.log('🎯 Decisión final:', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
-        console.log('📝 Razón:', razonDecision);
-        
-        if (debeGenerarVenta) {
-          console.log('💰 Generando venta automática...');
-          const ventaAutomatica = crearVentaAutomatica(newReport);
-          
-          if (ventaAutomatica) {
-            console.log('💾 Guardando venta en localStorage...');
-            try {
-              const ventasExistentes = loadVentas();
-              console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
-              
-              // CORRECCIÓN: Verificar duplicados antes de agregar
-              const ventaExistente = ventasExistentes.find(v => 
-                v.cliente === ventaAutomatica.cliente &&
-                new Date(v.fecha).toDateString() === new Date(ventaAutomatica.fecha).toDateString() &&
-                v.observaciones?.includes('Venta automática') &&
-                Math.abs(v.total_venta - ventaAutomatica.total_venta) < 100 // Tolerancia de $100
-              );
+    // Procesar ventas automáticas
+    processAutomaticSales(newReport);
 
-              if (ventaExistente) {
-                console.log('⚠️ Venta similar ya existe, no se duplica:', ventaExistente);
-                toast.info('ℹ️ Venta similar ya registrada, no se duplicó', {
-                  duration: 3000
-                });
-              } else {
-                const nuevasVentas = [...ventasExistentes, ventaAutomatica];
-                console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
-                
-                saveVentas(nuevasVentas);
-                console.log('✅ Venta guardada exitosamente en localStorage');
-                
-                // Verificar que se guardó correctamente
-                const ventasVerificacion = loadVentas();
-                console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
-                
-                const ventaGuardada = ventasVerificacion.find(v => v.id === ventaAutomatica.id);
-                if (ventaGuardada) {
-                  console.log('✓ Venta automática creada y guardada exitosamente');
-                  toast.success('💰 Venta automática generada y guardada exitosamente', {
-                    duration: 5000,
-                    style: {
-                      fontSize: '14px',
-                      backgroundColor: '#059669',
-                      color: 'white'
-                    }
-                  });
-                } else {
-                  console.error('❌ Error: Venta no se encontró después del guardado');
-                  toast.error('❌ Error guardando la venta automática');
-                }
-              }
-            } catch (error) {
-              console.error('❌ Error guardando venta:', error);
-              toast.error('❌ Error guardando la venta automática');
-            }
-          } else {
-            console.log('⚠️ No se pudo crear la venta automática');
-            toast.warning('⚠️ No se pudo generar la venta automática - revisa los datos', {
-              duration: 4000
-            });
-          }
-        } else {
-          console.log('ℹ️ Venta no generada por lógica de negocio');
-          toast.info(`ℹ️ ${razonDecision}`, {
-            duration: 3000,
-            style: {
-              fontSize: '14px'
-            }
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error procesando venta automática:', error);
-        toast.error('❌ Error procesando venta automática: ' + error.message);
-      }
-    }
-
-    // PROCESAR ESCOMBRERA (mantener funcionalidad existente)
-    if (newReport.reportType === 'Recepción Escombrera') {
-      console.log('🏗 Procesando recepción de escombrera...');
-      const ventaGenerada = procesarReporteParaVenta(newReport);
-      if (ventaGenerada) {
-        toast.success('💰 Venta de escombrera generada', {
-          duration: 3000,
-          style: {
-            fontSize: '14px',
-            backgroundColor: '#059669',
-            color: 'white'
-          }
-        });
-      }
-    }
-  };
-
-  const updateReport = (id: string, updatedReport: Partial<Report>) => {
-    const updatedReports = reports.map(report =>
-      report.id === id ? { ...report, ...updatedReport } : report
-    );
-    saveReports(updatedReports);
-  };
-
-  const deleteReport = (id: string) => {
-    const updatedReports = reports.filter(report => report.id !== id);
-    saveReports(updatedReports);
-  };
-
-  const getFilteredReports = (filters: any) => {
-    return filterReports(reports, filters);
+    // Procesar escombrera
+    processEscombreraReport(newReport);
   };
 
   const value: ReportContextType = {
