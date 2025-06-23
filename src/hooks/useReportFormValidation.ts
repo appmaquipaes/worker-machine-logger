@@ -53,18 +53,14 @@ export const useReportFormValidation = () => {
       }
     }
 
-    if (reportType === 'Viajes' || reportType === 'Entrega Material') {
+    if (reportType === 'Viajes') {
       // Validación específica para Cargadores
       if (isCargador(selectedMachine)) {
         if (!tipoMateria.trim()) {
-          return reportType === 'Entrega Material' 
-            ? 'Debe seleccionar el material a entregar'
-            : 'Debe seleccionar el material a cargar';
+          return 'Debe seleccionar el material a cargar';
         }
         if (!cantidadM3 || cantidadM3 <= 0) {
-          return reportType === 'Entrega Material'
-            ? 'Debe ingresar la cantidad de m³ entregados'
-            : 'Debe ingresar la cantidad de m³ cargados';
+          return 'Debe ingresar la cantidad de m³ cargados';
         }
         if (!selectedCliente.trim()) {
           return 'Debe seleccionar el cliente de destino';
@@ -91,7 +87,7 @@ export const useReportFormValidation = () => {
         }
       } else {
         // Validación para otras máquinas de transporte
-        if (reportType === 'Viajes' && (!trips || trips <= 0)) {
+        if (!trips || trips <= 0) {
           return 'Debe ingresar el número de viajes';
         }
         if (!origin.trim()) {
@@ -101,9 +97,7 @@ export const useReportFormValidation = () => {
           return 'Debe seleccionar el cliente de destino';
         }
         if (isMaterialTransportVehicle(selectedMachine) && (!cantidadM3 || cantidadM3 <= 0)) {
-          return reportType === 'Entrega Material'
-            ? 'Debe ingresar la cantidad de m³ entregados'
-            : 'Debe ingresar la cantidad de m³ transportados';
+          return 'Debe ingresar la cantidad de m³ transportados';
         }
       }
     }

@@ -7,8 +7,7 @@ import {
   Fuel, 
   Info, 
   Truck,
-  Recycle,
-  PackageCheck
+  Recycle
 } from 'lucide-react';
 
 export const useReportTypeConfig = () => {
@@ -89,17 +88,6 @@ export const useReportTypeConfig = () => {
       borderColor: 'border-teal-200',
       textColor: 'text-teal-700',
       description: 'Recepción de material en escombrera'
-    },
-    { 
-      type: 'Entrega Material' as ReportType, 
-      icon: PackageCheck, 
-      label: 'Entrega Material', 
-      gradient: 'from-indigo-500 via-indigo-600 to-indigo-700',
-      hoverGradient: 'hover:from-indigo-600 hover:via-indigo-700 hover:to-indigo-800',
-      bgColor: 'bg-indigo-50/80', 
-      borderColor: 'border-indigo-200',
-      textColor: 'text-indigo-700',
-      description: 'Entrega de material sin generar venta automática'
     }
   ];
 

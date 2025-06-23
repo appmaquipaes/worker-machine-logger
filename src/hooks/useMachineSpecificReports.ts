@@ -32,10 +32,6 @@ export const useMachineSpecificReports = () => {
     return isMaterialTransportVehicle(machine) || isCargador(machine);
   };
 
-  const getMachineTypeLabel = (machine: Machine): string => {
-    return `${machine.type}`;
-  };
-
   const getAvailableReportTypes = (machine?: Machine): ReportType[] => {
     if (!machine) return [];
 
@@ -46,30 +42,25 @@ export const useMachineSpecificReports = () => {
 
     const baseReports: ReportType[] = ['Horas Trabajadas', 'Mantenimiento', 'Combustible', 'Novedades'];
     
-    // Para Cargadores: agregar Entrega Material (en lugar de Viajes)
+    // Para Cargadores: agregar Viajes (para cargar material del acopio)
     if (isCargador(machine)) {
-      return [...baseReports, 'Entrega Material'];
+      return [...baseReports, 'Viajes'];
     }
     
     if (machine.type === 'Retroexcavadora de Oruga' || machine.type === 'Bulldozer' || machine.type === 'Motoniveladora') {
       return [...baseReports, 'Horas Extras'];
     }
     
-    // Para vehículos de transporte de material: agregar Entrega Material (en lugar de Viajes)
     if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine)) {
-      return [...baseReports, 'Entrega Material'];
+      return [...baseReports, 'Viajes'];
     }
     
     return baseReports;
   };
 
   const getReportTypeDescription = (machine: Machine, reportType: ReportType): string => {
-    if (reportType === 'Entrega Material') {
-      if (isCargador(machine)) {
-        return `Registro de entrega de material cargado desde el Acopio hacia clientes. El ${machine.name} opera desde el Acopio Maquipaes, selecciona el material y destino. NO genera venta automática.`;
-      } else {
-        return `Registro de entrega de material transportado por ${machine.name}. Especifica origen, destino y cantidad. NO genera venta automática - las ventas se registran manualmente.`;
-      }
+    if (isCargador(machine) && reportType === 'Viajes') {
+      return `Registro de carga de material desde el Acopio hacia clientes. El ${machine.name} siempre opera desde el Acopio Maquipaes, solo necesitas seleccionar el material y destino.`;
     }
 
     switch (reportType) {
@@ -88,6 +79,16 @@ export const useMachineSpecificReports = () => {
       default:
         return 'Completa la información requerida para este tipo de reporte.';
     }
+  };
+
+  const getMachineTypeLabel = (machine: Machine): string => {
+    if (isEscombrera(machine)) {
+      return 'Escombrera';
+    }
+    if (isCargador(machine)) {
+      return 'Cargador (Acopio)';
+    }
+    return machine.type;
   };
 
   return {

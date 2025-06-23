@@ -1,4 +1,5 @@
-export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes' | 'Recepción Escombrera' | 'Entrega Material';
+
+export type ReportType = 'Horas Trabajadas' | 'Horas Extras' | 'Combustible' | 'Mantenimiento' | 'Novedades' | 'Viajes' | 'Recepción Escombrera';
 
 export interface Report {
   id: string;

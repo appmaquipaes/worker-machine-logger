@@ -17,7 +17,6 @@ import { loadClientes } from '@/models/Clientes';
 import { useMachine } from '@/context/MachineContext';
 import { loadMateriales } from '@/models/Materiales';
 import { loadProveedores } from '@/models/Proveedores';
-import { useDataPersistence } from '@/hooks/useDataPersistence';
 
 import TarifasClienteStats from "@/components/tarifas/TarifasClienteStats";
 import TarifasClienteTable from "@/components/tarifas/TarifasClienteTable";
@@ -27,7 +26,6 @@ const TarifasClientePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { machines } = useMachine();
-  const { saveToLocalStorage, loadFromLocalStorage } = useDataPersistence();
 
   // Estados principales
   const [tarifas, setTarifas] = useState<TarifaCliente[]>([]);
@@ -64,23 +62,11 @@ const TarifasClientePage: React.FC = () => {
       navigate('/dashboard');
       return;
     }
-    loadData();
+    setTarifas(loadTarifasCliente());
+    setClientes(loadClientes());
+    setProveedores(loadProveedores());
+    setMateriales(loadMateriales());
   }, [user, navigate]);
-
-  const loadData = () => {
-    console.log('🔄 Cargando datos de tarifas cliente...');
-    const tarifasData = loadFromLocalStorage('tarifas_cliente', []);
-    const clientesData = loadFromLocalStorage('clientes', []);
-    const proveedoresData = loadFromLocalStorage('proveedores', []);
-    const materialesData = loadFromLocalStorage('materiales_volquetas', []);
-    
-    setTarifas(tarifasData);
-    setClientes(clientesData);
-    setProveedores(proveedoresData);
-    setMateriales(materialesData);
-    
-    console.log('✅ Datos cargados - Tarifas:', tarifasData.length);
-  };
 
   const handleTarifaCreated = (nuevaTarifa: TarifaCliente) => {
     let tarifasActualizadas: TarifaCliente[];
@@ -94,15 +80,10 @@ const TarifasClientePage: React.FC = () => {
       tarifasActualizadas = [...tarifas, nuevaTarifa];
       toast.success('Tarifa agregada exitosamente');
     }
-    
-    const guardadoExitoso = saveToLocalStorage('tarifas_cliente', tarifasActualizadas);
-    if (guardadoExitoso) {
-      setTarifas(tarifasActualizadas);
-      setShowDialog(false);
-      setEditingTarifa(null);
-    } else {
-      toast.error('Error guardando la tarifa');
-    }
+    saveTarifasCliente(tarifasActualizadas);
+    setTarifas(tarifasActualizadas);
+    setShowDialog(false);
+    setEditingTarifa(null);
   };
 
   const handleEdit = (tarifa: TarifaCliente) => {
@@ -112,25 +93,17 @@ const TarifasClientePage: React.FC = () => {
 
   const handleDeleteTarifa = (id: string) => {
     const tarifasActualizadas = tarifas.filter(t => t.id !== id);
-    const guardadoExitoso = saveToLocalStorage('tarifas_cliente', tarifasActualizadas);
-    if (guardadoExitoso) {
-      setTarifas(tarifasActualizadas);
-      toast.success('Tarifa eliminada');
-    } else {
-      toast.error('Error eliminando la tarifa');
-    }
+    saveTarifasCliente(tarifasActualizadas);
+    setTarifas(tarifasActualizadas);
+    toast.success('Tarifa eliminada');
   };
 
   const handleToggleStatus = (id: string) => {
     const tarifasActualizadas = tarifas.map(t =>
       t.id === id ? { ...t, activa: !t.activa } : t
     );
-    const guardadoExitoso = saveToLocalStorage('tarifas_cliente', tarifasActualizadas);
-    if (guardadoExitoso) {
-      setTarifas(tarifasActualizadas);
-    } else {
-      toast.error('Error actualizando el estado de la tarifa');
-    }
+    saveTarifasCliente(tarifasActualizadas);
+    setTarifas(tarifasActualizadas);
   };
 
   const handleCancel = () => {

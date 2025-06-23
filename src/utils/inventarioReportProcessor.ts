@@ -15,9 +15,9 @@ export const procesarReporteInventario = (report: Report): ResultadoOperacionInv
   console.log('🔨 Material:', report.description);
   console.log('🚜 Máquina:', report.machineName);
 
-  // Solo procesar reportes de viajes y entregas de material con cantidad de m³
-  if ((report.reportType !== 'Viajes' && report.reportType !== 'Entrega Material') || !report.cantidadM3 || report.cantidadM3 <= 0) {
-    console.log('⚠️ Reporte no aplica para inventario (no es viaje/entrega o sin cantidad)');
+  // Solo procesar reportes de viajes con cantidad de m³
+  if (report.reportType !== 'Viajes' || !report.cantidadM3 || report.cantidadM3 <= 0) {
+    console.log('⚠️ Reporte no aplica para inventario (no es viaje o sin cantidad)');
     return { exito: false, mensaje: 'Reporte no aplica para inventario' };
   }
 

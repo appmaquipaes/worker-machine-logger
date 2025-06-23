@@ -9,9 +9,7 @@ import { Machine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { ReportType } from '@/types/report';
 import { loadInventarioAcopio } from '@/models/InventarioAcopio';
-import { loadProductosProveedores } from '@/models/Proveedores';
 import { esAcopio } from '@/utils/inventarioDetection';
-import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 
 interface MaterialInputsProps {
   reportType: ReportType;
@@ -38,7 +36,6 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
   const [inventarioActual, setInventarioActual] = useState<any[]>([]);
-  const [productosProveedor, setProductosProveedor] = useState<any[]>([]);
 
   // Cargar inventario fresco cuando el componente se monta o cuando cambia el material
   useEffect(() => {
@@ -46,25 +43,6 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
     setInventarioActual(inventario);
     console.log('MaterialInputs - Inventario cargado:', inventario);
   }, [tipoMateria]);
-
-  // Cargar productos del proveedor cuando cambia el origen
-  useEffect(() => {
-    if (origin && !esAcopio(origin)) {
-      const { proveedorId } = extraerInfoProveedor(origin);
-      if (proveedorId) {
-        const productos = loadProductosProveedores();
-        const productosDelProveedor = productos.filter(
-          producto => producto.proveedor_id === proveedorId && producto.tipo_insumo === 'Material'
-        );
-        setProductosProveedor(productosDelProveedor);
-        console.log('MaterialInputs - Productos del proveedor cargados:', productosDelProveedor);
-      } else {
-        setProductosProveedor([]);
-      }
-    } else {
-      setProductosProveedor([]);
-    }
-  }, [origin]);
 
   // Verificar si es Camabaja (transporta maquinaria, no material)
   const isCamabaja = selectedMachine?.type === 'Camabaja';
@@ -87,17 +65,12 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   // 2. Cualquier máquina cuyo origen sea el acopio
   const shouldShowInventoryMaterialSelect = esCargadorMachine || origenEsAcopio;
   
-  // Mostrar selector de productos del proveedor para volquetas/camiones que NO vienen del acopio
-  const shouldShowProviderMaterialSelect = !esCargadorMachine && !origenEsAcopio && origin.trim() !== '' && productosProveedor.length > 0;
-  
-  // Mostrar selector estándar como fallback
-  const shouldShowTipoMateriaInput = !esCargadorMachine && !origenEsAcopio && origin.trim() !== '' && productosProveedor.length === 0;
+  // Mostrar selector estándar para volquetas/camiones que NO vienen del acopio
+  const shouldShowTipoMateriaInput = !esCargadorMachine && !origenEsAcopio && origin.trim() !== '';
   
   console.log('MaterialInputs - origenEsAcopio:', origenEsAcopio);
   console.log('MaterialInputs - shouldShowInventoryMaterialSelect:', shouldShowInventoryMaterialSelect);
-  console.log('MaterialInputs - shouldShowProviderMaterialSelect:', shouldShowProviderMaterialSelect);
   console.log('MaterialInputs - shouldShowTipoMateriaInput:', shouldShowTipoMateriaInput);
-  console.log('MaterialInputs - productosProveedor:', productosProveedor);
   
   // Obtener stock disponible del material seleccionado usando el inventario actual
   const materialSeleccionado = inventarioActual.find(item => item.tipo_material === tipoMateria);
@@ -151,39 +124,6 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
         </div>
       )}
 
-      {shouldShowProviderMaterialSelect && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Wrench size={24} />
-            <Label htmlFor="material-proveedor" className="text-lg">Tipo de Material (del Proveedor)</Label>
-          </div>
-          
-          <Alert className="border-blue-200 bg-blue-50 mb-3">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <strong>Materiales del Proveedor:</strong> Estos son los materiales específicos disponibles 
-              del proveedor seleccionado en el origen.
-            </AlertDescription>
-          </Alert>
-          
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el material del proveedor" />
-            </SelectTrigger>
-            <SelectContent>
-              {productosProveedor.map((producto) => (
-                <SelectItem key={producto.id} value={producto.nombre_producto}>
-                  {producto.nombre_producto}
-                  <span className="ml-2 text-sm text-gray-600">
-                    ({producto.unidad} - ${producto.precio_unitario?.toLocaleString()})
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       {shouldShowTipoMateriaInput && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
@@ -205,7 +145,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
         </div>
       )}
 
-      {(shouldShowInventoryMaterialSelect || shouldShowProviderMaterialSelect || shouldShowTipoMateriaInput) && (
+      {(shouldShowInventoryMaterialSelect || shouldShowTipoMateriaInput) && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <Truck size={24} />
