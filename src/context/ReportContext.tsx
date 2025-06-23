@@ -1,13 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
-import { parseStoredReports, filterReports } from '@/utils/reportUtils';
+import { filterReports } from '@/utils/reportUtils';
 import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 import { useReportOperations } from '@/hooks/useReportOperations';
-import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
-import { useVentaCreation } from '@/hooks/useVentaCreation';
-import { loadVentas, saveVentas } from '@/models/Ventas';
-import { useDataPersistence } from '@/hooks/useDataPersistence';
+import { useReportPersistence } from '@/hooks/useReportPersistence';
+import { useReportInventoryProcessing } from '@/hooks/useReportInventoryProcessing';
+import { useReportSalesProcessing } from '@/hooks/useReportSalesProcessing';
 import { toast } from "sonner";
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -28,30 +27,11 @@ interface ReportProviderProps {
 }
 
 export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
-  const [reports, setReports] = useState<Report[]>([]);
   const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
-  const { procesarReporteParaVenta } = useAutoVentas();
-  const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
-  const { crearVentaAutomatica } = useVentaCreation();
-  const { saveToLocalStorage, loadFromLocalStorage } = useDataPersistence();
-
-  useEffect(() => {
-    const storedReports = loadFromLocalStorage('reports', []);
-    if (storedReports && storedReports.length > 0) {
-      const parsedReports = parseStoredReports(JSON.stringify(storedReports));
-      setReports(parsedReports);
-      console.log('📋 Reportes cargados:', parsedReports.length);
-    }
-  }, [loadFromLocalStorage]);
-
-  const saveReports = (newReports: Report[]) => {
-    console.log('💾 Guardando reportes:', newReports.length);
-    setReports(newReports);
-    const guardadoExitoso = saveToLocalStorage('reports', newReports);
-    if (!guardadoExitoso) {
-      toast.error('Error guardando reportes');
-    }
-  };
+  const { validarOperacion } = useInventarioOperations();
+  const { reports, saveReports, updateReport, deleteReport } = useReportPersistence();
+  const { processInventoryForReport } = useReportInventoryProcessing();
+  const { processSalesForReport } = useReportSalesProcessing();
 
   const addReport = (
     machineId: string,
@@ -144,182 +124,10 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     saveReports(updatedReports);
 
     // PROCESAR INVENTARIO PRIMERO (para todas las máquinas)
-    if (newReport.reportType === 'Viajes' && (newReport.origin || newReport.destination)) {
-      console.log('🏭 Iniciando procesamiento de inventario...');
-      try {
-        const resultadoInventario = procesarReporteInventario(newReport);
-        console.log('📊 Resultado procesamiento inventario:', resultadoInventario);
-        
-        if (resultadoInventario.exito) {
-          console.log('✅ Inventario actualizado exitosamente');
-          toast.success(`✅ Inventario actualizado: ${resultadoInventario.mensaje}`, {
-            duration: 4000,
-            style: {
-              fontSize: '14px',
-              backgroundColor: '#22c55e',
-              color: 'white'
-            }
-          });
-        } else {
-          console.log('⚠ No se procesó inventario:', resultadoInventario.mensaje);
-        }
-      } catch (error) {
-        console.error('❌ Error procesando inventario:', error);
-      }
-    }
+    processInventoryForReport(newReport);
 
-    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS AUTOMÁTICAS
-    if (newReport.reportType === 'Viajes' && newReport.destination) {
-      try {
-        console.log('💼 Aplicando NUEVA LÓGICA SIMPLIFICADA de ventas...');
-        
-        const esCargador = newReport.machineName.toLowerCase().includes('cargador');
-        const esVolqueta = newReport.machineName.toLowerCase().includes('volqueta') || 
-                         newReport.machineName.toLowerCase().includes('camión');
-        const origenEsAcopio = newReport.origin?.toLowerCase().includes('acopio') || false;
-        
-        console.log('📋 Análisis de máquina:');
-        console.log('- Es cargador:', esCargador);
-        console.log('- Es volqueta/camión:', esVolqueta);
-        console.log('- Origen es acopio:', origenEsAcopio);
-        
-        let debeGenerarVenta = false;
-        let razonDecision = '';
-        
-        // REGLAS SIMPLIFICADAS:
-        if (esCargador) {
-          // CARGADORES: SIEMPRE generan venta
-          debeGenerarVenta = true;
-          razonDecision = 'Cargador SIEMPRE genera venta (nueva lógica simplificada)';
-        } else if (esVolqueta && !origenEsAcopio) {
-          // VOLQUETAS: Solo si NO vienen del acopio
-          debeGenerarVenta = true;
-          razonDecision = 'Volqueta desde origen DISTINTO al acopio - genera venta';
-        } else if (esVolqueta && origenEsAcopio) {
-          // VOLQUETAS desde acopio: NO generar venta
-          debeGenerarVenta = false;
-          razonDecision = 'Volqueta desde acopio - NO generar venta (nueva lógica simplificada)';
-        } else {
-          // Otras máquinas: mantener lógica actual
-          debeGenerarVenta = true;
-          razonDecision = 'Otra máquina - generar venta';
-        }
-        
-        console.log('🎯 DECISIÓN FINAL (LÓGICA SIMPLIFICADA):', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
-        console.log('📝 Razón:', razonDecision);
-        
-        if (debeGenerarVenta) {
-          console.log('💰 Generando venta automática con nueva lógica...');
-          const ventaAutomatica = crearVentaAutomatica(newReport);
-          
-          if (ventaAutomatica) {
-            // ASEGURAR GUARDADO DE LA VENTA
-            console.log('💾 Guardando venta en localStorage...');
-            try {
-              const ventasExistentes = loadVentas();
-              console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
-              
-              const nuevasVentas = [...ventasExistentes, ventaAutomatica];
-              console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
-              
-              const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
-              if (guardadoExitoso) {
-                console.log('✅ Venta guardada exitosamente en localStorage');
-                
-                // Verificar que se guardó correctamente
-                const ventasVerificacion = loadVentas();
-                console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
-                
-                console.log('✓ Venta automática creada y guardada con NUEVA LÓGICA SIMPLIFICADA');
-                toast.success('💰 Venta automática generada exitosamente (Lógica Simplificada)', {
-                  duration: 4000,
-                  style: {
-                    fontSize: '14px',
-                    backgroundColor: '#059669',
-                    color: 'white'
-                  }
-                });
-              } else {
-                console.error('❌ Error guardando venta en localStorage');
-                toast.error('Error guardando la venta automática');
-              }
-            } catch (error) {
-              console.error('❌ Error guardando venta:', error);
-              toast.error('Error guardando la venta automática');
-            }
-          } else {
-            console.log('⚠️ No se pudo crear la venta automática');
-          }
-        } else {
-          console.log('ℹ️ Venta NO generada por nueva lógica simplificada');
-          toast.info(`ℹ️ ${razonDecision}`, {
-            duration: 3000,
-            style: {
-              fontSize: '14px'
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error procesando venta automática:', error);
-      }
-    }
-
-    // NUEVO: GENERAR VENTAS AUTOMÁTICAS PARA HORAS TRABAJADAS
-    if (newReport.reportType === 'Horas Trabajadas' && newReport.workSite && newReport.hours) {
-      try {
-        console.log('⏰ Generando venta automática para HORAS TRABAJADAS...');
-        const ventaAutomatica = crearVentaAutomatica(newReport);
-        
-        if (ventaAutomatica) {
-          console.log('💾 Guardando venta de horas trabajadas...');
-          const ventasExistentes = loadVentas();
-          const nuevasVentas = [...ventasExistentes, ventaAutomatica];
-          
-          const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
-          if (guardadoExitoso) {
-            console.log('✅ Venta de horas trabajadas guardada exitosamente');
-            toast.success('💰 Venta automática de horas trabajadas generada', {
-              duration: 4000,
-              style: {
-                fontSize: '14px',
-                backgroundColor: '#059669',
-                color: 'white'
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error generando venta para horas trabajadas:', error);
-      }
-    }
-
-    // PROCESAR ESCOMBRERA (mantener funcionalidad existente)
-    if (newReport.reportType === 'Recepción Escombrera') {
-      console.log('🏗 Procesando recepción de escombrera...');
-      const ventaGenerada = procesarReporteParaVenta(newReport);
-      if (ventaGenerada) {
-        toast.success('💰 Venta de escombrera generada', {
-          duration: 3000,
-          style: {
-            fontSize: '14px',
-            backgroundColor: '#059669',
-            color: 'white'
-          }
-        });
-      }
-    }
-  };
-
-  const updateReport = (id: string, updatedReport: Partial<Report>) => {
-    const updatedReports = reports.map(report =>
-      report.id === id ? { ...report, ...updatedReport } : report
-    );
-    saveReports(updatedReports);
-  };
-
-  const deleteReport = (id: string) => {
-    const updatedReports = reports.filter(report => report.id !== id);
-    saveReports(updatedReports);
+    // PROCESAR VENTAS AUTOMÁTICAS
+    processSalesForReport(newReport);
   };
 
   const getFilteredReports = (filters: any) => {
