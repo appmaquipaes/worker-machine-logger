@@ -217,20 +217,20 @@ const ProveedoresPage: React.FC = () => {
     toast.success('Producto eliminado correctamente');
   };
 
-  // Colores visuales de los badges unificados al UI corporativo
-  const getTipoProveedorColor = (tipo?: string): string => {
-    if (!tipo) return "muted";
+  // Fixed function with proper Badge variants
+  const getTipoProveedorColor = (tipo?: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!tipo) return "secondary";
     switch (tipo) {
       case "Materiales":
-        return "accent";
+        return "default";
       case "Lubricantes":
-        return "primary";
-      case "Repuestos":
         return "secondary";
+      case "Repuestos":
+        return "outline";
       case "Servicios":
-        return "accent";
+        return "default";
       default:
-        return "muted";
+        return "secondary";
     }
   };
 
