@@ -39,11 +39,11 @@ export const createCliente = (
   nombre_cliente: string,
   tipo_persona: TipoPersona,
   nit_cedula: string,
-  telefono_contacto: string,
+  correo_electronico: string | undefined,
   persona_contacto: string,
+  telefono_contacto: string,
   ciudad: string,
   tipo_cliente?: TipoCliente,
-  correo_electronico?: string,
   observaciones?: string
 ): Cliente => {
   return {
@@ -66,6 +66,53 @@ export const createCliente = (
     fecha_registro: new Date(),
     observaciones
   };
+};
+
+// Función para actualizar un cliente
+export const updateCliente = (id: string, updates: Partial<Omit<Cliente, 'id' | 'fecha_registro'>>): Cliente => {
+  const clientes = loadClientes();
+  const clienteIndex = clientes.findIndex(c => c.id === id);
+  
+  if (clienteIndex === -1) {
+    throw new Error('Cliente no encontrado');
+  }
+  
+  const clienteActualizado = {
+    ...clientes[clienteIndex],
+    ...updates,
+    // Update aliases
+    nombre: updates.nombre_cliente || clientes[clienteIndex].nombre_cliente,
+    nit: updates.nit_cedula || clientes[clienteIndex].nit_cedula,
+    telefono: updates.telefono_contacto || clientes[clienteIndex].telefono_contacto,
+    email: updates.correo_electronico || clientes[clienteIndex].correo_electronico,
+    contacto_principal: updates.persona_contacto || clientes[clienteIndex].persona_contacto,
+    direccion: updates.ciudad || clientes[clienteIndex].ciudad
+  };
+  
+  return clienteActualizado;
+};
+
+// Función para eliminar un cliente
+export const deleteCliente = (id: string): void => {
+  const clientes = loadClientes();
+  const clienteIndex = clientes.findIndex(c => c.id === id);
+  
+  if (clienteIndex === -1) {
+    throw new Error('Cliente no encontrado');
+  }
+  
+  clientes[clienteIndex].activo = false;
+  saveClientes(clientes);
+};
+
+// Función para obtener tipos de persona
+export const getTiposPersona = (): string[] => {
+  return [...tiposPersona];
+};
+
+// Función para obtener tipos de cliente
+export const getTiposCliente = (): string[] => {
+  return [...tiposCliente];
 };
 
 // Función para guardar clientes en localStorage

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +20,8 @@ import {
   updateCliente,
   deleteCliente,
   getTiposPersona,
-  getTiposCliente
+  getTiposCliente,
+  TipoPersona
 } from '@/models/Clientes';
 import { Finca, loadFincas, getFincasByCliente } from '@/models/Fincas';
 import FincasManagement from '@/components/FincasManagement';
@@ -108,13 +110,13 @@ const ClientesPage: React.FC = () => {
     try {
       const nuevoCliente = createCliente(
         data.nombre_cliente,
-        data.tipo_persona,
+        data.tipo_persona as TipoPersona,
         data.nit_cedula,
         data.correo_electronico || undefined,
         data.persona_contacto,
         data.telefono_contacto,
         data.ciudad,
-        data.tipo_cliente || undefined,
+        data.tipo_cliente as any || undefined,
         data.observaciones || undefined
       );
 
@@ -137,13 +139,13 @@ const ClientesPage: React.FC = () => {
     try {
       const clienteActualizado = updateCliente(selectedCliente.id, {
         nombre_cliente: data.nombre_cliente,
-        tipo_persona: data.tipo_persona,
+        tipo_persona: data.tipo_persona as TipoPersona,
         nit_cedula: data.nit_cedula,
         correo_electronico: data.correo_electronico || undefined,
         persona_contacto: data.persona_contacto,
         telefono_contacto: data.telefono_contacto,
         ciudad: data.ciudad,
-        tipo_cliente: data.tipo_cliente || undefined,
+        tipo_cliente: data.tipo_cliente as any || undefined,
         observaciones: data.observaciones || undefined,
       });
 
@@ -300,7 +302,7 @@ const ClientesPage: React.FC = () => {
               <div>
                 <p className="text-purple-600 text-base font-bold">Personas Naturales</p>
                 <p className="text-4xl font-bold text-purple-700">
-                  {clientes.filter(c => c.tipo_persona === 'Persona Natural').length}
+                  {clientes.filter(c => c.tipo_persona === 'Natural').length}
                 </p>
               </div>
               <div className="p-4 bg-purple-200 rounded-2xl">
@@ -442,8 +444,8 @@ const ClientesPage: React.FC = () => {
           </DialogHeader>
           {selectedCliente && (
             <FincasManagement
-              cliente={selectedCliente}
-              onClose={() => setShowFincasDialog(false)}
+              clienteId={selectedCliente.id}
+              clienteNombre={selectedCliente.nombre_cliente}
             />
           )}
         </DialogContent>
