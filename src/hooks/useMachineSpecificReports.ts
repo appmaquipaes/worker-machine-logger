@@ -1,4 +1,3 @@
-
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
 
@@ -42,25 +41,30 @@ export const useMachineSpecificReports = () => {
 
     const baseReports: ReportType[] = ['Horas Trabajadas', 'Mantenimiento', 'Combustible', 'Novedades'];
     
-    // Para Cargadores: agregar Viajes (para cargar material del acopio)
+    // Para Cargadores: agregar Entrega Material (en lugar de Viajes)
     if (isCargador(machine)) {
-      return [...baseReports, 'Viajes'];
+      return [...baseReports, 'Entrega Material'];
     }
     
     if (machine.type === 'Retroexcavadora de Oruga' || machine.type === 'Bulldozer' || machine.type === 'Motoniveladora') {
       return [...baseReports, 'Horas Extras'];
     }
     
+    // Para vehículos de transporte de material: agregar Entrega Material (en lugar de Viajes)
     if (isMaterialTransportVehicle(machine) || isMachineryTransportVehicle(machine)) {
-      return [...baseReports, 'Viajes'];
+      return [...baseReports, 'Entrega Material'];
     }
     
     return baseReports;
   };
 
   const getReportTypeDescription = (machine: Machine, reportType: ReportType): string => {
-    if (isCargador(machine) && reportType === 'Viajes') {
-      return `Registro de carga de material desde el Acopio hacia clientes. El ${machine.name} siempre opera desde el Acopio Maquipaes, solo necesitas seleccionar el material y destino.`;
+    if (reportType === 'Entrega Material') {
+      if (isCargador(machine)) {
+        return `Registro de entrega de material cargado desde el Acopio hacia clientes. El ${machine.name} opera desde el Acopio Maquipaes, selecciona el material y destino. NO genera venta automática.`;
+      } else {
+        return `Registro de entrega de material transportado por ${machine.name}. Especifica origen, destino y cantidad. NO genera venta automática - las ventas se registran manualmente.`;
+      }
     }
 
     switch (reportType) {
@@ -79,16 +83,6 @@ export const useMachineSpecificReports = () => {
       default:
         return 'Completa la información requerida para este tipo de reporte.';
     }
-  };
-
-  const getMachineTypeLabel = (machine: Machine): string => {
-    if (isEscombrera(machine)) {
-      return 'Escombrera';
-    }
-    if (isCargador(machine)) {
-      return 'Cargador (Acopio)';
-    }
-    return machine.type;
   };
 
   return {

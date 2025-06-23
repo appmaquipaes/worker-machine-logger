@@ -1,4 +1,3 @@
-
 import { Report } from '@/types/report';
 import { useVentaCreation } from './useVentaCreation';
 import { loadVentas, saveVentas } from '@/models/Ventas';
@@ -8,6 +7,7 @@ export const useAutomaticSalesProcessing = () => {
   const { crearVentaAutomatica } = useVentaCreation();
 
   const processAutomaticSales = (report: Report) => {
+    // Excluir "Entrega Material" de las ventas automáticas
     const tiposQueGeneranVenta = ['Viajes', 'Horas Trabajadas', 'Horas Extras'];
     
     if (tiposQueGeneranVenta.includes(report.reportType)) {
@@ -150,6 +150,14 @@ export const useAutomaticSalesProcessing = () => {
         console.error('📋 Stack trace:', error.stack);
         toast.error('❌ Error procesando venta automática: ' + error.message);
       }
+    } else if (report.reportType === 'Entrega Material') {
+      console.log('ℹ️ Entrega Material - NO se genera venta automática por diseño');
+      toast.info('📦 Entrega Material registrada - Las ventas se registran manualmente', {
+        duration: 4000,
+        style: {
+          fontSize: '14px',
+        }
+      });
     }
   };
 

@@ -1,4 +1,3 @@
-
 import { useReport } from '@/context/ReportContext';
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
@@ -47,15 +46,15 @@ export const useReportFormSubmission = () => {
       tipoMateria
     } = formData;
 
-    // Para viajes del Cargador, usar el tipo de materia como descripción
+    // Para entregas de material y viajes del Cargador, usar el tipo de materia como descripción
     let reportDescription = '';
-    if (reportType === 'Viajes' && isCargador(selectedMachine) && tipoMateria) {
+    if ((reportType === 'Viajes' || reportType === 'Entrega Material') && isCargador(selectedMachine) && tipoMateria) {
       reportDescription = tipoMateria;
       console.log('Cargador - usando tipoMateria como descripción:', tipoMateria);
-    } else if (reportType === 'Viajes' && origin === 'Acopio Maquipaes' && tipoMateria) {
+    } else if ((reportType === 'Viajes' || reportType === 'Entrega Material') && origin === 'Acopio Maquipaes' && tipoMateria) {
       // Para cualquier vehículo que transporte desde acopio, usar el material seleccionado
       reportDescription = tipoMateria;
-      console.log('Viaje desde acopio - usando tipoMateria como descripción:', tipoMateria);
+      console.log('Entrega desde acopio - usando tipoMateria como descripción:', tipoMateria);
     } else if (reportType === 'Novedades') {
       reportDescription = description;
     } else if (reportType === 'Recepción Escombrera') {
@@ -64,7 +63,7 @@ export const useReportFormSubmission = () => {
       reportDescription = description;
     }
     
-    const finalDestination = reportType === 'Viajes' 
+    const finalDestination = (reportType === 'Viajes' || reportType === 'Entrega Material')
       ? `${selectedCliente} - ${selectedFinca}`
       : selectedCliente;
     
@@ -92,20 +91,24 @@ export const useReportFormSubmission = () => {
         reportType,
         reportDescription,
         reportDate,
-        reportType === 'Viajes' ? trips : undefined,
+        (reportType === 'Viajes' || reportType === 'Entrega Material') ? trips : undefined,
         (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
         reportType === 'Combustible' ? value : 
         reportType === 'Mantenimiento' ? maintenanceValue : undefined,
         reportType === 'Horas Trabajadas' ? workSite : undefined,
-        reportType === 'Viajes' ? origin : undefined,
-        reportType === 'Viajes' ? finalDestination : undefined,
-        reportType === 'Viajes' ? cantidadM3 : undefined,
+        (reportType === 'Viajes' || reportType === 'Entrega Material') ? origin : undefined,
+        (reportType === 'Viajes' || reportType === 'Entrega Material') ? finalDestination : undefined,
+        (reportType === 'Viajes' || reportType === 'Entrega Material') ? cantidadM3 : undefined,
         reportType === 'Mantenimiento' ? proveedor : undefined,
         reportType === 'Combustible' ? kilometraje : undefined
       );
     }
 
-    toast.success('¡REPORTE REGISTRADO CON ÉXITO!', {
+    const successMessage = reportType === 'Entrega Material' 
+      ? '📦 ¡ENTREGA DE MATERIAL REGISTRADA!'
+      : '¡REPORTE REGISTRADO CON ÉXITO!';
+
+    toast.success(successMessage, {
       duration: 5000,
       style: {
         fontSize: '18px',
