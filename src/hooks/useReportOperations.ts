@@ -1,129 +1,157 @@
+import { Report } from '@/types/report';
+import { useVentaCreation } from '@/hooks/useVentaCreation';
+import { useAutoVentas } from '@/hooks/useAutoVentas';
+import { loadVentas } from '@/models/Ventas';
+import { useDataPersistence } from '@/hooks/useDataPersistence';
+import { useVentaCalculationsFixed } from '@/hooks/useVentaCalculationsFixed';
+import { toast } from "sonner";
 
-import { Report, ReportType } from '@/types/report';
-import { calcularValorHorasTrabajadas, calcularValorViajes } from '@/utils/reportValueCalculator';
-import { findTarifaEscombrera } from '@/models/TarifasCliente';
+export const useReportSalesProcessing = () => {
+  const { crearVentaAutomatica } = useVentaCreation();
+  const { procesarReporteParaVenta } = useAutoVentas();
+  const { saveToLocalStorage } = useDataPersistence();
+  const { updateVentaWithCalculatedTotal } = useVentaCalculationsFixed();
 
-export const useReportOperations = () => {
-  const createReport = (
-    reports: Report[],
-    machineId: string,
-    machineName: string,
-    reportType: ReportType,
-    description: string,
-    reportDate: Date,
-    trips?: number,
-    hours?: number,
-    value?: number,
-    workSite?: string,
-    origin?: string,
-    destination?: string,
-    cantidadM3?: number,
-    proveedor?: string,
-    kilometraje?: number
-  ): Report => {
-    let calculatedValue = value || 0;
-    let detalleCalculo = '';
-    let tarifaEncontrada = false;
+  const processSalesForReport = (report: Report) => {
+    console.log('💼 Procesando ventas para reporte:', report.reportType, report.machineName);
 
-    // Calcular valor automáticamente basado en tarifas
-    if (reportType === 'Horas Trabajadas' && workSite && hours) {
-      const calculo = calcularValorHorasTrabajadas(
-        workSite,
-        undefined, // Por ahora no manejamos finca específica en horas trabajadas
-        machineId,
-        hours
-      );
-      calculatedValue = calculo.valorCalculado;
-      detalleCalculo = calculo.detalleCalculo;
-      tarifaEncontrada = calculo.tarifaEncontrada;
-    }
-    
-    if (reportType === 'Viajes' && destination && origin && cantidadM3) {
-      const calculo = calcularValorViajes(
-        destination.split(' - ')[0] || '', // Cliente del destino
-        destination.split(' - ')[1], // Finca del destino
-        origin,
-        destination,
-        cantidadM3
-      );
-      calculatedValue = calculo.valorCalculado;
-      detalleCalculo = calculo.detalleCalculo;
-      tarifaEncontrada = calculo.tarifaEncontrada;
-    }
-
-    // Calcular valor para recepción de escombrera usando las nuevas tarifas
-    if (reportType === 'Recepción Escombrera' && destination && trips) {
-      const tarifa = findTarifaEscombrera(destination, machineId);
-      if (tarifa) {
-        // Determinar tipo de volqueta desde la descripción
-        const tipoVolqueta = description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla';
-        const valorPorVolqueta = tipoVolqueta === 'Doble Troque' 
-          ? tarifa.valor_volqueta_doble_troque || 0
-          : tarifa.valor_volqueta_sencilla || 0;
+    // GENERAR VENTAS AUTOMÁTICAS PARA HORAS TRABAJADAS (TODAS LAS MÁQUINAS)
+    if (report.reportType === 'Horas Trabajadas' && report.workSite && report.hours) {
+      try {
+        console.log('⏰ Generando venta automática para HORAS TRABAJADAS...');
+        console.log('- Máquina:', report.machineName);
+        console.log('- Cliente/Sitio:', report.workSite);
+        console.log('- Horas:', report.hours);
+        console.log('- Valor:', report.value);
         
-        calculatedValue = valorPorVolqueta * trips;
-        detalleCalculo = `${trips} volquetas ${tipoVolqueta} × $${valorPorVolqueta.toLocaleString()} = $${calculatedValue.toLocaleString()}`;
-        tarifaEncontrada = true;
+        generateAutomaticSale(report);
+      } catch (error) {
+        console.error('❌ Error generando venta para horas trabajadas:', error);
       }
     }
 
-    // Si no se pudo calcular automáticamente, usar valor manual si se proporcionó
-    if (!tarifaEncontrada && value !== undefined) {
-      calculatedValue = value;
-      detalleCalculo = 'Valor ingresado manualmente';
+    // NUEVA LÓGICA SIMPLIFICADA PARA VIAJES
+    if (report.reportType === 'Viajes' && report.destination) {
+      try {
+        console.log('💼 Aplicando NUEVA LÓGICA SIMPLIFICADA de ventas...');
+        
+        const esCargador = report.machineName.toLowerCase().includes('cargador');
+        const esVolqueta = report.machineName.toLowerCase().includes('volqueta') || 
+                         report.machineName.toLowerCase().includes('camión');
+        const origenEsAcopio = report.origin?.toLowerCase().includes('acopio') || false;
+        
+        console.log('📋 Análisis de máquina:');
+        console.log('- Es cargador:', esCargador);
+        console.log('- Es volqueta/camión:', esVolqueta);
+        console.log('- Origen es acopio:', origenEsAcopio);
+        
+        let debeGenerarVenta = false;
+        let razonDecision = '';
+        
+        // REGLAS SIMPLIFICADAS:
+        if (esCargador) {
+          // CARGADORES: SIEMPRE generan venta
+          debeGenerarVenta = true;
+          razonDecision = 'Cargador SIEMPRE genera venta (nueva lógica simplificada)';
+        } else if (esVolqueta && !origenEsAcopio) {
+          // VOLQUETAS: Solo si NO vienen del acopio
+          debeGenerarVenta = true;
+          razonDecision = 'Volqueta desde origen DISTINTO al acopio - genera venta';
+        } else if (esVolqueta && origenEsAcopio) {
+          // VOLQUETAS desde acopio: NO generar venta
+          debeGenerarVenta = false;
+          razonDecision = 'Volqueta desde acopio - NO generar venta (nueva lógica simplificada)';
+        } else {
+          // Otras máquinas: mantener lógica actual
+          debeGenerarVenta = true;
+          razonDecision = 'Otra máquina - generar venta';
+        }
+        
+        console.log('🎯 DECISIÓN FINAL (LÓGICA SIMPLIFICADA):', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
+        console.log('📝 Razón:', razonDecision);
+        
+        if (debeGenerarVenta) {
+          generateAutomaticSale(report);
+        } else {
+          console.log('ℹ️ Venta NO generada por nueva lógica simplificada');
+          toast.info(`ℹ️ ${razonDecision}`, {
+            duration: 3000,
+            style: {
+              fontSize: '14px'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error procesando venta automática:', error);
+      }
     }
 
-    const newReport: Report = {
-      id: Date.now().toString(),
-      machineId,
-      machineName,
-      userName: 'Current User',
-      reportType,
-      description,
-      reportDate,
-      createdAt: new Date(),
-      value: calculatedValue,
-      trips,
-      hours,
-      workSite,
-      origin,
-      destination,
-      cantidadM3,
-      proveedor,
-      kilometraje,
-      detalleCalculo,
-      tarifaEncontrada,
-      // Campos específicos para escombrera
-      clienteEscombrera: reportType === 'Recepción Escombrera' ? destination : undefined,
-      tipoVolqueta: reportType === 'Recepción Escombrera' && description.includes('Doble Troque') ? 'Doble Troque' : 'Sencilla',
-      cantidadVolquetas: reportType === 'Recepción Escombrera' ? trips : undefined,
-    };
-
-    // Log para debugging
-    console.log('Nuevo reporte creado:', {
-      tipo: reportType,
-      valor: calculatedValue,
-      detalleCalculo,
-      tarifaEncontrada,
-      inventarioSeraAfectado: reportType === 'Viajes' && (origin?.includes('Acopio') || destination?.includes('Acopio'))
-    });
-
-    return newReport;
+    // PROCESAR ESCOMBRERA (mantener funcionalidad existente)
+    if (report.reportType === 'Recepción Escombrera') {
+      console.log('🏗 Procesando recepción de escombrera...');
+      const ventaGenerada = procesarReporteParaVenta(report);
+      if (ventaGenerada) {
+        toast.success('💰 Venta de escombrera generada', {
+          duration: 3000,
+          style: {
+            fontSize: '14px',
+            backgroundColor: '#059669',
+            color: 'white'
+          }
+        });
+      }
+    }
   };
 
-  const getReportsByMachine = (reports: Report[], machineId: string): Report[] => {
-    return reports.filter(report => report.machineId === machineId);
-  };
-
-  const getTotalByType = (reports: Report[], type: string): number => {
-    return reports
-      .filter(report => report.reportType === type)
-      .reduce((total, report) => total + report.value, 0);
+  const generateAutomaticSale = (report: Report) => {
+    console.log('💰 Generando venta automática...');
+    const ventaAutomatica = crearVentaAutomatica(report);
+    
+    if (ventaAutomatica) {
+      // ASEGURAR CÁLCULO CORRECTO DEL TOTAL
+      const ventaConTotalCalculado = updateVentaWithCalculatedTotal(ventaAutomatica);
+      console.log('💰 Venta con total calculado:', ventaConTotalCalculado.total_venta);
+      
+      // ASEGURAR GUARDADO DE LA VENTA
+      console.log('💾 Guardando venta en localStorage...');
+      try {
+        const ventasExistentes = loadVentas();
+        console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
+        
+        const nuevasVentas = [...ventasExistentes, ventaConTotalCalculado];
+        console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
+        
+        const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
+        if (guardadoExitoso) {
+          console.log('✅ Venta guardada exitosamente en localStorage');
+          
+          // Verificar que se guardó correctamente
+          const ventasVerificacion = loadVentas();
+          console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
+          
+          console.log('✓ Venta automática creada y guardada');
+          toast.success('💰 Venta automática generada exitosamente', {
+            duration: 4000,
+            style: {
+              fontSize: '14px',
+              backgroundColor: '#059669',
+              color: 'white'
+            }
+          });
+        } else {
+          console.error('❌ Error guardando venta en localStorage');
+          toast.error('Error guardando la venta automática');
+        }
+      } catch (error) {
+        console.error('❌ Error guardando venta:', error);
+        toast.error('Error guardando la venta automática');
+      }
+    } else {
+      console.log('⚠️ No se pudo crear la venta automática');
+    }
   };
 
   return {
-    createReport,
-    getReportsByMachine,
-    getTotalByType,
+    processSalesForReport
   };
 };

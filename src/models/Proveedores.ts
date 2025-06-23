@@ -1,4 +1,3 @@
-
 export interface Proveedor {
   id: string;
   nombre: string;
@@ -6,9 +5,14 @@ export interface Proveedor {
   telefono: string;
   email?: string;
   contacto_principal: string;
+  contacto: string; // Alias para contacto_principal
   activo: boolean;
   fecha_registro: Date;
   observaciones?: string;
+  tipo_proveedor: string;
+  nit: string;
+  correo_electronico?: string;
+  forma_pago?: string;
 }
 
 export interface ProductoProveedor {
@@ -20,6 +24,10 @@ export interface ProductoProveedor {
   disponible: boolean;
   fecha_registro: Date;
   observaciones?: string;
+  // Nuevas propiedades que esperan los componentes
+  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
+  unidad: string;
+  precio_unitario: number;
 }
 
 // Función para crear un nuevo proveedor
@@ -29,7 +37,10 @@ export const createProveedor = (
   telefono: string,
   contacto_principal: string,
   email?: string,
-  observaciones?: string
+  observaciones?: string,
+  tipo_proveedor?: string,
+  nit?: string,
+  forma_pago?: string
 ): Proveedor => {
   return {
     id: Date.now().toString(),
@@ -38,9 +49,14 @@ export const createProveedor = (
     telefono,
     email,
     contacto_principal,
+    contacto: contacto_principal, // Alias
     activo: true,
     fecha_registro: new Date(),
-    observaciones
+    observaciones,
+    tipo_proveedor: tipo_proveedor || 'Materiales',
+    nit: nit || '',
+    correo_electronico: email,
+    forma_pago: forma_pago || 'Contado'
   };
 };
 
@@ -50,7 +66,10 @@ export const createProductoProveedor = (
   nombre_producto: string,
   tipo_material: string,
   precio_por_m3: number,
-  observaciones?: string
+  observaciones?: string,
+  tipo_insumo?: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio',
+  unidad?: string,
+  precio_unitario?: number
 ): ProductoProveedor => {
   return {
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -60,7 +79,10 @@ export const createProductoProveedor = (
     precio_por_m3,
     disponible: true,
     fecha_registro: new Date(),
-    observaciones
+    observaciones,
+    tipo_insumo: tipo_insumo || 'Material',
+    unidad: unidad || 'm³',
+    precio_unitario: precio_unitario || precio_por_m3
   };
 };
 

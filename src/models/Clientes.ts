@@ -1,94 +1,83 @@
-
-// Model for clients
-
 export interface Cliente {
   id: string;
   nombre_cliente: string;
-  tipo_persona: 'Natural' | 'Empresa';
-  nit_cedula: string;
-  correo_electronico?: string;
-  telefono_contacto: string;
-  persona_contacto: string;
-  tipo_cliente: string;
+  nombre: string; // Alias para nombre_cliente
+  nit: string;
   ciudad: string;
+  direccion: string;
+  telefono: string;
+  email?: string;
+  contacto_principal: string;
+  activo: boolean;
   fecha_registro: Date;
   observaciones?: string;
 }
 
-export const tiposCliente = [
-  'Floristeria',
-  'Particular', 
-  'Finca',
-  'Constructora',
-  'Firma Ingenieria',
-  'Acopio de Material'
-];
-
-export const tiposPersona = [
-  'Natural',
-  'Empresa'
-];
-
-// Load clients from localStorage
-export const loadClientes = (): Cliente[] => {
-  const clientesString = localStorage.getItem('clientes');
-  if (!clientesString) return [];
-
-  try {
-    return JSON.parse(clientesString).map((cliente: any) => ({
-      ...cliente,
-      fecha_registro: new Date(cliente.fecha_registro),
-      // Migrar datos antiguos si es necesario
-      tipo_persona: cliente.tipo_persona || 'Natural',
-      nit_cedula: cliente.nit_cedula || '',
-      correo_electronico: cliente.correo_electronico || '',
-      telefono_contacto: cliente.telefono_contacto || cliente.contacto_telefono || '',
-      persona_contacto: cliente.persona_contacto || cliente.contacto_nombre || ''
-    }));
-  } catch (error) {
-    console.error('Error loading clients:', error);
-    return [];
-  }
-};
-
-// Save clients to localStorage
-export const saveClientes = (clientes: Cliente[]): void => {
-  localStorage.setItem('clientes', JSON.stringify(clientes));
-};
-
-// Create a new client
+// Función para crear un nuevo cliente
 export const createCliente = (
   nombre_cliente: string,
-  tipo_persona: 'Natural' | 'Empresa',
-  nit_cedula: string,
-  telefono_contacto: string,
-  persona_contacto: string,
+  nit: string,
   ciudad: string,
-  tipo_cliente?: string,
-  correo_electronico?: string,
+  direccion: string,
+  telefono: string,
+  contacto_principal: string,
+  email?: string,
   observaciones?: string
 ): Cliente => {
   return {
     id: Date.now().toString(),
     nombre_cliente,
-    tipo_persona,
-    nit_cedula,
-    correo_electronico,
-    telefono_contacto,
-    persona_contacto,
-    tipo_cliente: tipo_cliente || '',
+    nombre: nombre_cliente, // Alias
+    nit,
     ciudad,
+    direccion,
+    telefono,
+    contacto_principal,
+    activo: true,
     fecha_registro: new Date(),
-    observaciones
+    observaciones,
+    email
   };
 };
 
-// Get client names for dropdown
-export const getClientesNames = (): string[] => {
-  return loadClientes().map(cliente => cliente.nombre_cliente);
+// Función para guardar clientes en localStorage
+export const saveClientes = (clientes: Cliente[]): void => {
+  try {
+    console.log('💾 Guardando clientes:', clientes.length);
+    localStorage.setItem('clientes', JSON.stringify(clientes));
+    console.log('✅ Clientes guardados exitosamente');
+  } catch (error) {
+    console.error('❌ Error guardando clientes:', error);
+    throw error;
+  }
 };
 
-// Get client by name
+// Función para cargar clientes desde localStorage
+export const loadClientes = (): Cliente[] => {
+  try {
+    console.log('📂 Cargando clientes...');
+    const storedClientes = localStorage.getItem('clientes');
+    
+    if (!storedClientes) {
+      console.log('ℹ️ No hay clientes almacenados');
+      return [];
+    }
+    
+    const parsedClientes = JSON.parse(storedClientes).map((cliente: any) => ({
+      ...cliente,
+      fecha_registro: new Date(cliente.fecha_registro)
+    }));
+    
+    console.log('✅ Clientes cargados:', parsedClientes.length);
+    return parsedClientes;
+  } catch (error) {
+    console.error('❌ Error cargando clientes:', error);
+    return [];
+  }
+};
+
+// Función para obtener cliente por nombre
 export const getClienteByName = (nombre: string): Cliente | undefined => {
-  return loadClientes().find(cliente => cliente.nombre_cliente === nombre);
+  const clientes = loadClientes();
+  return clientes.find(cliente => (cliente.nombre_cliente === nombre || cliente.nombre === nombre) && cliente.activo);
 };

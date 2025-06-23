@@ -33,7 +33,7 @@ export const useProveedorClienteTarifaTrazabilidad = () => {
 
       // Verificar cada tarifa y su relación con proveedores
       tarifas.forEach(tarifa => {
-        const cliente = clientes.find(c => c.nombre === tarifa.cliente);
+        const cliente = clientes.find(c => (c.nombre_cliente || c.nombre) === tarifa.cliente);
         if (!cliente) {
           problemas.push(`Tarifa ${tarifa.id}: Cliente "${tarifa.cliente}" no encontrado`);
         }
