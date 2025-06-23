@@ -1,260 +1,409 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Edit, Trash2, Users, MapPin } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from "sonner";
+import { ArrowLeft, UserPlus, Users, MapPin, Search, Building2, Contact } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente, tiposPersona, TipoPersona, TipoCliente } from '@/models/Clientes';
-import { getFincasByCliente } from '@/models/Fincas';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Cliente, 
+  loadClientes, 
+  saveClientes, 
+  createCliente,
+  updateCliente,
+  deleteCliente,
+  getTiposPersona,
+  getTiposCliente
+} from '@/models/Clientes';
+import { Finca, loadFincas, getFincasByCliente } from '@/models/Fincas';
 import FincasManagement from '@/components/FincasManagement';
-import ClienteDialogForm from "@/components/clientes/ClienteDialogForm";
-import ClientesTable from "@/components/clientes/ClientesTable";
-import ClientesEmptyState from "@/components/clientes/ClientesEmptyState";
-import EditarClienteDialog from "@/components/clientes/EditarClienteDialog";
+import ClientesTable from '@/components/clientes/ClientesTable';
+import ClienteDialogForm from '@/components/clientes/ClienteDialogForm';
+import EditarClienteDialog from '@/components/clientes/EditarClienteDialog';
+import ClientesEmptyState from '@/components/clientes/ClientesEmptyState';
 
-// Schema for client validation
-const clienteSchema = z.object({
-  nombre_cliente: z.string().min(1, { message: "El nombre del cliente es obligatorio" }),
-  tipo_persona: z.enum(['Natural', 'Empresa'], { message: "Seleccione el tipo de persona" }),
-  nit_cedula: z.string().min(1, { message: "El NIT o cédula es obligatorio" }),
-  correo_electronico: z.string().email({ message: "Ingrese un correo válido" }).optional().or(z.literal("")),
-  telefono_contacto: z.string().min(1, { message: "El teléfono es obligatorio" }),
-  persona_contacto: z.string().min(1, { message: "La persona de contacto es obligatoria" }),
-  ciudad: z.string().min(1, { message: "La ciudad es obligatoria" }),
+const formSchema = z.object({
+  nombre_cliente: z.string().min(1, 'El nombre del cliente es requerido'),
+  tipo_persona: z.string().min(1, 'El tipo de persona es requerido'),
+  nit_cedula: z.string().min(1, 'El NIT o cédula es requerido'),
+  correo_electronico: z.string().email('Email inválido').optional().or(z.literal('')),
+  persona_contacto: z.string().min(1, 'La persona de contacto es requerida'),
+  telefono_contacto: z.string().min(1, 'El teléfono de contacto es requerido'),
+  ciudad: z.string().min(1, 'La ciudad es requerida'),
   tipo_cliente: z.string().optional(),
-  observaciones: z.string().optional()
+  observaciones: z.string().optional(),
 });
 
 const ClientesPage: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   
-  // States
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [fincas, setFincas] = useState<Finca[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showFincasDialog, setShowFincasDialog] = useState(false);
-  
-  // Form setup
-  const form = useForm<z.infer<typeof clienteSchema>>({
-    resolver: zodResolver(clienteSchema),
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipoPersona, setFilterTipoPersona] = useState('');
+  const [filterTipoCliente, setFilterTipoCliente] = useState('');
+
+  const tiposPersona = getTiposPersona();
+  const tiposCliente = getTiposCliente();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      nombre_cliente: "",
-      tipo_persona: "Natural",
-      nit_cedula: "",
-      correo_electronico: "",
-      telefono_contacto: "",
-      persona_contacto: "",
-      ciudad: "",
-      tipo_cliente: "",
-      observaciones: ""
-    }
+      nombre_cliente: '',
+      tipo_persona: '',
+      nit_cedula: '',
+      correo_electronico: '',
+      persona_contacto: '',
+      telefono_contacto: '',
+      ciudad: '',
+      tipo_cliente: '',
+      observaciones: '',
+    },
   });
-  
-  // Load data on mount
+
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    
-    if (user.role !== 'Administrador') {
-      toast.error('No tienes permisos para acceder a esta página');
-      navigate('/dashboard');
-      return;
-    }
-    
+    loadData();
+  }, []);
+
+  const loadData = () => {
     setClientes(loadClientes());
-  }, [user, navigate]);
-  
-  // Function to add a new client
-  const handleAddCliente = (data: z.infer<typeof clienteSchema>) => {
-    const nuevoCliente = createCliente(
-      data.nombre_cliente,
-      data.tipo_persona as TipoPersona,
-      data.nit_cedula,
-      data.telefono_contacto,
-      data.persona_contacto,
-      data.ciudad,
-      data.tipo_cliente as TipoCliente,
-      data.correo_electronico,
-      data.observaciones
-    );
-    
-    const clientesActualizados = [...clientes, nuevoCliente];
-    saveClientes(clientesActualizados);
-    setClientes(clientesActualizados);
-    form.reset();
-    toast.success('Cliente agregado correctamente');
+    setFincas(loadFincas());
   };
-  
-  // Function to update a client
-  const handleUpdateCliente = (data: z.infer<typeof clienteSchema>) => {
-    if (!editingCliente) return;
+
+  const filteredClientes = clientes.filter(cliente => {
+    const matchesSearch = cliente.nombre_cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         cliente.nit_cedula.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         cliente.persona_contacto.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTipoPersona = !filterTipoPersona || cliente.tipo_persona === filterTipoPersona;
+    const matchesTipoCliente = !filterTipoCliente || cliente.tipo_cliente === filterTipoCliente;
     
-    const clientesActualizados = clientes.map(cliente => 
-      cliente.id === editingCliente.id ? {
-        ...cliente,
+    return matchesSearch && matchesTipoPersona && matchesTipoCliente;
+  });
+
+  const getFincasCount = (clienteId: string): number => {
+    return getFincasByCliente(clienteId).length;
+  };
+
+  const getTipoClienteColor = (tipo?: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!tipo) return "outline";
+    switch (tipo.toLowerCase()) {
+      case 'vip': return 'default';
+      case 'premium': return 'secondary';
+      case 'regular': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
+  const handleAddCliente = (data: z.infer<typeof formSchema>) => {
+    try {
+      const nuevoCliente = createCliente(
+        data.nombre_cliente,
+        data.tipo_persona,
+        data.nit_cedula,
+        data.correo_electronico || undefined,
+        data.persona_contacto,
+        data.telefono_contacto,
+        data.ciudad,
+        data.tipo_cliente || undefined,
+        data.observaciones || undefined
+      );
+
+      const clientesActualizados = [...clientes, nuevoCliente];
+      saveClientes(clientesActualizados);
+      setClientes(clientesActualizados);
+      
+      form.reset();
+      setShowAddDialog(false);
+      toast.success('Cliente agregado exitosamente');
+    } catch (error) {
+      console.error('Error agregando cliente:', error);
+      toast.error('Error al agregar el cliente');
+    }
+  };
+
+  const handleUpdateCliente = (data: z.infer<typeof formSchema>) => {
+    if (!selectedCliente) return;
+
+    try {
+      const clienteActualizado = updateCliente(selectedCliente.id, {
         nombre_cliente: data.nombre_cliente,
-        nombre: data.nombre_cliente,
-        tipo_persona: data.tipo_persona as TipoPersona,
+        tipo_persona: data.tipo_persona,
         nit_cedula: data.nit_cedula,
-        nit: data.nit_cedula,
-        correo_electronico: data.correo_electronico,
-        email: data.correo_electronico,
-        telefono_contacto: data.telefono_contacto,
-        telefono: data.telefono_contacto,
+        correo_electronico: data.correo_electronico || undefined,
         persona_contacto: data.persona_contacto,
-        contacto_principal: data.persona_contacto,
+        telefono_contacto: data.telefono_contacto,
         ciudad: data.ciudad,
-        tipo_cliente: data.tipo_cliente as TipoCliente,
-        observaciones: data.observaciones
-      } : cliente
-    );
-    
-    saveClientes(clientesActualizados);
-    setClientes(clientesActualizados);
-    setEditingCliente(null);
-    toast.success('Cliente actualizado correctamente');
+        tipo_cliente: data.tipo_cliente || undefined,
+        observaciones: data.observaciones || undefined,
+      });
+
+      const clientesActualizados = clientes.map(c => 
+        c.id === selectedCliente.id ? clienteActualizado : c
+      );
+      
+      saveClientes(clientesActualizados);
+      setClientes(clientesActualizados);
+      setShowEditDialog(false);
+      setSelectedCliente(null);
+      toast.success('Cliente actualizado exitosamente');
+    } catch (error) {
+      console.error('Error actualizando cliente:', error);
+      toast.error('Error al actualizar el cliente');
+    }
   };
-  
-  // Function to delete a client
+
   const handleDeleteCliente = (id: string) => {
-    const clientesActualizados = clientes.filter(cliente => cliente.id !== id);
-    saveClientes(clientesActualizados);
-    setClientes(clientesActualizados);
-    toast.success('Cliente eliminado correctamente');
+    try {
+      deleteCliente(id);
+      const clientesActualizados = clientes.filter(c => c.id !== id);
+      saveClientes(clientesActualizados);
+      setClientes(clientesActualizados);
+      toast.success('Cliente eliminado exitosamente');
+    } catch (error) {
+      console.error('Error eliminando cliente:', error);
+      toast.error('Error al eliminar el cliente');
+    }
   };
-  
-  // Function to open edit client dialog
+
   const openEditCliente = (cliente: Cliente) => {
-    setEditingCliente(cliente);
+    setSelectedCliente(cliente);
     form.reset({
       nombre_cliente: cliente.nombre_cliente,
       tipo_persona: cliente.tipo_persona,
       nit_cedula: cliente.nit_cedula,
-      correo_electronico: cliente.correo_electronico || "",
-      telefono_contacto: cliente.telefono_contacto,
+      correo_electronico: cliente.correo_electronico || '',
       persona_contacto: cliente.persona_contacto,
+      telefono_contacto: cliente.telefono_contacto,
       ciudad: cliente.ciudad,
-      tipo_cliente: cliente.tipo_cliente || "",
-      observaciones: cliente.observaciones || ""
+      tipo_cliente: cliente.tipo_cliente || '',
+      observaciones: cliente.observaciones || '',
     });
+    setShowEditDialog(true);
   };
 
-  // Function to open fincas management
   const openFincasManagement = (cliente: Cliente) => {
     setSelectedCliente(cliente);
     setShowFincasDialog(true);
   };
-  
-  // Colores visuales de los badges unificados al UI corporativo
-  const getTipoClienteColor = (tipo?: string): string => {
-    if (!tipo) return "muted";
-    switch (tipo) {
-      case "Constructora":
-        return "accent";
-      case "Floristeria":
-        return "primary";
-      case "Particular":
-        return "secondary";
-      case "Finca":
-        return "accent";
-      default:
-        return "muted";
-    }
-  };
-
-  // Get count of fincas for each client
-  const getFincasCount = (clienteId: string): number => {
-    return getFincasByCliente(clienteId).length;
-  };
-  
-  if (!user || user.role !== 'Administrador') return null;
 
   return (
-    <div className="container mx-auto py-8 px-0 sm:px-4">
-
-      {/* Cabecera visual potente */}
-      <div className="page-header animate-fade-in mb-12">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div>
-            <h1 className="text-responsive-xl font-bold mb-2 flex items-center gap-4">
-              <Users className="mobile-icon-large hidden sm:inline-block" />
-              Gestión de Clientes
-            </h1>
-            <p className="text-corporate-muted text-lg">
-              Administra los clientes y sus fincas o puntos de entrega de forma eficiente.
-            </p>
-          </div>
-          <Button 
-            variant="back"
-            className="btn-outline-large btn-press"
-            onClick={() => navigate('/admin')}
-          >
-            <ArrowLeft className="mr-2" /> Volver al panel admin
-          </Button>
-        </div>
-      </div>
-
-      <Card className="corporate-card animate-scale-in shadow-2xl">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0">
-            <div>
-              <CardTitle className="text-responsive-lg">Clientes</CardTitle>
-              <CardDescription>
-                Gestiona los clientes y sus múltiples fincas o puntos de entrega para mayor flexibilidad.
-              </CardDescription>
+    <div className="container mx-auto py-10 px-6 animate-fade-in max-w-7xl">
+      {/* Enhanced Header Section */}
+      <div className="mb-10">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Gestión de Clientes
+                </h1>
+                <p className="text-lg text-slate-600 font-medium">
+                  Administra tu cartera de clientes y sus proyectos
+                </p>
+              </div>
             </div>
-            <Dialog>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
-                <Button className="btn-primary-large btn-press gap-2">
-                  <Plus />
-                  Agregar nuevo cliente
+                <Button 
+                  className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                >
+                  <UserPlus className="mr-3 h-6 w-6" />
+                  Agregar Cliente
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[700px]">
-                <DialogHeader>
-                  <DialogTitle>Agregar Cliente</DialogTitle>
-                  <DialogDescription>
-                    Ingresa los datos del nuevo cliente
-                  </DialogDescription>
+              <DialogContent className="sm:max-w-[800px] animate-scale-in corporate-card shadow-2xl bg-background border">
+                <DialogHeader className="space-y-4 pb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                      <UserPlus className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-2xl font-bold text-slate-800">Agregar Nuevo Cliente</DialogTitle>
+                      <DialogDescription className="text-base text-slate-600">
+                        Complete la información del cliente para registrarlo en el sistema
+                      </DialogDescription>
+                    </div>
+                  </div>
                 </DialogHeader>
-                <ClienteDialogForm 
+                <ClienteDialogForm
                   form={form}
-                  tiposPersona={[...tiposPersona]} 
-                  tiposCliente={[...tiposCliente]}
-                  isEdit={false}
-                  onSubmit={form.handleSubmit(handleAddCliente)}
+                  tiposPersona={tiposPersona}
+                  tiposCliente={tiposCliente}
+                  onSubmit={handleAddCliente}
                 />
               </DialogContent>
             </Dialog>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/admin')}
+              className="h-14 px-8 font-bold text-lg border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 shadow-md"
+            >
+              <ArrowLeft className="mr-3 h-6 w-6" />
+              Volver al Panel
+            </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Enhanced Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-600 text-base font-bold">Total Clientes</p>
+                <p className="text-4xl font-bold text-blue-700">{clientes.length}</p>
+              </div>
+              <div className="p-4 bg-blue-200 rounded-2xl">
+                <Users className="h-10 w-10 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 text-base font-bold">Empresas</p>
+                <p className="text-4xl font-bold text-green-700">
+                  {clientes.filter(c => c.tipo_persona === 'Empresa').length}
+                </p>
+              </div>
+              <div className="p-4 bg-green-200 rounded-2xl">
+                <Building2 className="h-10 w-10 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-600 text-base font-bold">Personas Naturales</p>
+                <p className="text-4xl font-bold text-purple-700">
+                  {clientes.filter(c => c.tipo_persona === 'Persona Natural').length}
+                </p>
+              </div>
+              <div className="p-4 bg-purple-200 rounded-2xl">
+                <Contact className="h-10 w-10 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-600 text-base font-bold">Proyectos Activos</p>
+                <p className="text-4xl font-bold text-orange-700">{fincas.length}</p>
+              </div>
+              <div className="p-4 bg-orange-200 rounded-2xl">
+                <MapPin className="h-10 w-10 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Enhanced Search and Filters */}
+      <Card className="mb-8 shadow-xl border-0 bg-white/95 backdrop-blur">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+            <Search className="h-7 w-7 text-slate-600" />
+            Buscar y Filtrar Clientes
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {clientes.length > 0 ? (
+        <CardContent className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="search" className="text-lg font-bold text-slate-700">Buscar Cliente</Label>
+              <Input
+                id="search"
+                placeholder="Nombre, NIT/Cédula o contacto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-14 text-lg border-2 border-slate-300 focus:border-blue-500 transition-colors"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <Label htmlFor="tipo-persona" className="text-lg font-bold text-slate-700">Tipo de Persona</Label>
+              <select
+                id="tipo-persona"
+                value={filterTipoPersona}
+                onChange={(e) => setFilterTipoPersona(e.target.value)}
+                className="w-full h-14 px-4 text-lg border-2 border-slate-300 rounded-md focus:border-blue-500 focus:outline-none transition-colors bg-white"
+              >
+                <option value="">Todos los tipos</option>
+                {tiposPersona.map((tipo) => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-3">
+              <Label htmlFor="tipo-cliente" className="text-lg font-bold text-slate-700">Categoría Cliente</Label>
+              <select
+                id="tipo-cliente"
+                value={filterTipoCliente}
+                onChange={(e) => setFilterTipoCliente(e.target.value)}
+                className="w-full h-14 px-4 text-lg border-2 border-slate-300 rounded-md focus:border-blue-500 focus:outline-none transition-colors bg-white"
+              >
+                <option value="">Todas las categorías</option>
+                {tiposCliente.map((tipo) => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Clients Table */}
+      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="text-2xl font-bold text-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="h-7 w-7 text-slate-600" />
+              Lista de Clientes
+            </div>
+            <Badge variant="secondary" className="text-lg font-bold px-4 py-2">
+              {filteredClientes.length} resultados
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8">
+          {filteredClientes.length > 0 ? (
             <ClientesTable
-              clientes={clientes}
+              clientes={filteredClientes}
               getFincasCount={getFincasCount}
               getTipoClienteColor={getTipoClienteColor}
               openFincasManagement={openFincasManagement}
               openEditCliente={openEditCliente}
               handleDeleteCliente={handleDeleteCliente}
               form={form}
-              tiposPersona={[...tiposPersona]}
-              tiposCliente={[...tiposCliente]}
+              tiposPersona={tiposPersona}
+              tiposCliente={tiposCliente}
               handleUpdateCliente={handleUpdateCliente}
             />
           ) : (
@@ -263,27 +412,38 @@ const ClientesPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog para editar cliente - ahora refactorizado */}
+      {/* Enhanced Dialogs */}
       <EditarClienteDialog
-        open={!!editingCliente}
-        onOpenChange={(open) => !open && setEditingCliente(null)}
-        cliente={editingCliente}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        cliente={selectedCliente}
         form={form}
-        tiposPersona={[...tiposPersona]}
-        tiposCliente={[...tiposCliente]}
-        onSubmit={form.handleSubmit(handleUpdateCliente)}
+        tiposPersona={tiposPersona}
+        tiposCliente={tiposCliente}
+        onSubmit={handleUpdateCliente}
       />
 
-      {/* Dialog para gestión de fincas */}
       <Dialog open={showFincasDialog} onOpenChange={setShowFincasDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gestión de Fincas</DialogTitle>
+        <DialogContent className="sm:max-w-6xl animate-scale-in corporate-card shadow-2xl bg-background border">
+          <DialogHeader className="space-y-4 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+                <MapPin className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold text-slate-800">
+                  Gestionar Fincas - {selectedCliente?.nombre_cliente}
+                </DialogTitle>
+                <DialogDescription className="text-base text-slate-600">
+                  Administra las fincas y proyectos asociados a este cliente
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           {selectedCliente && (
-            <FincasManagement 
-              clienteId={selectedCliente.id}
-              clienteNombre={selectedCliente.nombre_cliente}
+            <FincasManagement
+              cliente={selectedCliente}
+              onClose={() => setShowFincasDialog(false)}
             />
           )}
         </DialogContent>

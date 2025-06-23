@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Finca } from "@/models/Fincas";
+import { Save, Plus, MapPin, Building, Phone, User } from "lucide-react";
 
 interface FincaFormProps {
   nombreFinca: string;
@@ -37,77 +38,128 @@ const FincaForm: React.FC<FincaFormProps> = ({
   onCancel,
 }) => (
   <>
-    <DialogHeader>
-      <DialogTitle>
-        {editingFinca ? 'Editar Finca' : 'Agregar Nueva Finca'}
-      </DialogTitle>
+    <DialogHeader className="space-y-4 pb-6">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+          {editingFinca ? <Save className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
+        </div>
+        <div>
+          <DialogTitle className="text-2xl font-bold text-slate-800">
+            {editingFinca ? 'Editar Proyecto/Finca' : 'Agregar Nuevo Proyecto/Finca'}
+          </DialogTitle>
+          <p className="text-base text-slate-600 mt-1">
+            {editingFinca ? 'Modifica la información del proyecto' : 'Complete los datos del nuevo proyecto'}
+          </p>
+        </div>
+      </div>
     </DialogHeader>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
-      <div>
-        <Label htmlFor="nombre-finca">Nombre de la Finca *</Label>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+      <div className="space-y-3">
+        <Label htmlFor="nombre-finca" className="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <Building className="w-5 h-5 text-slate-600" />
+          Nombre del Proyecto/Finca *
+        </Label>
         <Input
           id="nombre-finca"
           value={nombreFinca}
           onChange={(e) => setNombreFinca(e.target.value)}
-          placeholder="Ej: Finca La Esperanza"
-          className="mt-1"
+          placeholder="Ej: Proyecto Urbanización La Esperanza"
+          className="h-14 text-lg border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
-      <div>
-        <Label htmlFor="ciudad">Ciudad/Municipio *</Label>
+      
+      <div className="space-y-3">
+        <Label htmlFor="ciudad" className="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-slate-600" />
+          Ciudad/Municipio *
+        </Label>
         <Input
           id="ciudad"
           value={ciudad}
           onChange={(e) => setCiudad(e.target.value)}
-          placeholder="Ej: Medellín"
-          className="mt-1"
+          placeholder="Ej: Medellín, Antioquia"
+          className="h-14 text-lg border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
-      <div className="md:col-span-2">
-        <Label htmlFor="direccion">Dirección Exacta *</Label>
+      
+      <div className="md:col-span-2 space-y-3">
+        <Label htmlFor="direccion" className="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-slate-600" />
+          Dirección Exacta del Proyecto *
+        </Label>
         <Input
           id="direccion"
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
-          placeholder="Dirección completa de la finca"
-          className="mt-1"
+          placeholder="Dirección completa y detallada del proyecto"
+          className="h-14 text-lg border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
-      <div>
-        <Label htmlFor="contacto-nombre">Persona de Contacto *</Label>
+      
+      <div className="space-y-3">
+        <Label htmlFor="contacto-nombre" className="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <User className="w-5 h-5 text-slate-600" />
+          Persona de Contacto *
+        </Label>
         <Input
           id="contacto-nombre"
           value={contactoNombre}
           onChange={(e) => setContactoNombre(e.target.value)}
-          placeholder="Nombre del contacto"
-          className="mt-1"
+          placeholder="Nombre del responsable en el proyecto"
+          className="h-14 text-lg border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
-      <div>
-        <Label htmlFor="contacto-telefono">Teléfono de Contacto *</Label>
+      
+      <div className="space-y-3">
+        <Label htmlFor="contacto-telefono" className="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <Phone className="w-5 h-5 text-slate-600" />
+          Teléfono de Contacto *
+        </Label>
         <Input
           id="contacto-telefono"
           value={contactoTelefono}
           onChange={(e) => setContactoTelefono(e.target.value)}
-          placeholder="Teléfono del contacto"
-          className="mt-1"
+          placeholder="Ej: +57 301 234 5678"
+          className="h-14 text-lg border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
-      <div className="md:col-span-2">
-        <Label htmlFor="notas">Notas Adicionales</Label>
+      
+      <div className="md:col-span-2 space-y-3">
+        <Label htmlFor="notas" className="text-lg font-bold text-slate-700">Notas Adicionales del Proyecto</Label>
         <Textarea
           id="notas"
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
-          placeholder="Notas adicionales sobre la finca"
-          className="mt-1"
+          placeholder="Información adicional sobre el proyecto, requisitos especiales, observaciones importantes..."
+          className="min-h-[120px] text-lg border-2 border-slate-300 focus:border-green-500 transition-colors resize-none"
         />
       </div>
     </div>
-    <DialogFooter>
-      <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-      <Button onClick={onSubmit} className="btn-primary-large btn-press">
-        {editingFinca ? "Actualizar" : "Guardar"} Finca
+    
+    <DialogFooter className="gap-4 pt-8 border-t border-slate-200">
+      <Button 
+        variant="outline" 
+        onClick={onCancel}
+        className="h-14 px-8 font-bold text-lg border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
+      >
+        Cancelar
+      </Button>
+      <Button 
+        onClick={onSubmit} 
+        className="h-14 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      >
+        {editingFinca ? (
+          <>
+            <Save className="mr-3 h-6 w-6" />
+            Actualizar Proyecto
+          </>
+        ) : (
+          <>
+            <Plus className="mr-3 h-6 w-6" />
+            Guardar Proyecto
+          </>
+        )}
       </Button>
     </DialogFooter>
   </>
