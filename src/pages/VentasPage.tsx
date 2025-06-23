@@ -21,7 +21,11 @@ const VentasPage = () => {
 
   if (!user || user.role !== 'Administrador') return null;
 
-  return <VentasPageContainerFixed />;
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <VentasPageContainerFixed />
+    </div>
+  );
 };
 
 export default VentasPage;

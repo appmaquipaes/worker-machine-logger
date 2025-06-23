@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, ShoppingCart } from 'lucide-react';
 
 interface VentasPageHeaderProps {
   onNewVentaClick: () => void;
@@ -12,30 +12,36 @@ const VentasPageHeader: React.FC<VentasPageHeaderProps> = ({ onNewVentaClick }) 
   const navigate = useNavigate();
 
   return (
-    <div className="mb-8">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-2 gap-2 md:gap-0">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight mb-1">Gestión de Ventas</h1>
-          <p className="text-muted-foreground text-sm">Registra y gestiona todas las ventas de material y transporte</p>
+    <div className="mb-8 bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="p-4 bg-blue-100 rounded-2xl">
+            <ShoppingCart className="h-8 w-8 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold text-slate-800 mb-2">Gestión de Ventas</h1>
+            <p className="text-lg text-slate-600 leading-relaxed">
+              Registra y gestiona todas las ventas de material y transporte de forma sencilla
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 mt-2 md:mt-0">
+        
+        <div className="flex flex-col sm:flex-row gap-4">
           <Button
             onClick={onNewVentaClick}
-            className="flex items-center gap-2 shadow-sm transition-transform hover:scale-[1.03] duration-150"
-            variant="default"
-            size="sm"
+            className="h-14 px-8 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
           >
-            <Plus size={18} />
+            <Plus className="h-6 w-6 mr-3" />
             Nueva Venta
           </Button>
+          
           <Button 
-            variant="back"
+            variant="outline"
             onClick={() => navigate('/admin')}
-            className="shadow-sm"
-            size="sm"
+            className="h-14 px-8 text-lg font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
           >
-            <ArrowLeft size={18} />
-            Volver
+            <ArrowLeft className="h-6 w-6 mr-3" />
+            Volver al Panel
           </Button>
         </div>
       </div>
