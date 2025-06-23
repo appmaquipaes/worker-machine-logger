@@ -1,10 +1,13 @@
 
 import { Report } from '@/types/report';
-import { Venta, createVenta, createDetalleVenta, updateVentaTotal } from '@/models/Ventas';
+import { Venta, createVenta, createDetalleVenta } from '@/models/Ventas';
 import { findTarifaCliente, findTarifaEscombrera } from '@/models/TarifasCliente';
 import { extractClienteFromDestination, extractFincaFromDestination } from '@/utils/reportUtils';
+import { useVentaCalculationsFixed } from '@/hooks/useVentaCalculationsFixed';
 
 export const useVentaCreation = () => {
+  const { updateVentaWithCalculatedTotal } = useVentaCalculationsFixed();
+
   const crearVentaAutomatica = (report: Report): Venta | null => {
     console.log('🔄 Iniciando creación de venta automática para reporte:', report);
     
@@ -147,10 +150,10 @@ export const useVentaCreation = () => {
         }
       }
 
-      // Actualizar total de la venta
-      const ventaFinal = updateVentaTotal(nuevaVenta);
+      // Calcular total correctamente
+      const ventaFinal = updateVentaWithCalculatedTotal(nuevaVenta);
       
-      console.log('✅ Venta automática creada:', ventaFinal);
+      console.log('✅ Venta automática creada con total calculado:', ventaFinal.total_venta);
       return ventaFinal;
       
     } catch (error) {

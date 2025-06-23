@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import VentasPageContainer from '@/components/ventas/VentasPageContainer';
+import VentasPageContainerFixed from '@/components/ventas/VentasPageContainerFixed';
 
 const VentasPage = () => {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ const VentasPage = () => {
 
   if (!user || user.role !== 'Administrador') return null;
 
-  return <VentasPageContainer />;
+  return <VentasPageContainerFixed />;
 };
 
 export default VentasPage;
