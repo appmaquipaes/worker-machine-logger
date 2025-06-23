@@ -4,15 +4,34 @@ import { useVentaCreation } from '@/hooks/useVentaCreation';
 import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { loadVentas } from '@/models/Ventas';
 import { useDataPersistence } from '@/hooks/useDataPersistence';
+import { useVentaCalculationsFixed } from '@/hooks/useVentaCalculationsFixed';
 import { toast } from "sonner";
 
 export const useReportSalesProcessing = () => {
   const { crearVentaAutomatica } = useVentaCreation();
   const { procesarReporteParaVenta } = useAutoVentas();
   const { saveToLocalStorage } = useDataPersistence();
+  const { updateVentaWithCalculatedTotal } = useVentaCalculationsFixed();
 
   const processSalesForReport = (report: Report) => {
-    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS AUTOMÁTICAS
+    console.log('💼 Procesando ventas para reporte:', report.reportType, report.machineName);
+
+    // GENERAR VENTAS AUTOMÁTICAS PARA HORAS TRABAJADAS (TODAS LAS MÁQUINAS)
+    if (report.reportType === 'Horas Trabajadas' && report.workSite && report.hours) {
+      try {
+        console.log('⏰ Generando venta automática para HORAS TRABAJADAS...');
+        console.log('- Máquina:', report.machineName);
+        console.log('- Cliente/Sitio:', report.workSite);
+        console.log('- Horas:', report.hours);
+        console.log('- Valor:', report.value);
+        
+        generateAutomaticSale(report);
+      } catch (error) {
+        console.error('❌ Error generando venta para horas trabajadas:', error);
+      }
+    }
+
+    // NUEVA LÓGICA SIMPLIFICADA PARA VIAJES
     if (report.reportType === 'Viajes' && report.destination) {
       try {
         console.log('💼 Aplicando NUEVA LÓGICA SIMPLIFICADA de ventas...');
@@ -68,16 +87,6 @@ export const useReportSalesProcessing = () => {
       }
     }
 
-    // NUEVO: GENERAR VENTAS AUTOMÁTICAS PARA HORAS TRABAJADAS
-    if (report.reportType === 'Horas Trabajadas' && report.workSite && report.hours) {
-      try {
-        console.log('⏰ Generando venta automática para HORAS TRABAJADAS...');
-        generateAutomaticSale(report);
-      } catch (error) {
-        console.error('❌ Error generando venta para horas trabajadas:', error);
-      }
-    }
-
     // PROCESAR ESCOMBRERA (mantener funcionalidad existente)
     if (report.reportType === 'Recepción Escombrera') {
       console.log('🏗 Procesando recepción de escombrera...');
@@ -100,13 +109,17 @@ export const useReportSalesProcessing = () => {
     const ventaAutomatica = crearVentaAutomatica(report);
     
     if (ventaAutomatica) {
+      // ASEGURAR CÁLCULO CORRECTO DEL TOTAL
+      const ventaConTotalCalculado = updateVentaWithCalculatedTotal(ventaAutomatica);
+      console.log('💰 Venta con total calculado:', ventaConTotalCalculado.total_venta);
+      
       // ASEGURAR GUARDADO DE LA VENTA
       console.log('💾 Guardando venta en localStorage...');
       try {
         const ventasExistentes = loadVentas();
         console.log('📋 Ventas existentes cargadas:', ventasExistentes.length);
         
-        const nuevasVentas = [...ventasExistentes, ventaAutomatica];
+        const nuevasVentas = [...ventasExistentes, ventaConTotalCalculado];
         console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
         
         const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
