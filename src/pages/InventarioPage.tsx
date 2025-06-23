@@ -31,6 +31,7 @@ const InventarioPage: React.FC = () => {
   const [columnaOrdenada, setColumnaOrdenada] = useState<string>('tipo_material');
   const [modalDesgloseOpen, setModalDesgloseOpen] = useState(false);
 
+  // ... keep existing code (useEffect, helper functions)
   useEffect(() => {
     cargarInventario();
   }, []);
@@ -171,31 +172,26 @@ const InventarioPage: React.FC = () => {
     };
   };
 
-  // Lógica para manejador del desglose
   const handleDesgloseRealizado = (movimiento: { cantidadRecebo: number; subproductos: { [key: string]: number } }) => {
     if (!movimiento) return;
 
     const { cantidadRecebo, subproductos } = movimiento;
 
-    // Buscar Recebo
     const inventarioActual = [...inventario];
     const idxRecebo = inventarioActual.findIndex(i => i.tipo_material.toLowerCase().includes("recebo común"));
     if (idxRecebo === -1) return;
 
-    // Descontar Recebo Común
     inventarioActual[idxRecebo].cantidad_disponible -= cantidadRecebo;
 
-    // Agregar/sumar subproductos al inventario
     Object.entries(subproductos).forEach(([nombre, cantidad]) => {
       if (!cantidad || cantidad <= 0) return;
       const idxSub = inventarioActual.findIndex(i => i.tipo_material === nombre);
       if (idxSub === -1) {
-        // Crear nueva línea
         inventarioActual.push({
           id: Date.now().toString() + Math.random().toString().slice(2,7),
           tipo_material: nombre,
           cantidad_disponible: cantidad,
-          costo_promedio_m3: 0, // Se puede ajustar según lógica contable
+          costo_promedio_m3: 0,
         });
       } else {
         inventarioActual[idxSub].cantidad_disponible += cantidad;
@@ -209,369 +205,380 @@ const InventarioPage: React.FC = () => {
   const stats = generarReporteStock();
 
   return (
-    <div className="container mx-auto py-8 px-4 animate-fade-in">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Inventario de Acopio
-            </h1>
-            <p className="text-lg text-slate-600">
-              Gestiona el inventario de materiales en acopio
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-2 h-12 px-6 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
-          >
-            <ArrowLeft size={18} />
-            Volver al panel admin
-          </Button>
-        </div>
-      </div>
-
-      {/* Estadísticas del inventario */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-medium">Total Materiales</p>
-                <p className="text-3xl font-bold text-blue-700">{stats.totalMateriales}</p>
-              </div>
-              <div className="p-3 bg-blue-200 rounded-xl">
-                <Package className="h-8 w-8 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 text-sm font-medium">Con Stock</p>
-                <p className="text-3xl font-bold text-green-700">{stats.materialesConStock}</p>
-              </div>
-              <div className="p-3 bg-green-200 rounded-xl">
-                <TrendingUp className="h-8 w-8 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-600 text-sm font-medium">Sin Stock</p>
-                <p className="text-3xl font-bold text-red-700">{stats.materialesSinStock}</p>
-              </div>
-              <div className="p-3 bg-red-200 rounded-xl">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-600 text-sm font-medium">Valor Total</p>
-                <p className="text-3xl font-bold text-purple-700">${stats.valorTotalInventario.toLocaleString()}</p>
-              </div>
-              <div className="p-3 bg-purple-200 rounded-xl">
-                <BarChart3 className="h-8 w-8 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="default"
-          onClick={() => setModalDesgloseOpen(true)}
-          className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-white font-semibold px-6 h-10 shadow-lg hover:from-yellow-500 hover:to-yellow-300"
-        >
-          Desglosar/Transformar Material
-        </Button>
-      </div>
-
-      {/* Agregar Material */}
-      <Card className="mb-8 shadow-2xl border-0 bg-white/80 backdrop-blur">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-2xl font-bold text-slate-800">Agregar Material</CardTitle>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="container mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div className="space-y-3">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Inventario de Acopio
+              </h1>
+              <p className="text-xl text-slate-600 leading-relaxed">
+                Gestiona el inventario de materiales en acopio de forma sencilla y eficiente
+              </p>
             </div>
             <Button 
-              onClick={exportarReporteStock} 
               variant="outline" 
-              className="flex items-center gap-2 h-12 px-6 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+              onClick={() => navigate('/admin')}
+              className="h-14 px-8 text-lg font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 rounded-xl"
             >
-              <Download size={16} />
-              Exportar Reporte
+              <ArrowLeft className="h-6 w-6 mr-3" />
+              Volver al Panel Admin
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label htmlFor="tipo_material" className="text-slate-700 font-semibold">Tipo de Material</Label>
-              <Input
-                type="text"
-                id="tipo_material"
-                name="tipo_material"
-                value={nuevoMaterial.tipo_material}
-                onChange={handleInputChange}
-                className="h-12 border-slate-300 focus:border-blue-500"
-                placeholder="Ej: Arena fina, Grava"
-              />
-            </div>
-            <div>
-              <Label htmlFor="cantidad_disponible" className="text-slate-700 font-semibold">Cantidad Disponible (m³)</Label>
-              <Input
-                type="number"
-                id="cantidad_disponible"
-                name="cantidad_disponible"
-                value={nuevoMaterial.cantidad_disponible.toString()}
-                onChange={handleInputChange}
-                className="h-12 border-slate-300 focus:border-blue-500"
-                placeholder="0"
-              />
-            </div>
-          </div>
-          <Button 
-            onClick={agregarMaterial}
-            className="h-12 px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Agregar Material
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Inventario Actual */}
-      <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <CardTitle className="text-2xl font-bold text-slate-800">Inventario Actual</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          {inventario.length > 0 ? (
-            <div className="rounded-xl border border-slate-200 overflow-hidden shadow-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50 hover:bg-slate-50">
-                    <TableHead 
-                      onClick={() => ordenarInventario('tipo_material')} 
-                      className="cursor-pointer font-bold text-slate-700 h-14 hover:text-blue-600 transition-colors"
-                    >
-                      Tipo de Material
-                      {columnaOrdenada === 'tipo_material' && (orden === 'asc' ? ' ▲' : ' ▼')}
-                    </TableHead>
-                    <TableHead 
-                      onClick={() => ordenarInventario('cantidad_disponible')} 
-                      className="cursor-pointer font-bold text-slate-700 h-14 hover:text-blue-600 transition-colors"
-                    >
-                      Cantidad Disponible (m³)
-                      {columnaOrdenada === 'cantidad_disponible' && (orden === 'asc' ? ' ▲' : ' ▼')}
-                    </TableHead>
-                    <TableHead className="font-bold text-slate-700 h-14">Costo Promedio</TableHead>
-                    <TableHead className="font-bold text-slate-700 h-14">Valor Total</TableHead>
-                    <TableHead className="w-32 font-bold text-slate-700 h-14">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventario.map((item, index) => (
-                    <TableRow 
-                      key={item.id}
-                      className="hover:bg-blue-50/50 transition-colors duration-200"
-                      style={{
-                        animationDelay: `${index * 100}ms`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      <TableCell className="font-semibold text-slate-800 py-4">{item.tipo_material}</TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold ${item.cantidad_disponible <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                            {item.cantidad_disponible.toLocaleString()}
-                          </span>
-                          {item.cantidad_disponible <= 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              Sin Stock
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="font-semibold text-emerald-600">
-                          ${(item.costo_promedio_m3 || 0).toLocaleString()}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="font-bold text-purple-600">
-                          ${((item.cantidad_disponible * (item.costo_promedio_m3 || 0))).toLocaleString()}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {editandoId === item.id ? (
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="default" 
-                              size="sm" 
-                              onClick={guardarEdicion}
-                              className="h-9 px-3 bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              Guardar
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setEditandoId(null)}
-                              className="h-9 px-3"
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleEditarClick(item)}
-                              className="h-9 w-9 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  className="h-9 w-9 p-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-md bg-white shadow-2xl border-0">
-                                <AlertDialogHeader className="text-center space-y-4 pb-4">
-                                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <AlertTriangle className="h-8 w-8 text-white" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <AlertDialogTitle className="text-2xl font-bold text-slate-800">
-                                      ¿Confirmar Eliminación?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
-                                      Esta acción eliminará permanentemente el material <span className="font-bold text-slate-800">"{item.tipo_material}"</span> del inventario.
-                                      <br /><br />
-                                      Esta acción no se puede deshacer.
-                                    </AlertDialogDescription>
-                                  </div>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className="gap-3 pt-6 border-t border-slate-200">
-                                  <AlertDialogCancel className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50">
-                                    Cancelar
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleEliminar(item.id)}
-                                    className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Eliminar Material
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-16 space-y-6">
-              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
-                <Package className="w-12 h-12 text-slate-400" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xl font-semibold text-slate-600">No hay materiales en inventario</p>
-                <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                  Agrega nuevos materiales para comenzar a gestionar el inventario
-                </p>
-              </div>
-            </div>
-          )}
-
-          {editandoId && (
-            <Dialog open={!!editandoId} onOpenChange={() => setEditandoId(null)}>
-              <DialogContent className="sm:max-w-[500px] bg-white shadow-2xl border-0">
-                <DialogHeader className="text-center space-y-4 pb-6">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Edit className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="space-y-2">
-                    <DialogTitle className="text-2xl font-bold text-slate-800">Editar Material</DialogTitle>
-                  </div>
-                </DialogHeader>
-                <div className="space-y-6 pt-6">
-                  <div>
-                    <Label htmlFor="tipo_material_edit" className="text-slate-700 font-semibold">Tipo de Material</Label>
-                    <Input
-                      type="text"
-                      id="tipo_material_edit"
-                      name="tipo_material"
-                      value={materialEditado.tipo_material}
-                      onChange={handleEditarInputChange}
-                      className="h-12 border-slate-300 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cantidad_disponible_edit" className="text-slate-700 font-semibold">Cantidad Disponible (m³)</Label>
-                    <Input
-                      type="number"
-                      id="cantidad_disponible_edit"
-                      name="cantidad_disponible"
-                      value={materialEditado.cantidad_disponible.toString()}
-                      onChange={handleEditarInputChange}
-                      className="h-12 border-slate-300 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-6 border-t border-slate-200">
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditandoId(null)}
-                      className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={guardarEdicion}
-                      className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Guardar Cambios
-                    </Button>
-                  </div>
+        {/* Estadísticas del inventario */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-600 text-lg font-bold mb-2">Total Materiales</p>
+                  <p className="text-4xl font-bold text-blue-700">{stats.totalMateriales}</p>
                 </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardContent>
-      </Card>
-      <DesgloseMaterialModal
-        open={modalDesgloseOpen}
-        onOpenChange={setModalDesgloseOpen}
-        inventario={inventario}
-        onDesgloseRealizado={handleDesgloseRealizado}
-      />
+                <div className="p-4 bg-blue-200 rounded-2xl">
+                  <Package className="h-10 w-10 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-600 text-lg font-bold mb-2">Con Stock</p>
+                  <p className="text-4xl font-bold text-green-700">{stats.materialesConStock}</p>
+                </div>
+                <div className="p-4 bg-green-200 rounded-2xl">
+                  <TrendingUp className="h-10 w-10 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-600 text-lg font-bold mb-2">Sin Stock</p>
+                  <p className="text-4xl font-bold text-red-700">{stats.materialesSinStock}</p>
+                </div>
+                <div className="p-4 bg-red-200 rounded-2xl">
+                  <AlertTriangle className="h-10 w-10 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-600 text-lg font-bold mb-2">Valor Total</p>
+                  <p className="text-4xl font-bold text-purple-700">${stats.valorTotalInventario.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-purple-200 rounded-2xl">
+                  <BarChart3 className="h-10 w-10 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Botón de Desglose */}
+        <div className="flex justify-end mb-8">
+          <Button
+            variant="default"
+            onClick={() => setModalDesgloseOpen(true)}
+            className="h-14 px-8 text-lg font-semibold bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <Package className="h-6 w-6 mr-3" />
+            Desglosar/Transformar Material
+          </Button>
+        </div>
+
+        {/* Agregar Material */}
+        <Card className="mb-8 shadow-2xl border-2 border-slate-200 bg-white rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200 p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <CardTitle className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                  <Plus className="h-8 w-8 text-blue-600" />
+                  Agregar Material al Inventario
+                </CardTitle>
+                <p className="text-lg text-slate-600 mt-2">Registra nuevos materiales en el sistema de inventario</p>
+              </div>
+              <Button 
+                onClick={exportarReporteStock} 
+                variant="outline" 
+                className="h-14 px-8 text-lg font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl"
+              >
+                <Download className="h-6 w-6 mr-3" />
+                Exportar Reporte
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-3">
+                <Label htmlFor="tipo_material" className="text-lg font-bold text-slate-700">Tipo de Material</Label>
+                <Input
+                  type="text"
+                  id="tipo_material"
+                  name="tipo_material"
+                  value={nuevoMaterial.tipo_material}
+                  onChange={handleInputChange}
+                  className="h-14 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl"
+                  placeholder="Ejemplo: Arena fina, Grava, Recebo común"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label htmlFor="cantidad_disponible" className="text-lg font-bold text-slate-700">Cantidad Disponible (m³)</Label>
+                <Input
+                  type="number"
+                  id="cantidad_disponible"
+                  name="cantidad_disponible"
+                  value={nuevoMaterial.cantidad_disponible.toString()}
+                  onChange={handleInputChange}
+                  className="h-14 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={agregarMaterial}
+              className="h-14 px-8 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl"
+            >
+              <Plus className="h-6 w-6 mr-3" />
+              Agregar Material
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Inventario Actual */}
+        <Card className="shadow-2xl border-2 border-slate-200 bg-white rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200 p-8">
+            <CardTitle className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+              <FileText className="h-8 w-8 text-slate-600" />
+              Inventario Actual de Materiales
+            </CardTitle>
+            <p className="text-lg text-slate-600 mt-2">
+              {inventario.length} materiales registrados en el sistema
+            </p>
+          </CardHeader>
+          <CardContent className="p-8">
+            {inventario.length > 0 ? (
+              <div className="rounded-2xl border-2 border-slate-200 overflow-hidden shadow-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                      <TableHead 
+                        onClick={() => ordenarInventario('tipo_material')} 
+                        className="cursor-pointer font-bold text-slate-700 h-16 text-lg hover:text-blue-600 transition-colors"
+                      >
+                        Tipo de Material
+                        {columnaOrdenada === 'tipo_material' && (orden === 'asc' ? ' ▲' : ' ▼')}
+                      </TableHead>
+                      <TableHead 
+                        onClick={() => ordenarInventario('cantidad_disponible')} 
+                        className="cursor-pointer font-bold text-slate-700 h-16 text-lg hover:text-blue-600 transition-colors"
+                      >
+                        Cantidad Disponible (m³)
+                        {columnaOrdenada === 'cantidad_disponible' && (orden === 'asc' ? ' ▲' : ' ▼')}
+                      </TableHead>
+                      <TableHead className="font-bold text-slate-700 h-16 text-lg">Costo Promedio</TableHead>
+                      <TableHead className="font-bold text-slate-700 h-16 text-lg">Valor Total</TableHead>
+                      <TableHead className="w-40 font-bold text-slate-700 h-16 text-lg">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inventario.map((item, index) => (
+                      <TableRow 
+                        key={item.id}
+                        className="hover:bg-blue-50/50 transition-colors duration-200"
+                      >
+                        <TableCell className="font-semibold text-slate-800 py-6 text-lg">{item.tipo_material}</TableCell>
+                        <TableCell className="py-6">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-lg font-bold ${item.cantidad_disponible <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                              {item.cantidad_disponible.toLocaleString()}
+                            </span>
+                            {item.cantidad_disponible <= 0 && (
+                              <Badge variant="destructive" className="text-sm px-3 py-1">
+                                Sin Stock
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6">
+                          <span className="text-lg font-semibold text-emerald-600">
+                            ${(item.costo_promedio_m3 || 0).toLocaleString()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-6">
+                          <span className="text-lg font-bold text-purple-600">
+                            ${((item.cantidad_disponible * (item.costo_promedio_m3 || 0))).toLocaleString()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-6">
+                          {editandoId === item.id ? (
+                            <div className="flex gap-3">
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                onClick={guardarEdicion}
+                                className="h-11 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                Guardar
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setEditandoId(null)}
+                                className="h-11 px-4 text-sm"
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-3">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleEditarClick(item)}
+                                className="h-11 w-11 p-0 border-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                              >
+                                <Edit className="h-5 w-5" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    className="h-11 w-11 p-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="max-w-md bg-white shadow-2xl border-0 rounded-2xl">
+                                  <AlertDialogHeader className="text-center space-y-4 pb-4">
+                                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                      <AlertTriangle className="h-8 w-8 text-white" />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <AlertDialogTitle className="text-2xl font-bold text-slate-800">
+                                        ¿Confirmar Eliminación?
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription className="text-base text-slate-600 leading-relaxed">
+                                        Esta acción eliminará permanentemente el material <span className="font-bold text-slate-800">"{item.tipo_material}"</span> del inventario.
+                                        <br /><br />
+                                        Esta acción no se puede deshacer.
+                                      </AlertDialogDescription>
+                                    </div>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="gap-3 pt-6 border-t border-slate-200">
+                                    <AlertDialogCancel className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50">
+                                      Cancelar
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleEliminar(item.id)}
+                                      className="flex-1 h-12 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Eliminar Material
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-20 space-y-6">
+                <div className="mx-auto w-28 h-28 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+                  <Package className="w-14 h-14 text-slate-400" />
+                </div>
+                <div className="space-y-3">
+                  <p className="text-2xl font-semibold text-slate-600">No hay materiales en inventario</p>
+                  <p className="text-lg text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Agrega nuevos materiales para comenzar a gestionar el inventario de acopio
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {editandoId && (
+              <Dialog open={!!editandoId} onOpenChange={() => setEditandoId(null)}>
+                <DialogContent className="sm:max-w-[500px] bg-white shadow-2xl border-0 rounded-2xl">
+                  <DialogHeader className="text-center space-y-4 pb-6">
+                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Edit className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <DialogTitle className="text-2xl font-bold text-slate-800">Editar Material</DialogTitle>
+                    </div>
+                  </DialogHeader>
+                  <div className="space-y-6 pt-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="tipo_material_edit" className="text-lg font-bold text-slate-700">Tipo de Material</Label>
+                      <Input
+                        type="text"
+                        id="tipo_material_edit"
+                        name="tipo_material"
+                        value={materialEditado.tipo_material}
+                        onChange={handleEditarInputChange}
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="cantidad_disponible_edit" className="text-lg font-bold text-slate-700">Cantidad Disponible (m³)</Label>
+                      <Input
+                        type="number"
+                        id="cantidad_disponible_edit"
+                        name="cantidad_disponible"
+                        value={materialEditado.cantidad_disponible.toString()}
+                        onChange={handleEditarInputChange}
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-6 border-t border-slate-200">
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditandoId(null)}
+                        className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        onClick={guardarEdicion}
+                        className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Guardar Cambios
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </CardContent>
+        </Card>
+        
+        <DesgloseMaterialModal
+          open={modalDesgloseOpen}
+          onOpenChange={setModalDesgloseOpen}
+          inventario={inventario}
+          onDesgloseRealizado={handleDesgloseRealizado}
+        />
+      </div>
     </div>
   );
 };
