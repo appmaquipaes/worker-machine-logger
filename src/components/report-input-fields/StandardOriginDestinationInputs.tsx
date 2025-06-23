@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Info } from 'lucide-react';
+import { MapPin, Info, Building2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -66,6 +66,11 @@ const StandardOriginDestinationInputs: React.FC<StandardOriginDestinationInputsP
     return existingProvider ? origin : '';
   };
 
+  // Obtener información del proveedor seleccionado
+  const proveedorSeleccionado = proveedores.find(prov => 
+    `${prov.nombre} - ${prov.ciudad}` === origin
+  );
+
   return (
     <>
       <div className="space-y-2">
@@ -76,7 +81,7 @@ const StandardOriginDestinationInputs: React.FC<StandardOriginDestinationInputsP
               ? 'Origen (Punto de Recogida)' 
               : isCargador(selectedMachine)
                 ? 'Origen (Fijo - Acopio)'
-                : 'Origen (Proveedor)'
+                : 'Origen - Proveedor de Material'
             }
           </Label>
         </div>
@@ -90,9 +95,9 @@ const StandardOriginDestinationInputs: React.FC<StandardOriginDestinationInputsP
               readOnly
               className="text-lg p-6 bg-gray-50 text-gray-700 font-medium"
             />
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
+            <Alert className="border-green-200 bg-green-50">
+              <Info className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
                 <strong>Cargador siempre opera desde el Acopio:</strong> El origen está fijo como "Acopio Maquipaes" 
                 ya que los cargadores siempre cargan material desde nuestro acopio hacia los clientes.
               </AlertDescription>
@@ -109,18 +114,60 @@ const StandardOriginDestinationInputs: React.FC<StandardOriginDestinationInputsP
             required
           />
         ) : (
-          <Select onValueChange={handleOriginChange} value={getSelectValue()}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el origen" />
-            </SelectTrigger>
-            <SelectContent>
-              {proveedores.map((prov) => (
-                <SelectItem key={prov.id} value={`${prov.nombre} - ${prov.ciudad}`}>
-                  {prov.nombre} - {prov.ciudad}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-3">
+            {(selectedMachine?.type === 'Camión' || selectedMachine?.type === 'Volqueta') && (
+              <Alert className="border-blue-200 bg-blue-50">
+                <Building2 className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>Selección de Proveedor:</strong> Elige el proveedor que suministra el material 
+                  que vas a transportar. Los materiales disponibles se mostrarán según el proveedor seleccionado.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <Select onValueChange={handleOriginChange} value={getSelectValue()}>
+              <SelectTrigger className="text-lg p-6">
+                <SelectValue placeholder="Selecciona el proveedor de origen" />
+              </SelectTrigger>
+              <SelectContent>
+                {proveedores.map((prov) => (
+                  <SelectItem key={prov.id} value={`${prov.nombre} - ${prov.ciudad}`}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{prov.nombre}</span>
+                      <span className="text-sm text-gray-600">{prov.ciudad} - {prov.tipo_proveedor}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {proveedorSeleccionado && (
+              <div className="bg-gray-50 p-3 rounded-lg border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 size={16} className="text-gray-600" />
+                  <span className="font-medium text-gray-800">Información del Proveedor</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">Contacto:</span>
+                    <span className="ml-1 font-medium">{proveedorSeleccionado.contacto_principal}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Teléfono:</span>
+                    <span className="ml-1 font-medium">{proveedorSeleccionado.telefono}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Tipo:</span>
+                    <span className="ml-1 font-medium">{proveedorSeleccionado.tipo_proveedor}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Ciudad:</span>
+                    <span className="ml-1 font-medium">{proveedorSeleccionado.ciudad}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
       

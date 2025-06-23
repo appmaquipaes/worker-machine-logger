@@ -10,6 +10,8 @@ import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { ReportType } from '@/types/report';
 import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 import { esAcopio } from '@/utils/inventarioDetection';
+import { useMaterialesPorProveedor } from '@/hooks/useMaterialesPorProveedor';
+import { extraerInfoProveedor } from '@/utils/proveedorUtils';
 
 interface MaterialInputsProps {
   reportType: ReportType;
@@ -35,6 +37,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   selectedMachine
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
+  const { obtenerMaterialesPorNombreProveedor } = useMaterialesPorProveedor();
   const [inventarioActual, setInventarioActual] = useState<any[]>([]);
 
   // Cargar inventario fresco cuando el componente se monta o cuando cambia el material
@@ -71,6 +74,13 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   console.log('MaterialInputs - origenEsAcopio:', origenEsAcopio);
   console.log('MaterialInputs - shouldShowInventoryMaterialSelect:', shouldShowInventoryMaterialSelect);
   console.log('MaterialInputs - shouldShowTipoMateriaInput:', shouldShowTipoMateriaInput);
+  
+  // Obtener materiales del proveedor seleccionado
+  const { proveedorNombre } = extraerInfoProveedor(origin);
+  const materialesProveedor = proveedorNombre ? obtenerMaterialesPorNombreProveedor(proveedorNombre) : [];
+  
+  console.log('MaterialInputs - Proveedor extraído:', proveedorNombre);
+  console.log('MaterialInputs - Materiales del proveedor:', materialesProveedor);
   
   // Obtener stock disponible del material seleccionado usando el inventario actual
   const materialSeleccionado = inventarioActual.find(item => item.tipo_material === tipoMateria);
@@ -128,20 +138,66 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <Wrench size={24} />
-            <Label htmlFor="tipo-materia" className="text-lg">Tipo de Materia</Label>
+            <Label htmlFor="tipo-materia" className="text-lg">
+              Tipo de Material del Proveedor
+              {proveedorNombre && (
+                <span className="text-sm font-normal text-blue-600 ml-2">
+                  ({proveedorNombre})
+                </span>
+              )}
+            </Label>
           </div>
-          <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
-              <SelectValue placeholder="Selecciona el tipo de materia" />
-            </SelectTrigger>
-            <SelectContent>
-              {tiposMaterial.map((tipo) => (
-                <SelectItem key={tipo} value={tipo}>
-                  {tipo}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          
+          {materialesProveedor.length > 0 ? (
+            <>
+              <Alert className="border-blue-200 bg-blue-50 mb-3">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>Materiales disponibles del proveedor:</strong> Selecciona el material 
+                  específico que ofrece {proveedorNombre}.
+                </AlertDescription>
+              </Alert>
+              
+              <Select onValueChange={setTipoMateria} value={tipoMateria}>
+                <SelectTrigger className="text-lg p-6">
+                  <SelectValue placeholder="Selecciona el material del proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materialesProveedor.map((material) => (
+                    <SelectItem key={material.id} value={material.tipo_material}>
+                      {material.tipo_material}
+                      <span className="ml-2 text-sm text-gray-600">
+                        (${material.precio_por_m3?.toLocaleString()}/m³)
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          ) : (
+            <>
+              <Alert className="border-amber-200 bg-amber-50 mb-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800">
+                  <strong>Sin materiales registrados:</strong> Este proveedor no tiene materiales 
+                  registrados. Selecciona de la lista general.
+                </AlertDescription>
+              </Alert>
+              
+              <Select onValueChange={setTipoMateria} value={tipoMateria}>
+                <SelectTrigger className="text-lg p-6">
+                  <SelectValue placeholder="Selecciona el tipo de material" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposMaterial.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </div>
       )}
 
