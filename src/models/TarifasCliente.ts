@@ -138,27 +138,64 @@ export const findTarifaCliente = (
 ): TarifaCliente | null => {
   const tarifas = loadTarifasCliente();
   
+  console.log('🔍 BÚSQUEDA DETALLADA DE TARIFA CLIENTE:');
+  console.log('📋 Parámetros de búsqueda:', {
+    cliente,
+    finca,
+    origen,
+    destino
+  });
+  console.log('📋 Total tarifas en sistema:', tarifas.length);
+  console.log('📋 Todas las tarifas disponibles:', tarifas.map(t => ({
+    id: t.id,
+    cliente: t.cliente,
+    finca: t.finca,
+    origen: t.origen,
+    destino: t.destino,
+    valor_flete_m3: t.valor_flete_m3,
+    valor_material_cliente_m3: t.valor_material_cliente_m3,
+    activa: t.activa,
+    tipo_servicio: t.tipo_servicio
+  })));
+  
   // Buscar coincidencia exacta con finca
-  let tarifa = tarifas.find(t => 
-    t.activa && 
-    t.cliente === cliente && 
-    t.finca === finca &&
-    t.origen === origen && 
-    t.destino === destino
-  );
+  console.log('🎯 Búsqueda 1: Coincidencia exacta con finca');
+  let tarifa = tarifas.find(t => {
+    const coincide = t.activa && 
+      t.cliente === cliente && 
+      t.finca === finca &&
+      t.origen === origen && 
+      t.destino === destino;
+    
+    console.log(`  - Tarifa ${t.id}: cliente=${t.cliente === cliente}, finca=${t.finca === finca}, origen=${t.origen === origen}, destino=${t.destino === destino}, activa=${t.activa} → ${coincide}`);
+    return coincide;
+  });
+  
+  if (tarifa) {
+    console.log('✅ Tarifa encontrada con coincidencia exacta:', tarifa);
+    return tarifa;
+  }
   
   // Si no encuentra con finca específica, buscar solo por cliente
-  if (!tarifa) {
-    tarifa = tarifas.find(t => 
-      t.activa && 
+  console.log('🎯 Búsqueda 2: Sin finca específica');
+  tarifa = tarifas.find(t => {
+    const coincide = t.activa && 
       t.cliente === cliente && 
       !t.finca &&
       t.origen === origen && 
-      t.destino === destino
-    );
+      t.destino === destino;
+    
+    console.log(`  - Tarifa ${t.id}: cliente=${t.cliente === cliente}, sin_finca=${!t.finca}, origen=${t.origen === origen}, destino=${t.destino === destino}, activa=${t.activa} → ${coincide}`);
+    return coincide;
+  });
+  
+  if (tarifa) {
+    console.log('✅ Tarifa encontrada sin finca específica:', tarifa);
+    return tarifa;
   }
   
-  return tarifa || null;
+  console.log('❌ No se encontró ninguna tarifa que coincida');
+  return null;
 };
 
 // Función para obtener todas las tarifas de un cliente
