@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Plus, Building } from 'lucide-react';
+import { Plus, Save, Building, User, Mail, MapPin, Phone, CreditCard, FileText } from 'lucide-react';
 
 // Schema for provider validation
 const proveedorSchema = z.object({
@@ -52,202 +52,261 @@ const ProveedorForm: React.FC<ProveedorFormProps> = ({
     }
   });
 
+  const tiposProveedor = [
+    { value: 'Materiales', label: 'Materiales', icon: '🏗️' },
+    { value: 'Lubricantes', label: 'Lubricantes', icon: '🛢️' },
+    { value: 'Repuestos', label: 'Repuestos', icon: '🔧' },
+    { value: 'Servicios', label: 'Servicios', icon: '⚙️' },
+    { value: 'Otros', label: 'Otros', icon: '📦' }
+  ];
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="nombre"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Nombre del Proveedor *
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="Nombre del proveedor" 
-                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <div className="bg-white rounded-xl">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
           
-          <FormField
-            control={form.control}
-            name="ciudad"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Ciudad *
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="Ciudad" 
-                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+          {/* Información básica */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+              <Building className="w-6 h-6 text-emerald-600" />
+              <h3 className="text-xl font-bold text-slate-800">Información Básica</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="nombre"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <Building className="w-4 h-4" />
+                      Nombre del Proveedor *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Ej: Construcciones ABC Ltda." 
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="nit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      NIT *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Ej: 900123456-7" 
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contacto"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Persona de Contacto *
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="Nombre del contacto" 
-                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="correo_electronico"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Correo Electrónico *
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    type="email" 
-                    placeholder="correo@ejemplo.com" 
-                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="ciudad"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Ciudad *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Ej: Bogotá" 
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="tipo_proveedor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Tipo de Proveedor *
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-white border-2 border-slate-200">
+                        {tiposProveedor.map((tipo) => (
+                          <SelectItem 
+                            key={tipo.value} 
+                            value={tipo.value}
+                            className="text-lg py-3 hover:bg-emerald-50 focus:bg-emerald-50"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{tipo.icon}</span>
+                              <span>{tipo.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="nit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  NIT *
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="123456789-0" 
-                    className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="tipo_proveedor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Tipo de Proveedor *
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+          {/* Información de contacto */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+              <User className="w-6 h-6 text-blue-600" />
+              <h3 className="text-xl font-bold text-slate-800">Información de Contacto</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="contacto"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Persona de Contacto *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="Ej: Juan Pérez" 
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="correo_electronico"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Correo Electrónico *
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="email" 
+                        placeholder="Ej: contacto@empresa.com" 
+                        className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-base" />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Información comercial */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+              <CreditCard className="w-6 h-6 text-purple-600" />
+              <h3 className="text-xl font-bold text-slate-800">Información Comercial</h3>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="forma_pago"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Forma de Pago *
+                  </FormLabel>
                   <FormControl>
-                    <SelectTrigger className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors">
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
+                    <Input 
+                      {...field} 
+                      placeholder="Ej: Contado, 30 días, 60 días" 
+                      className="h-14 text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
+                    />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Materiales">Materiales</SelectItem>
-                    <SelectItem value="Lubricantes">Lubricantes</SelectItem>
-                    <SelectItem value="Repuestos">Repuestos</SelectItem>
-                    <SelectItem value="Servicios">Servicios</SelectItem>
-                    <SelectItem value="Otros">Otros</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="forma_pago"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                Forma de Pago *
-              </FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  placeholder="Ej: Contado, 30 días, 60 días" 
-                  className="h-12 text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="observaciones"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                Observaciones
-              </FormLabel>
-              <FormControl>
-                <Textarea 
-                  {...field} 
-                  placeholder="Observaciones adicionales (opcional)" 
-                  className="min-h-[80px] text-base border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors resize-none"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <DialogFooter className="gap-3 pt-6 border-t border-slate-200">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="flex-1 h-12 font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            Cancelar
-          </Button>
-          <Button 
-            type="submit"
-            className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {isEditing ? 'Actualizar' : 'Guardar'} Proveedor
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
+                  <FormMessage className="text-base" />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="observaciones"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-bold text-slate-700 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Observaciones
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Información adicional sobre el proveedor (opcional)" 
+                      className="min-h-[100px] text-lg border-2 border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors resize-none"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-base" />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <DialogFooter className="gap-4 pt-8 border-t border-slate-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1 h-14 text-lg font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit"
+              className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              {isEditing ? (
+                <>
+                  <Save className="h-5 w-5 mr-3" />
+                  Actualizar Proveedor
+                </>
+              ) : (
+                <>
+                  <Plus className="h-5 w-5 mr-3" />
+                  Guardar Proveedor
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </div>
   );
 };
 
