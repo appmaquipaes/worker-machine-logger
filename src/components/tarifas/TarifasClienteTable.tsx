@@ -60,10 +60,10 @@ const TarifasClienteTable: React.FC<TarifasClienteTableProps> = ({
 
   const getServiceIcon = (tipo: string) => {
     switch (tipo) {
-      case 'transporte': return <Truck className="h-4 w-4" />;
-      case 'alquiler_maquina': return <Settings className="h-4 w-4" />;
-      case 'recepcion_escombrera': return <MapPin className="h-4 w-4" />;
-      default: return <DollarSign className="h-4 w-4" />;
+      case 'transporte': return <Truck className="h-5 w-5" />;
+      case 'alquiler_maquina': return <Settings className="h-5 w-5" />;
+      case 'recepcion_escombrera': return <MapPin className="h-5 w-5" />;
+      default: return <DollarSign className="h-5 w-5" />;
     }
   };
 
@@ -76,18 +76,27 @@ const TarifasClienteTable: React.FC<TarifasClienteTableProps> = ({
     }
   };
 
+  const getServiceColor = (tipo: string) => {
+    switch (tipo) {
+      case 'transporte': return 'text-green-600 bg-green-100';
+      case 'alquiler_maquina': return 'text-purple-600 bg-purple-100';
+      case 'recepcion_escombrera': return 'text-orange-600 bg-orange-100';
+      default: return 'text-blue-600 bg-blue-100';
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow className="bg-slate-50 hover:bg-slate-100">
-            <TableHead className="font-bold text-slate-700">Cliente</TableHead>
-            <TableHead className="font-bold text-slate-700">Finca</TableHead>
-            <TableHead className="font-bold text-slate-700">Tipo Servicio</TableHead>
-            <TableHead className="font-bold text-slate-700">Detalle</TableHead>
-            <TableHead className="font-bold text-slate-700">Valores</TableHead>
-            <TableHead className="font-bold text-slate-700">Estado</TableHead>
-            <TableHead className="font-bold text-slate-700 text-center">Acciones</TableHead>
+          <TableRow className="bg-slate-50 hover:bg-slate-100 border-b-2 border-slate-200">
+            <TableHead className="font-bold text-slate-800 text-base py-4">Cliente</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4">Finca</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4">Tipo Servicio</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4">Detalle</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4">Valores</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4">Estado</TableHead>
+            <TableHead className="font-bold text-slate-800 text-base py-4 text-center">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -97,47 +106,49 @@ const TarifasClienteTable: React.FC<TarifasClienteTableProps> = ({
             const margen = calcularMargen(tarifa);
 
             return (
-              <TableRow key={tarifa.id} className="hover:bg-slate-50 transition-colors">
-                <TableCell className="font-medium text-slate-800">{clienteNombre}</TableCell>
-                <TableCell className="text-slate-600">{tarifa.finca || '-'}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <TableRow key={tarifa.id} className="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                <TableCell className="font-bold text-slate-800 text-base py-6">{clienteNombre}</TableCell>
+                <TableCell className="text-slate-600 text-base py-6">{tarifa.finca || '-'}</TableCell>
+                <TableCell className="py-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getServiceColor(tarifa.tipo_servicio)}`}>
                       {getServiceIcon(tarifa.tipo_servicio)}
                     </div>
-                    <span className="font-medium text-slate-700">{getServiceLabel(tarifa.tipo_servicio)}</span>
+                    <span className="font-bold text-slate-700 text-base">{getServiceLabel(tarifa.tipo_servicio)}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-slate-600">
+                <TableCell className="text-slate-600 py-6">
                   {tarifa.tipo_servicio === 'transporte' && (
-                    <div className="space-y-1">
-                      <div className="text-sm"><strong>Ruta:</strong> {tarifa.origen} → {tarifa.destino}</div>
+                    <div className="space-y-2">
+                      <div className="text-base"><strong>Ruta:</strong> {tarifa.origen} → {tarifa.destino}</div>
                       {tarifa.tipo_material && (
-                        <div className="text-sm"><strong>Material:</strong> {getMaterialName(tarifa.tipo_material)}</div>
+                        <div className="text-base"><strong>Material:</strong> {getMaterialName(tarifa.tipo_material)}</div>
                       )}
                     </div>
                   )}
                   {tarifa.tipo_servicio === 'alquiler_maquina' && (
-                    <div className="text-sm">
+                    <div className="text-base">
                       <strong>Máquina:</strong> {getMachineName(tarifa.maquina_id)}
                     </div>
                   )}
                   {tarifa.tipo_servicio === 'recepcion_escombrera' && (
-                    <div className="text-sm">
+                    <div className="text-base">
                       <strong>Escombrera:</strong> {getEscombreraName(tarifa.escombrera_id)}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
+                <TableCell className="py-6">
+                  <div className="space-y-2">
                     {tarifa.tipo_servicio === 'transporte' && (
                       <>
-                        <div className="text-sm"><strong>Flete:</strong> {formatCurrency(tarifa.valor_flete_m3 || 0)}/m³</div>
+                        <div className="text-base font-semibold">
+                          <strong>Flete:</strong> {formatCurrency(tarifa.valor_flete_m3 || 0)}/m³
+                        </div>
                         {tarifa.valor_material_cliente_m3 && (
-                          <div className="text-sm">
+                          <div className="text-base">
                             <strong>Material:</strong> {formatCurrency(tarifa.valor_material_cliente_m3)}/m³
                             {margen && (
-                              <span className={`ml-2 text-xs ${margen.margen >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`ml-2 text-sm font-bold px-2 py-1 rounded ${margen.margen >= 0 ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'}`}>
                                 ({margen.porcentaje}%)
                               </span>
                             )}
@@ -148,58 +159,75 @@ const TarifasClienteTable: React.FC<TarifasClienteTableProps> = ({
                     {tarifa.tipo_servicio === 'alquiler_maquina' && (
                       <div className="space-y-1">
                         {tarifa.valor_por_hora && (
-                          <div className="text-sm"><strong>Por hora:</strong> {formatCurrency(tarifa.valor_por_hora)}</div>
+                          <div className="text-base font-semibold">
+                            <strong>Por hora:</strong> {formatCurrency(tarifa.valor_por_hora)}
+                          </div>
                         )}
                         {tarifa.valor_por_dia && (
-                          <div className="text-sm"><strong>Por día:</strong> {formatCurrency(tarifa.valor_por_dia)}</div>
+                          <div className="text-base font-semibold">
+                            <strong>Por día:</strong> {formatCurrency(tarifa.valor_por_dia)}
+                          </div>
                         )}
                         {tarifa.valor_por_mes && (
-                          <div className="text-sm"><strong>Por mes:</strong> {formatCurrency(tarifa.valor_por_mes)}</div>
+                          <div className="text-base font-semibold">
+                            <strong>Por mes:</strong> {formatCurrency(tarifa.valor_por_mes)}
+                          </div>
                         )}
                       </div>
                     )}
                     {tarifa.tipo_servicio === 'recepcion_escombrera' && (
                       <div className="space-y-1">
-                        <div className="text-sm"><strong>Sencilla:</strong> {formatCurrency(tarifa.valor_volqueta_sencilla || 0)}</div>
-                        <div className="text-sm"><strong>Doble Troque:</strong> {formatCurrency(tarifa.valor_volqueta_doble_troque || 0)}</div>
+                        <div className="text-base font-semibold">
+                          <strong>Sencilla:</strong> {formatCurrency(tarifa.valor_volqueta_sencilla || 0)}
+                        </div>
+                        <div className="text-base font-semibold">
+                          <strong>Doble Troque:</strong> {formatCurrency(tarifa.valor_volqueta_doble_troque || 0)}
+                        </div>
                       </div>
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Badge variant={tarifa.activa ? "default" : "secondary"} className="animate-fade-in">
+                <TableCell className="py-6">
+                  <Badge 
+                    variant={tarifa.activa ? "default" : "secondary"} 
+                    className={`text-base font-bold px-4 py-2 ${
+                      tarifa.activa 
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
+                  >
                     {tarifa.activa ? 'Activa' : 'Inactiva'}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex justify-center space-x-2">
+                <TableCell className="py-6">
+                  <div className="flex justify-center space-x-3">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onToggleStatus(tarifa.id)}
-                      className="h-8 w-8 p-0 hover:bg-blue-100 transition-colors"
+                      className="h-10 w-10 p-0 hover:bg-blue-100 transition-colors rounded-lg"
                     >
                       {tarifa.activa ? (
-                        <ToggleRight className="h-4 w-4 text-green-600" />
+                        <ToggleRight className="h-6 w-6 text-green-600" />
                       ) : (
-                        <ToggleLeft className="h-4 w-4 text-gray-400" />
+                        <ToggleLeft className="h-6 w-6 text-gray-400" />
                       )}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onEdit(tarifa)}
-                      className="h-8 w-8 p-0 hover:bg-blue-100 transition-colors"
+                      className="h-10 w-10 p-0 hover:bg-blue-100 transition-colors rounded-lg"
                     >
-                      <Edit className="h-4 w-4 text-blue-600" />
+                      <Edit className="h-5 w-5 text-blue-600" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onDelete(tarifa.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-100 transition-colors"
+                      className="h-10 w-10 p-0 hover:bg-red-100 transition-colors rounded-lg"
                     >
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <Trash2 className="h-5 w-5 text-red-600" />
                     </Button>
                   </div>
                 </TableCell>

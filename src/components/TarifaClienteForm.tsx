@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ import ClienteFincaSelector from '@/components/ClienteFincaSelector';
 import TarifaTransporteForm from '@/components/TarifaTransporteForm';
 import TarifaAlquilerForm from '@/components/TarifaAlquilerForm';
 import TarifaEscombreraForm from '@/components/TarifaEscombreraForm';
+import { Truck, Settings, MapPin } from 'lucide-react';
 
 interface TarifaClienteFormProps {
   initialData?: TarifaCliente | null;
@@ -247,85 +249,141 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
   const clienteTieneFincas = fincasDisponibles.length > 0;
 
+  const getServiceIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'transporte': return <Truck className="h-5 w-5" />;
+      case 'alquiler_maquina': return <Settings className="h-5 w-5" />;
+      case 'recepcion_escombrera': return <MapPin className="h-5 w-5" />;
+      default: return null;
+    }
+  };
+
+  const getServiceLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'transporte': return 'Servicio de Transporte';
+      case 'alquiler_maquina': return 'Alquiler de Maquinaria';
+      case 'recepcion_escombrera': return 'Recepción Escombrera';
+      default: return tipo;
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div>
-        <Label htmlFor="tipo-servicio">Tipo de Servicio *</Label>
-        <select
-          id="tipo-servicio"
-          value={tipoServicio}
-          onChange={(e) => setTipoServicio(e.target.value as 'transporte' | 'alquiler_maquina' | 'recepcion_escombrera')}
-          className="w-full p-2 border rounded-md"
-        >
-          <option value="transporte">Servicio de Transporte</option>
-          <option value="alquiler_maquina">Alquiler de Maquinaria</option>
-          <option value="recepcion_escombrera">Recepción Escombrera</option>
-        </select>
+    <div className="space-y-8">
+      {/* Service Type Selection */}
+      <div className="space-y-4">
+        <Label htmlFor="tipo-servicio" className="text-lg font-bold text-slate-700">
+          Tipo de Servicio *
+        </Label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {['transporte', 'alquiler_maquina', 'recepcion_escombrera'].map((tipo) => (
+            <button
+              key={tipo}
+              type="button"
+              onClick={() => setTipoServicio(tipo as any)}
+              className={`p-6 rounded-xl border-2 transition-all duration-300 flex items-center gap-4 ${
+                tipoServicio === tipo
+                  ? 'border-blue-500 bg-blue-50 shadow-lg scale-105'
+                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+              }`}
+            >
+              <div className={`p-3 rounded-lg ${
+                tipoServicio === tipo ? 'bg-blue-100' : 'bg-slate-100'
+              }`}>
+                {getServiceIcon(tipo)}
+              </div>
+              <div className="text-left">
+                <p className={`font-bold text-base ${
+                  tipoServicio === tipo ? 'text-blue-700' : 'text-slate-700'
+                }`}>
+                  {getServiceLabel(tipo)}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <ClienteFincaSelector
-        selectedCliente={cliente}
-        selectedFinca={finca}
-        onClienteChange={handleClienteChange}
-        onFincaChange={handleFincaChange}
-      />
+      {/* Client and Farm Selection */}
+      <div className="bg-slate-50 p-6 rounded-xl">
+        <ClienteFincaSelector
+          selectedCliente={cliente}
+          selectedFinca={finca}
+          onClienteChange={handleClienteChange}
+          onFincaChange={handleFincaChange}
+        />
+      </div>
 
-      {tipoServicio === 'transporte' ? (
-        <TarifaTransporteForm
-          origen={origen}
-          destino={destino}
-          valorFlete={valorFlete}
-          tipoMaterial={tipoMaterial}
-          valorMaterial={valorMaterial}
-          valorMaterialCliente={valorMaterialCliente}
-          proveedores={proveedores}
-          materiales={materiales}
-          cliente={cliente}
-          clienteTieneFincas={clienteTieneFincas}
-          onOrigenChange={setOrigen}
-          onDestinoChange={setDestino}
-          onValorFleteChange={setValorFlete}
-          onMaterialChange={handleMaterialChange}
-          onValorMaterialClienteChange={setValorMaterialCliente}
-        />
-      ) : tipoServicio === 'alquiler_maquina' ? (
-        <TarifaAlquilerForm
-          maquinaId={maquinaId}
-          valorPorHora={valorPorHora}
-          valorPorDia={valorPorDia}
-          valorPorMes={valorPorMes}
-          machines={machines}
-          onMaquinaChange={setMaquinaId}
-          onValorPorHoraChange={setValorPorHora}
-          onValorPorDiaChange={setValorPorDia}
-          onValorPorMesChange={setValorPorMes}
-        />
-      ) : (
-        <TarifaEscombreraForm
-          escombreraId={escombreraId}
-          valorVolquetaSencilla={valorVolquetaSencilla}
-          valorVolquetaDobletroque={valorVolquetaDobletroque}
-          onEscombreraChange={setEscombreraId}
-          onValorSencillaChange={setValorVolquetaSencilla}
-          onValorDobletroqueChange={setValorVolquetaDobletroque}
-        />
-      )}
+      {/* Service-specific forms */}
+      <div className="bg-white border-2 border-slate-200 rounded-xl p-6">
+        {tipoServicio === 'transporte' ? (
+          <TarifaTransporteForm
+            origen={origen}
+            destino={destino}
+            valorFlete={valorFlete}
+            tipoMaterial={tipoMaterial}
+            valorMaterial={valorMaterial}
+            valorMaterialCliente={valorMaterialCliente}
+            proveedores={proveedores}
+            materiales={materiales}
+            cliente={cliente}
+            clienteTieneFincas={clienteTieneFincas}
+            onOrigenChange={setOrigen}
+            onDestinoChange={setDestino}
+            onValorFleteChange={setValorFlete}
+            onMaterialChange={handleMaterialChange}
+            onValorMaterialClienteChange={setValorMaterialCliente}
+          />
+        ) : tipoServicio === 'alquiler_maquina' ? (
+          <TarifaAlquilerForm
+            maquinaId={maquinaId}
+            valorPorHora={valorPorHora}
+            valorPorDia={valorPorDia}
+            valorPorMes={valorPorMes}
+            machines={machines}
+            onMaquinaChange={setMaquinaId}
+            onValorPorHoraChange={setValorPorHora}
+            onValorPorDiaChange={setValorPorDia}
+            onValorPorMesChange={setValorPorMes}
+          />
+        ) : (
+          <TarifaEscombreraForm
+            escombreraId={escombreraId}
+            valorVolquetaSencilla={valorVolquetaSencilla}
+            valorVolquetaDobletroque={valorVolquetaDobletroque}
+            onEscombreraChange={setEscombreraId}
+            onValorSencillaChange={setValorVolquetaSencilla}
+            onValorDobletroqueChange={setValorVolquetaDobletroque}
+          />
+        )}
+      </div>
       
-      <div>
-        <Label htmlFor="observaciones">Observaciones</Label>
+      {/* Observations */}
+      <div className="space-y-3">
+        <Label htmlFor="observaciones" className="text-lg font-bold text-slate-700">
+          Observaciones
+        </Label>
         <Textarea
           id="observaciones"
           value={observaciones}
           onChange={(e) => setObservaciones(e.target.value)}
-          placeholder="Observaciones adicionales..."
+          placeholder="Observaciones adicionales sobre esta tarifa..."
+          className="min-h-[120px] text-base border-2 border-slate-300 focus:border-blue-500 rounded-lg"
         />
       </div>
       
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={onCancel}>
+      {/* Action Buttons */}
+      <div className="flex justify-end space-x-4 pt-6 border-t-2 border-slate-100">
+        <Button 
+          variant="outline" 
+          onClick={onCancel}
+          className="h-14 px-8 text-lg font-semibold border-2 border-slate-300 hover:border-slate-400 rounded-xl"
+        >
           Cancelar
         </Button>
-        <Button onClick={handleSubmit}>
+        <Button 
+          onClick={handleSubmit}
+          className="h-14 px-8 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+        >
           {initialData ? 'Actualizar Tarifa' : 'Crear Tarifa'}
         </Button>
       </div>
