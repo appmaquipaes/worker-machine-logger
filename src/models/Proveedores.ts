@@ -1,35 +1,3 @@
-export interface Proveedor {
-  id: string;
-  nombre: string;
-  ciudad: string;
-  telefono: string;
-  email?: string;
-  contacto_principal: string;
-  contacto: string; // Alias para contacto_principal
-  activo: boolean;
-  fecha_registro: Date;
-  observaciones?: string;
-  tipo_proveedor: string;
-  nit: string;
-  correo_electronico?: string;
-  forma_pago?: string;
-}
-
-export interface ProductoProveedor {
-  id: string;
-  proveedor_id: string;
-  nombre_producto: string;
-  tipo_material: string;
-  precio_por_m3: number;
-  disponible: boolean;
-  fecha_registro: Date;
-  observaciones?: string;
-  // Nuevas propiedades que esperan los componentes
-  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
-  unidad: string;
-  precio_unitario: number;
-}
-
 // Tipos de proveedor
 export const tiposProveedor = [
   'Materiales',
@@ -51,10 +19,25 @@ export interface Proveedor {
   activo: boolean;
   fecha_registro: Date;
   observaciones?: string;
-  tipo_proveedor: TipoProveedor;
+  tipo_proveedor: TipoProveedor; // Use union type consistently
   nit: string;
   correo_electronico?: string;
   forma_pago?: string;
+}
+
+export interface ProductoProveedor {
+  id: string;
+  proveedor_id: string;
+  nombre_producto: string;
+  tipo_material: string;
+  precio_por_m3: number;
+  disponible: boolean;
+  fecha_registro: Date;
+  observaciones?: string;
+  // Nuevas propiedades que esperan los componentes
+  tipo_insumo: 'Material' | 'Lubricante' | 'Repuesto' | 'Servicio';
+  unidad: string;
+  precio_unitario: number;
 }
 
 // Función para crear un nuevo proveedor

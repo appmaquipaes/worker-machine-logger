@@ -234,8 +234,8 @@ const ClientesPage: React.FC = () => {
                 </DialogHeader>
                 <ClienteDialogForm 
                   form={form}
-                  tiposPersona={tiposPersona}
-                  tiposCliente={tiposCliente}
+                  tiposPersona={[...tiposPersona]} 
+                  tiposCliente={[...tiposCliente]}
                   isEdit={false}
                   onSubmit={form.handleSubmit(handleAddCliente)}
                 />
@@ -253,8 +253,8 @@ const ClientesPage: React.FC = () => {
               openEditCliente={openEditCliente}
               handleDeleteCliente={handleDeleteCliente}
               form={form}
-              tiposPersona={tiposPersona}
-              tiposCliente={tiposCliente}
+              tiposPersona={[...tiposPersona]}
+              tiposCliente={[...tiposCliente]}
               handleUpdateCliente={handleUpdateCliente}
             />
           ) : (
@@ -269,8 +269,8 @@ const ClientesPage: React.FC = () => {
         onOpenChange={(open) => !open && setEditingCliente(null)}
         cliente={editingCliente}
         form={form}
-        tiposPersona={tiposPersona}
-        tiposCliente={tiposCliente}
+        tiposPersona={[...tiposPersona]}
+        tiposCliente={[...tiposCliente]}
         onSubmit={form.handleSubmit(handleUpdateCliente)}
       />
 
