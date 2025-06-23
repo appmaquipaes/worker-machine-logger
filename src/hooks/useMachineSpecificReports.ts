@@ -1,3 +1,4 @@
+
 import { Machine } from '@/context/MachineContext';
 import { ReportType } from '@/types/report';
 
@@ -29,6 +30,10 @@ export const useMachineSpecificReports = () => {
     if (!machine) return false;
     // Máquinas que manejan inventario: Volquetas, Camiones y Cargadores
     return isMaterialTransportVehicle(machine) || isCargador(machine);
+  };
+
+  const getMachineTypeLabel = (machine: Machine): string => {
+    return `${machine.type}`;
   };
 
   const getAvailableReportTypes = (machine?: Machine): ReportType[] => {
