@@ -7,6 +7,7 @@ import { useAutoVentas } from '@/hooks/useAutoVentas';
 import { useInventarioOperations } from '@/hooks/useInventarioOperations';
 import { useVentaCreation } from '@/hooks/useVentaCreation';
 import { loadVentas, saveVentas } from '@/models/Ventas';
+import { useDataPersistence } from '@/hooks/useDataPersistence';
 import { toast } from "sonner";
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -32,18 +33,24 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const { procesarReporteParaVenta } = useAutoVentas();
   const { procesarReporteInventario, validarOperacion } = useInventarioOperations();
   const { crearVentaAutomatica } = useVentaCreation();
+  const { saveToLocalStorage, loadFromLocalStorage } = useDataPersistence();
 
   useEffect(() => {
-    const storedReports = localStorage.getItem('reports');
-    if (storedReports) {
-      const parsedReports = parseStoredReports(storedReports);
+    const storedReports = loadFromLocalStorage('reports', []);
+    if (storedReports && storedReports.length > 0) {
+      const parsedReports = parseStoredReports(JSON.stringify(storedReports));
       setReports(parsedReports);
+      console.log('📋 Reportes cargados:', parsedReports.length);
     }
-  }, []);
+  }, [loadFromLocalStorage]);
 
   const saveReports = (newReports: Report[]) => {
+    console.log('💾 Guardando reportes:', newReports.length);
     setReports(newReports);
-    localStorage.setItem('reports', JSON.stringify(newReports));
+    const guardadoExitoso = saveToLocalStorage('reports', newReports);
+    if (!guardadoExitoso) {
+      toast.error('Error guardando reportes');
+    }
   };
 
   const addReport = (
@@ -161,7 +168,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       }
     }
 
-    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS
+    // NUEVA LÓGICA SIMPLIFICADA DE VENTAS AUTOMÁTICAS
     if (newReport.reportType === 'Viajes' && newReport.destination) {
       try {
         console.log('💼 Aplicando NUEVA LÓGICA SIMPLIFICADA de ventas...');
@@ -215,22 +222,27 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
               const nuevasVentas = [...ventasExistentes, ventaAutomatica];
               console.log('📋 Nuevas ventas a guardar:', nuevasVentas.length);
               
-              saveVentas(nuevasVentas);
-              console.log('✅ Venta guardada exitosamente en localStorage');
-              
-              // Verificar que se guardó correctamente
-              const ventasVerificacion = loadVentas();
-              console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
-              
-              console.log('✓ Venta automática creada y guardada con NUEVA LÓGICA SIMPLIFICADA');
-              toast.success('💰 Venta automática generada exitosamente (Lógica Simplificada)', {
-                duration: 4000,
-                style: {
-                  fontSize: '14px',
-                  backgroundColor: '#059669',
-                  color: 'white'
-                }
-              });
+              const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
+              if (guardadoExitoso) {
+                console.log('✅ Venta guardada exitosamente en localStorage');
+                
+                // Verificar que se guardó correctamente
+                const ventasVerificacion = loadVentas();
+                console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
+                
+                console.log('✓ Venta automática creada y guardada con NUEVA LÓGICA SIMPLIFICADA');
+                toast.success('💰 Venta automática generada exitosamente (Lógica Simplificada)', {
+                  duration: 4000,
+                  style: {
+                    fontSize: '14px',
+                    backgroundColor: '#059669',
+                    color: 'white'
+                  }
+                });
+              } else {
+                console.error('❌ Error guardando venta en localStorage');
+                toast.error('Error guardando la venta automática');
+              }
             } catch (error) {
               console.error('❌ Error guardando venta:', error);
               toast.error('Error guardando la venta automática');
@@ -249,6 +261,35 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error procesando venta automática:', error);
+      }
+    }
+
+    // NUEVO: GENERAR VENTAS AUTOMÁTICAS PARA HORAS TRABAJADAS
+    if (newReport.reportType === 'Horas Trabajadas' && newReport.workSite && newReport.hours) {
+      try {
+        console.log('⏰ Generando venta automática para HORAS TRABAJADAS...');
+        const ventaAutomatica = crearVentaAutomatica(newReport);
+        
+        if (ventaAutomatica) {
+          console.log('💾 Guardando venta de horas trabajadas...');
+          const ventasExistentes = loadVentas();
+          const nuevasVentas = [...ventasExistentes, ventaAutomatica];
+          
+          const guardadoExitoso = saveToLocalStorage('ventas', nuevasVentas);
+          if (guardadoExitoso) {
+            console.log('✅ Venta de horas trabajadas guardada exitosamente');
+            toast.success('💰 Venta automática de horas trabajadas generada', {
+              duration: 4000,
+              style: {
+                fontSize: '14px',
+                backgroundColor: '#059669',
+                color: 'white'
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error generando venta para horas trabajadas:', error);
       }
     }
 
