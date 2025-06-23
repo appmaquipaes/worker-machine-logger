@@ -164,7 +164,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     // NUEVA LÓGICA SIMPLIFICADA DE VENTAS
     if (newReport.reportType === 'Viajes' && newReport.destination) {
       try {
-        console.log('💼 Evaluando generación de venta con nueva lógica simplificada...');
+        console.log('💼 Aplicando NUEVA LÓGICA SIMPLIFICADA de ventas...');
         
         const esCargador = newReport.machineName.toLowerCase().includes('cargador');
         const esVolqueta = newReport.machineName.toLowerCase().includes('volqueta') || 
@@ -179,29 +179,30 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
         let debeGenerarVenta = false;
         let razonDecision = '';
         
+        // REGLAS SIMPLIFICADAS:
         if (esCargador) {
-          // CARGADORES: Siempre generan venta
+          // CARGADORES: SIEMPRE generan venta
           debeGenerarVenta = true;
-          razonDecision = 'Cargador siempre genera venta automática';
+          razonDecision = 'Cargador SIEMPRE genera venta (nueva lógica simplificada)';
         } else if (esVolqueta && !origenEsAcopio) {
           // VOLQUETAS: Solo si NO vienen del acopio
           debeGenerarVenta = true;
-          razonDecision = 'Volqueta desde origen distinto al acopio';
+          razonDecision = 'Volqueta desde origen DISTINTO al acopio - genera venta';
         } else if (esVolqueta && origenEsAcopio) {
           // VOLQUETAS desde acopio: NO generar venta
           debeGenerarVenta = false;
-          razonDecision = 'Volqueta desde acopio - no generar venta (evitar duplicación)';
+          razonDecision = 'Volqueta desde acopio - NO generar venta (nueva lógica simplificada)';
         } else {
           // Otras máquinas: mantener lógica actual
           debeGenerarVenta = true;
           razonDecision = 'Otra máquina - generar venta';
         }
         
-        console.log('🎯 Decisión final:', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
+        console.log('🎯 DECISIÓN FINAL (LÓGICA SIMPLIFICADA):', debeGenerarVenta ? 'GENERAR VENTA' : 'NO GENERAR VENTA');
         console.log('📝 Razón:', razonDecision);
         
         if (debeGenerarVenta) {
-          console.log('💰 Generando venta automática...');
+          console.log('💰 Generando venta automática con nueva lógica...');
           const ventaAutomatica = crearVentaAutomatica(newReport);
           
           if (ventaAutomatica) {
@@ -221,8 +222,8 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
               const ventasVerificacion = loadVentas();
               console.log('🔍 Verificación - Total ventas después de guardar:', ventasVerificacion.length);
               
-              console.log('✓ Venta automática creada y guardada');
-              toast.success('💰 Venta automática generada exitosamente', {
+              console.log('✓ Venta automática creada y guardada con NUEVA LÓGICA SIMPLIFICADA');
+              toast.success('💰 Venta automática generada exitosamente (Lógica Simplificada)', {
                 duration: 4000,
                 style: {
                   fontSize: '14px',
@@ -238,7 +239,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
             console.log('⚠️ No se pudo crear la venta automática');
           }
         } else {
-          console.log('ℹ️ Venta no generada por lógica de negocio');
+          console.log('ℹ️ Venta NO generada por nueva lógica simplificada');
           toast.info(`ℹ️ ${razonDecision}`, {
             duration: 3000,
             style: {
