@@ -15,6 +15,7 @@ import {
   loadProductosProveedores, 
   saveProductosProveedores,
   createProductoProveedor,
+  TipoProveedor
 } from '@/models/Proveedores';
 import ProveedorForm, { ProveedorFormData } from '@/components/proveedores/ProveedorForm';
 import ProveedorTable from '@/components/proveedores/ProveedorTable';
@@ -277,7 +278,16 @@ const ProveedoresPage: React.FC = () => {
                     <ProveedorForm 
                       onSubmit={editingProveedor ? handleUpdateProveedor : handleAddProveedor} 
                       onCancel={() => setShowProveedorDialog(false)} 
-                      defaultValues={editingProveedor || undefined}
+                      defaultValues={editingProveedor ? {
+                          nombre: editingProveedor.nombre,
+                          ciudad: editingProveedor.ciudad,
+                          contacto: editingProveedor.contacto_principal,
+                          correo_electronico: editingProveedor.correo_electronico,
+                          nit: editingProveedor.nit,
+                          tipo_proveedor: editingProveedor.tipo_proveedor,
+                          forma_pago: editingProveedor.forma_pago,
+                          observaciones: editingProveedor.observaciones
+                        } : undefined}
                       isEditing={!!editingProveedor}
                     />
                   </DialogContent>

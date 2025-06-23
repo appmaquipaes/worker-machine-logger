@@ -16,7 +16,7 @@ import { useForm } from 'react-hook-form';
 import { ArrowLeft, Plus, Edit, Trash2, Users, MapPin } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente, tiposPersona } from '@/models/Clientes';
+import { Cliente, loadClientes, saveClientes, createCliente, tiposCliente, tiposPersona, TipoPersona, TipoCliente } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
 import FincasManagement from '@/components/FincasManagement';
 import ClienteDialogForm from "@/components/clientes/ClienteDialogForm";
@@ -83,12 +83,12 @@ const ClientesPage: React.FC = () => {
   const handleAddCliente = (data: z.infer<typeof clienteSchema>) => {
     const nuevoCliente = createCliente(
       data.nombre_cliente,
-      data.tipo_persona,
+      data.tipo_persona as TipoPersona,
       data.nit_cedula,
       data.telefono_contacto,
       data.persona_contacto,
       data.ciudad,
-      data.tipo_cliente,
+      data.tipo_cliente as TipoCliente,
       data.correo_electronico,
       data.observaciones
     );
@@ -108,13 +108,18 @@ const ClientesPage: React.FC = () => {
       cliente.id === editingCliente.id ? {
         ...cliente,
         nombre_cliente: data.nombre_cliente,
-        tipo_persona: data.tipo_persona,
+        nombre: data.nombre_cliente,
+        tipo_persona: data.tipo_persona as TipoPersona,
         nit_cedula: data.nit_cedula,
+        nit: data.nit_cedula,
         correo_electronico: data.correo_electronico,
+        email: data.correo_electronico,
         telefono_contacto: data.telefono_contacto,
+        telefono: data.telefono_contacto,
         persona_contacto: data.persona_contacto,
+        contacto_principal: data.persona_contacto,
         ciudad: data.ciudad,
-        tipo_cliente: data.tipo_cliente,
+        tipo_cliente: data.tipo_cliente as TipoCliente,
         observaciones: data.observaciones
       } : cliente
     );

@@ -30,6 +30,33 @@ export interface ProductoProveedor {
   precio_unitario: number;
 }
 
+// Tipos de proveedor
+export const tiposProveedor = [
+  'Materiales',
+  'Lubricantes', 
+  'Repuestos',
+  'Servicios',
+  'Otros'
+] as const;
+export type TipoProveedor = typeof tiposProveedor[number];
+
+export interface Proveedor {
+  id: string;
+  nombre: string;
+  ciudad: string;
+  telefono: string;
+  email?: string;
+  contacto_principal: string;
+  contacto: string; // Alias para contacto_principal
+  activo: boolean;
+  fecha_registro: Date;
+  observaciones?: string;
+  tipo_proveedor: TipoProveedor;
+  nit: string;
+  correo_electronico?: string;
+  forma_pago?: string;
+}
+
 // Función para crear un nuevo proveedor
 export const createProveedor = (
   nombre: string,
@@ -38,7 +65,7 @@ export const createProveedor = (
   contacto_principal: string,
   email?: string,
   observaciones?: string,
-  tipo_proveedor?: string,
+  tipo_proveedor?: TipoProveedor,
   nit?: string,
   forma_pago?: string
 ): Proveedor => {
@@ -156,6 +183,13 @@ export const loadProductosProveedores = (): ProductoProveedor[] => {
     console.error('❌ Error cargando productos de proveedores:', error);
     return [];
   }
+};
+
+// Función para obtener tipos únicos de materiales de proveedores
+export const getUniqueProviderMaterialTypes = (): string[] => {
+  const productos = loadProductosProveedores();
+  const tiposUnicos = [...new Set(productos.map(p => p.tipo_material))];
+  return tiposUnicos.filter(tipo => tipo && tipo.trim() !== '');
 };
 
 // Función para obtener productos por proveedor
