@@ -3,6 +3,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ClienteDialogForm from "./ClienteDialogForm";
 import type { Cliente } from "@/models/Clientes";
+import { Edit, User } from "lucide-react";
 
 interface EditarClienteDialogProps {
   open: boolean;
@@ -25,12 +26,19 @@ const EditarClienteDialog: React.FC<EditarClienteDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] animate-scale-in corporate-card shadow-2xl bg-background border">
-        <DialogHeader>
-          <DialogTitle className="text-responsive-lg font-bold">Editar Cliente</DialogTitle>
-          <DialogDescription className="text-corporate-muted">
-            Modifica los datos del cliente
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[900px] animate-scale-in shadow-2xl bg-white border-0 rounded-3xl">
+        <DialogHeader className="space-y-6 pb-8">
+          <div className="flex items-center gap-6">
+            <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-2xl">
+              <Edit className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <DialogTitle className="text-3xl font-bold text-slate-800">Editar Cliente</DialogTitle>
+              <DialogDescription className="text-xl text-slate-600 mt-2">
+                Modifica los datos del cliente
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         <ClienteDialogForm
           form={form}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Building } from 'lucide-react';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -163,28 +164,33 @@ const FincasManagement: React.FC<FincasManagementProps> = ({
   };
 
   return (
-    <Card className="corporate-card animate-scale-in shadow-xl">
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b">
+    <Card className="shadow-2xl border-3 border-slate-200 bg-white rounded-3xl animate-scale-in">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b-2 border-slate-200 bg-gradient-to-r from-green-50 to-green-100 p-8">
         <div>
-          <CardTitle className="flex items-center gap-2 text-responsive-md font-bold">
-            <MapPin className="h-6 w-6 text-blue-700" />
+          <CardTitle className="flex items-center gap-4 text-3xl font-bold text-green-700">
+            <div className="p-3 bg-green-600 rounded-2xl shadow-lg">
+              <MapPin className="h-8 w-8 text-white" />
+            </div>
             Fincas y Puntos de Entrega
           </CardTitle>
-          <p className="text-sm text-corporate-muted mt-1">
+          <p className="text-xl text-green-600 mt-3 font-medium">
             Cliente:&nbsp;
-            <span className="font-semibold text-corporate">
+            <span className="font-bold text-green-700">
               {clienteNombre}
             </span>
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNewFincaDialog} className="btn-primary-large btn-press flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+            <Button 
+              onClick={openNewFincaDialog} 
+              className="h-16 px-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 min-w-[220px]"
+            >
+              <Plus className="h-6 w-6 mr-3" />
               Nueva Finca
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl bg-background/90 backdrop-blur animate-fade-in">
+          <DialogContent className="max-w-5xl bg-white shadow-2xl border-0 rounded-3xl animate-fade-in">
             <FincaForm
               nombreFinca={nombreFinca}
               setNombreFinca={setNombreFinca}
@@ -205,7 +211,7 @@ const FincasManagement: React.FC<FincasManagementProps> = ({
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0 pb-1">
+      <CardContent className="p-0 pb-2">
         {fincas.length > 0 ? (
           <FincasTable fincas={fincas} onEdit={handleEdit} onDelete={handleDelete} />
         ) : (
