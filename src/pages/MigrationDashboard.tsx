@@ -3,7 +3,6 @@ import React from 'react';
 import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
 import { useAuth } from '@/context/AuthContext';
 import { useMigrationData } from '@/hooks/useMigrationData';
-import { AuthDebugInfo } from '@/components/migration/AuthDebugInfo';
 import { MigrationHeader } from '@/components/migration/MigrationHeader';
 import { MigrationStatsCards } from '@/components/migration/MigrationStatsCards';
 import { LocalDataCard } from '@/components/migration/LocalDataCard';
@@ -35,9 +34,12 @@ const MigrationDashboard = () => {
     isAnyLoading: supabaseAuth.loading || localAuth.isLoading
   });
 
-  // LÓGICA SIMPLIFICADA: Permitir acceso siempre, sin restricciones de autenticación
-  // Esto es para el panel de migración solamente
-  const currentProfile = localAuth.user || supabaseAuth.profile || { name: 'Usuario Anónimo', email: 'N/A' };
+  // ACCESO COMPLETAMENTE ABIERTO - Sin restricciones de autenticación
+  const currentProfile = localAuth.user || supabaseAuth.profile || { 
+    name: 'Usuario Anónimo', 
+    email: 'migración@sistema.com',
+    role: 'Migración'
+  };
 
   const {
     machines,
@@ -50,21 +52,22 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  // Mostrar loading solo si ambos están cargando
+  // Solo mostrar loading si hay problemas técnicos, no por autenticación
   if (supabaseAuth.loading && localAuth.isLoading) {
-    console.log('🔄 Mostrando loading porque ambos contextos están cargando');
+    console.log('🔄 Cargando contextos de autenticación...');
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Verificando autenticación...</p>
+          <p>Inicializando panel de migración...</p>
         </div>
       </div>
     );
   }
 
-  // Siempre mostrar el dashboard - sin restricciones para migración
-  console.log('✅ Mostrando dashboard - acceso permitido para migración');
+  // SIEMPRE mostrar el dashboard - Panel de migración sin restricciones
+  console.log('✅ Panel de migración accesible - Mostrando dashboard');
+  
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MigrationHeader currentProfile={currentProfile} />
