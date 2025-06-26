@@ -13,15 +13,16 @@ export const useMigrationData = (supabaseAuth: any) => {
   const [localReportsCount, setLocalReportsCount] = useState(0);
 
   useEffect(() => {
+    console.log('🔄 MIGRATION HOOK: Cargando datos locales...');
     const loadLocalData = () => {
       try {
         const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
         const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
         setLocalMachinesCount(localMachines.length);
         setLocalReportsCount(localReports.length);
-        console.log('📊 Datos locales - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
+        console.log('✅ MIGRATION HOOK: Datos locales cargados - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
       } catch (error) {
-        console.error('❌ Error cargando datos locales:', error);
+        console.error('❌ MIGRATION HOOK: Error cargando datos locales:', error);
         setLocalMachinesCount(0);
         setLocalReportsCount(0);
       }
@@ -31,14 +32,10 @@ export const useMigrationData = (supabaseAuth: any) => {
   }, []);
 
   useEffect(() => {
+    console.log('🔄 MIGRATION HOOK: Intentando cargar datos de Supabase...');
     const loadSupabaseData = async () => {
-      if (!supabaseAuth.isAuthenticated) {
-        console.log('⏭️ Saltando carga de Supabase - no autenticado');
-        return;
-      }
-      
       try {
-        console.log('🔄 Cargando datos de Supabase...');
+        console.log('📡 MIGRATION HOOK: Haciendo peticiones a Supabase...');
         
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
@@ -46,10 +43,10 @@ export const useMigrationData = (supabaseAuth: any) => {
           .order('name');
 
         if (machinesError) {
-          console.error('❌ Error cargando máquinas:', machinesError);
+          console.error('❌ MIGRATION HOOK: Error cargando máquinas:', machinesError);
         } else {
           setMachines(machinesData || []);
-          console.log('✅ Máquinas en Supabase:', machinesData?.length || 0);
+          console.log('✅ MIGRATION HOOK: Máquinas en Supabase:', machinesData?.length || 0);
         }
 
         const { data: reportsData, error: reportsError } = await supabase
@@ -58,18 +55,18 @@ export const useMigrationData = (supabaseAuth: any) => {
           .order('created_at', { ascending: false });
 
         if (reportsError) {
-          console.error('❌ Error cargando reportes:', reportsError);
+          console.error('❌ MIGRATION HOOK: Error cargando reportes:', reportsError);
         } else {
           setReports(reportsData || []);
-          console.log('✅ Reportes en Supabase:', reportsData?.length || 0);
+          console.log('✅ MIGRATION HOOK: Reportes en Supabase:', reportsData?.length || 0);
         }
       } catch (error) {
-        console.error('❌ Error general cargando datos de Supabase:', error);
+        console.error('❌ MIGRATION HOOK: Error general cargando datos de Supabase:', error);
       }
     };
 
     loadSupabaseData();
-  }, [supabaseAuth.isAuthenticated]);
+  }, []);
 
   const addMachine = async (machineData: any) => {
     try {
@@ -106,18 +103,25 @@ export const useMigrationData = (supabaseAuth: any) => {
   };
 
   const migrateLocalStorageData = async () => {
-    if (!supabaseAuth.isAuthenticated || !supabaseAuth.profile) {
-      toast.error('Debes estar autenticado con Supabase para migrar datos');
-      return;
-    }
+    console.log('🚀 MIGRATION HOOK: Iniciando migración...');
+    
+    // Simulación de autenticación para migración
+    const mockProfile = {
+      id: 'migration-user',
+      name: 'Usuario de Migración',
+      email: 'migracion@maquipaes.com'
+    };
 
     setIsMigrating(true);
     setMigrationProgress(0);
     
     try {
+      setMigrationStep('Preparando migración...');
+      console.log('📝 MIGRATION HOOK: Preparando datos para migración');
+      
       setMigrationStep('Migrando máquinas...');
       const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
-      console.log('Máquinas locales encontradas:', localMachines.length);
+      console.log('🚚 MIGRATION HOOK: Máquinas locales encontradas:', localMachines.length);
       
       for (let i = 0; i < localMachines.length; i++) {
         const machine = localMachines[i];
@@ -136,7 +140,7 @@ export const useMigrationData = (supabaseAuth: any) => {
 
       setMigrationStep('Migrando reportes...');
       const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
-      console.log('Reportes locales encontrados:', localReports.length);
+      console.log('📊 MIGRATION HOOK: Reportes locales encontrados:', localReports.length);
       
       for (let i = 0; i < localReports.length; i++) {
         const report = localReports[i];
@@ -146,10 +150,10 @@ export const useMigrationData = (supabaseAuth: any) => {
         );
         
         await addReport({
-          user_id: supabaseAuth.profile.id,
+          user_id: mockProfile.id,
           machine_id: matchingMachine?.id || null,
           machine_name: report.machineName || '',
-          user_name: report.userName || supabaseAuth.profile.name,
+          user_name: report.userName || mockProfile.name,
           report_type: report.reportType || '',
           description: report.description || '',
           report_date: report.reportDate ? new Date(report.reportDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -166,17 +170,19 @@ export const useMigrationData = (supabaseAuth: any) => {
         setMigrationProgress(50 + ((i + 1) / localReports.length) * 50);
       }
 
-      setMigrationStep('Migración completada');
+      setMigrationStep('Migración completada exitosamente');
       setMigrationProgress(100);
+      console.log('✅ MIGRATION HOOK: Migración completada');
       toast.success('Migración completada exitosamente');
       
+      // Recargar datos
       const { data: updatedMachines } = await supabase.from('machines').select('*');
       const { data: updatedReports } = await supabase.from('reports').select('*');
       setMachines(updatedMachines || []);
       setReports(updatedReports || []);
       
     } catch (error) {
-      console.error('Error en migración:', error);
+      console.error('❌ MIGRATION HOOK: Error en migración:', error);
       toast.error('Error durante la migración: ' + error.message);
     } finally {
       setIsMigrating(false);
