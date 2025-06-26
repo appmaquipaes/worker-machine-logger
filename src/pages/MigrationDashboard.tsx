@@ -36,18 +36,18 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Verificar si el usuario está autenticado
-  if (!supabaseAuth.isAuthenticated || !supabaseAuth.user) {
-    console.log('❌ MIGRATION DASHBOARD: Usuario no autenticado, redirigiendo al login');
+  // CAMBIO IMPORTANTE: Solo verificar si hay usuario, no usar isAuthenticated
+  if (!supabaseAuth.user) {
+    console.log('❌ MIGRATION DASHBOARD: Usuario no encontrado, redirigiendo al login');
     console.log('❌ Estado de autenticación:', {
-      isAuthenticated: supabaseAuth.isAuthenticated,
       hasUser: !!supabaseAuth.user,
-      userEmail: supabaseAuth.user?.email
+      userEmail: supabaseAuth.user?.email,
+      loading: supabaseAuth.loading
     });
     return <Navigate to="/login" replace />;
   }
 
-  console.log('✅ MIGRATION DASHBOARD: Usuario autenticado correctamente');
+  console.log('✅ MIGRATION DASHBOARD: Usuario encontrado correctamente');
   console.log('👤 Usuario actual:', supabaseAuth.user.email);
 
   const {
@@ -133,7 +133,7 @@ const MigrationDashboard = () => {
           <p>🆔 ID: {supabaseAuth.user.id}</p>
           <p>📊 Datos locales: {localMachinesCount + localReportsCount} elementos</p>
           <p>🌐 Datos Supabase: {machines.length + reports.length} elementos</p>
-          <p>🔐 Estado: Autenticado con Supabase ✓</p>
+          <p>🔐 Estado: Usuario encontrado ✓</p>
           <p>⏰ Timestamp: {new Date().toLocaleTimeString()}</p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,23 +22,7 @@ export const useSupabaseAuth = () => {
   useEffect(() => {
     console.log('🔄 SUPABASE AUTH: Inicializando...');
     
-    // Obtener sesión inicial
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('📡 SUPABASE AUTH: Sesión inicial:', { 
-        hasSession: !!session, 
-        userEmail: session?.user?.email,
-        error 
-      });
-      
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Escuchar cambios de autenticación
+    // Escuchar cambios de autenticación PRIMERO
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔔 SUPABASE AUTH: Cambio de estado:', { 
@@ -55,6 +40,22 @@ export const useSupabaseAuth = () => {
         }
       }
     );
+
+    // DESPUÉS obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('📡 SUPABASE AUTH: Sesión inicial:', { 
+        hasSession: !!session, 
+        userEmail: session?.user?.email,
+        error 
+      });
+      
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -176,7 +177,9 @@ export const useSupabaseAuth = () => {
     }
   };
 
+  // CAMBIO IMPORTANTE: Simplificar la lógica de isAuthenticated
   const isAuthenticated = !!user;
+  
   console.log('🔍 SUPABASE AUTH: Estado final:', { 
     isAuthenticated, 
     hasUser: !!user, 
