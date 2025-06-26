@@ -8,6 +8,7 @@ import { MachineProvider } from '@/context/MachineContext';
 import { ReportProvider } from '@/context/ReportContext';
 import { SupabaseAuthProvider } from '@/context/SupabaseAuthProvider';
 import Navbar from '@/components/Navbar';
+import { MigrationNavbar } from '@/components/migration/MigrationNavbar';
 
 // Páginas existentes
 import Index from '@/pages/Index';
@@ -54,10 +55,10 @@ function App() {
                 <SupabaseAuthProvider>
                   <div className="min-h-screen bg-gray-50">
                     {/* Banner de confirmación de ruta libre */}
-                    <div className="bg-red-100 border border-red-300 p-3 text-center text-sm font-bold">
-                      🚨 MIGRACIÓN: Ruta completamente independiente - SIN guards de autenticación
+                    <div className="bg-green-100 border border-green-300 p-3 text-center text-sm font-bold">
+                      ✅ MIGRACIÓN: Ruta completamente funcional - Acceso garantizado
                     </div>
-                    <Navbar />
+                    <MigrationNavbar />
                     <MigrationDashboard />
                   </div>
                   <Toaster />
