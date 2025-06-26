@@ -39,67 +39,82 @@ import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
-function App() {
-  console.log('🚀 APP: Renderizando aplicación principal');
-  
+// Componente especial SOLO para migración - SIN contextos de auth
+const MigrationRoute = () => {
+  console.log('🎯 MIGRATION ROUTE: Renderizando ruta de migración independiente');
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SupabaseAuthProvider>
-          <AuthProvider>
-            <MachineProvider>
-              <ReportProvider>
-                <Router>
-                  <div className="min-h-screen bg-gray-50">
-                    <Navbar />
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      
-                      {/* MIGRACIÓN: Ruta completamente libre - SIN guards de autenticación */}
-                      <Route 
-                        path="/migration" 
-                        element={
-                          <div>
-                            <div className="bg-yellow-100 border border-yellow-300 p-2 text-center text-sm">
-                              🔧 DEBUG: Ruta /migration ejecutándose directamente
-                            </div>
-                            <MigrationDashboard />
-                          </div>
-                        } 
-                      />
-                      
-                      <Route path="/machine-selection" element={<MachineSelection />} />
-                      <Route path="/report" element={<ReportForm />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/machine-management" element={<MachineManagement />} />
-                      <Route path="/user-management" element={<UserManagement />} />
-                      <Route path="/admin" element={<AdminPanel />} />
-                      <Route path="/clientes" element={<ClientesPage />} />
-                      <Route path="/proveedores" element={<ProveedoresPage />} />
-                      <Route path="/compras" element={<ComprasPage />} />
-                      <Route path="/compras-material" element={<ComprasMaterialPage />} />
-                      <Route path="/ventas" element={<VentasPage />} />
-                      <Route path="/ventas-material" element={<VentasMaterialPage />} />
-                      <Route path="/inventario" element={<InventarioPage />} />
-                      <Route path="/informes" element={<InformesPage />} />
-                      <Route path="/tarifas-cliente" element={<TarifasClientePage />} />
-                      <Route path="/servicios-transporte" element={<ServiciosTransportePage />} />
-                      <Route path="/volqueta-management" element={<VolquetaManagement />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </div>
-                  <Toaster />
-                </Router>
-              </ReportProvider>
-            </MachineProvider>
-          </AuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <div className="bg-red-100 border border-red-300 p-3 text-center text-sm font-bold">
+              🚨 MIGRACIÓN: Ruta completamente independiente - SIN guards de autenticación
+            </div>
+            <MigrationDashboard />
+          </div>
+          <Toaster />
         </SupabaseAuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
+  );
+};
+
+function App() {
+  console.log('🚀 APP: Renderizando aplicación principal');
+  
+  return (
+    <Router>
+      <Routes>
+        {/* MIGRACIÓN: Ruta completamente aislada - PRIMERA para evitar conflictos */}
+        <Route path="/migration" element={<MigrationRoute />} />
+        
+        {/* Resto de rutas con contextos normales */}
+        <Route path="/*" element={
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route path="/forgot-password" element={<ForgotPassword />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/machine-selection" element={<MachineSelection />} />
+                          <Route path="/report" element={<ReportForm />} />
+                          <Route path="/reports" element={<Reports />} />
+                          <Route path="/machine-management" element={<MachineManagement />} />
+                          <Route path="/user-management" element={<UserManagement />} />
+                          <Route path="/admin" element={<AdminPanel />} />
+                          <Route path="/clientes" element={<ClientesPage />} />
+                          <Route path="/proveedores" element={<ProveedoresPage />} />
+                          <Route path="/compras" element={<ComprasPage />} />
+                          <Route path="/compras-material" element={<ComprasMaterialPage />} />
+                          <Route path="/ventas" element={<VentasPage />} />
+                          <Route path="/ventas-material" element={<VentasMaterialPage />} />
+                          <Route path="/inventario" element={<InventarioPage />} />
+                          <Route path="/informes" element={<InformesPage />} />
+                          <Route path="/tarifas-cliente" element={<TarifasClientePage />} />
+                          <Route path="/servicios-transporte" element={<ServiciosTransportePage />} />
+                          <Route path="/volqueta-management" element={<VolquetaManagement />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            </TooltipProvider>
+          </QueryClientProvider>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
