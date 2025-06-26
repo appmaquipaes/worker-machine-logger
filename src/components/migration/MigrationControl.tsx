@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, CheckCircle2 } from 'lucide-react';
 
 interface MigrationControlProps {
   supabaseAuth: any;
@@ -30,24 +30,20 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-5 w-5" />
-          Migración de Datos
+          Migración de Datos - ACCESO LIBRE
         </CardTitle>
         <CardDescription>
-          Migra tus datos desde localStorage a Supabase para mayor seguridad y persistencia.
+          Migra tus datos desde localStorage a Supabase. No requiere autenticación previa.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!supabaseAuth.isAuthenticated && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Para migrar datos necesitas estar autenticado con Supabase. 
-              <a href="/login" className="text-blue-600 hover:underline ml-1">
-                Inicia sesión aquí
-              </a>
-            </AlertDescription>
-          </Alert>
-        )}
+        <Alert>
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>
+            ✅ Panel de migración configurado para acceso completamente libre.
+            La migración copiará todos tus datos de localStorage a Supabase sin requerir autenticación.
+          </AlertDescription>
+        </Alert>
         
         {isMigrating ? (
           <div className="space-y-4">
@@ -61,27 +57,19 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>
-                La migración copiará todos tus datos de localStorage a Supabase. 
-                Este proceso no eliminará tus datos locales.
-              </AlertDescription>
-            </Alert>
-            
             <Button 
               onClick={onMigrate} 
               className="w-full"
               size="lg"
-              disabled={!supabaseAuth.isAuthenticated || (localMachinesCount === 0 && localReportsCount === 0)}
+              disabled={localMachinesCount === 0 && localReportsCount === 0}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Iniciar Migración ({localMachinesCount} máquinas, {localReportsCount} reportes)
+              Iniciar Migración Libre ({localMachinesCount} máquinas, {localReportsCount} reportes)
             </Button>
 
             {localMachinesCount === 0 && localReportsCount === 0 && (
               <Alert>
-                <AlertCircle className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
                   No se encontraron datos para migrar en localStorage.
                 </AlertDescription>
