@@ -1,3 +1,4 @@
+
 import { ReportType } from '@/types/report';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { useMachine } from '@/context/MachineContext';
@@ -43,17 +44,32 @@ export const useReportFormValidation = () => {
       inventarioAcopio
     } = formData;
 
+    console.log('🔍 VALIDANDO FORMULARIO:', {
+      reportType,
+      hours,
+      workSite,
+      selectedCliente,
+      trips,
+      value,
+      cantidadM3
+    });
+
     // Validaciones específicas por tipo de reporte
     if (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') {
       if (!hours || hours <= 0) {
         return 'Debe ingresar las horas trabajadas';
       }
+      // AMBOS tipos de reporte requieren sitio de trabajo
       if (!workSite.trim()) {
-        return 'Debe seleccionar el sitio de trabajo';
+        return reportType === 'Horas Trabajadas' 
+          ? 'Debe seleccionar el sitio de trabajo'
+          : 'Debe seleccionar el cliente donde se realizaron las horas extras';
       }
+      console.log('✅ Validación horas exitosa');
     }
 
     if (reportType === 'Viajes') {
+      console.log('🚛 Validando viajes...');
       // Validación específica para Cargadores
       if (isCargador(selectedMachine)) {
         if (!tipoMateria.trim()) {
@@ -100,6 +116,7 @@ export const useReportFormValidation = () => {
           return 'Debe ingresar la cantidad de m³ transportados';
         }
       }
+      console.log('✅ Validación viajes exitosa');
     }
 
     if (reportType === 'Combustible') {
@@ -109,6 +126,7 @@ export const useReportFormValidation = () => {
       if (!kilometraje || kilometraje < 0) {
         return 'Debe ingresar el kilometraje actual';
       }
+      console.log('✅ Validación combustible exitosa');
     }
 
     if (reportType === 'Mantenimiento') {
@@ -118,12 +136,14 @@ export const useReportFormValidation = () => {
       if (!proveedor.trim()) {
         return 'Debe seleccionar el proveedor';
       }
+      console.log('✅ Validación mantenimiento exitosa');
     }
 
     if (reportType === 'Novedades') {
       if (!description.trim()) {
         return 'Debe ingresar la descripción de la novedad';
       }
+      console.log('✅ Validación novedades exitosa');
     }
 
     if (reportType === 'Recepción Escombrera') {
@@ -136,8 +156,10 @@ export const useReportFormValidation = () => {
       if (!tipoMateria.trim()) {
         return 'Debe seleccionar el tipo de material';
       }
+      console.log('✅ Validación escombrera exitosa');
     }
 
+    console.log('✅ TODAS LAS VALIDACIONES EXITOSAS');
     return null;
   };
 

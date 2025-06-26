@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
 import { filterReports } from '@/utils/reportUtils';
@@ -8,6 +9,7 @@ import { useReportPersistence } from '@/hooks/useReportPersistence';
 import { useReportInventoryProcessing } from '@/hooks/useReportInventoryProcessing';
 import { useReportSalesProcessing } from '@/hooks/useReportSalesProcessing';
 import { toast } from "sonner";
+import { useAuth } from '@/context/AuthContext';
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
@@ -32,6 +34,7 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
   const { reports, saveReports, updateReport, deleteReport } = useReportPersistence();
   const { processInventoryForReport } = useReportInventoryProcessing();
   const { processSalesForReport } = useReportSalesProcessing();
+  const { user } = useAuth();
 
   const addReport = (
     machineId: string,
@@ -50,9 +53,12 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     kilometraje?: number
   ) => {
     console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
+    console.log('👤 Usuario actual:', user?.name, '(ID:', user?.id, ')');
     console.log('🚛 Máquina:', machineName, '(ID:', machineId, ')');
     console.log('📋 Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
     console.log('📍 Origen:', origin, 'Destino:', destination);
+    console.log('⏰ Fecha del reporte:', reportDate);
+    console.log('🔧 Datos adicionales:', { trips, hours, value, workSite, proveedor, kilometraje });
 
     // Extraer información del proveedor si aplica
     const { proveedorId, proveedorNombre } = extraerInfoProveedor(origin || '');
@@ -112,26 +118,39 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       kilometraje
     );
     
-    // Agregar información del proveedor al reporte
+    // Agregar información del usuario y proveedor al reporte
+    if (user) {
+      newReport.userName = user.name;
+      newReport.userId = user.id;
+      console.log('👤 Usuario agregado al reporte:', user.name);
+    }
+    
     if (proveedorId && proveedorNombre) {
       newReport.proveedorId = proveedorId;
       newReport.proveedorNombre = proveedorNombre;
       console.log('📋 Información de proveedor agregada al reporte');
     }
     
-    console.log('✅ Reporte creado:', newReport);
+    console.log('✅ Reporte creado completamente:', newReport);
     const updatedReports = [...reports, newReport];
     saveReports(updatedReports);
+    
+    console.log('💾 Reporte guardado. Total de reportes:', updatedReports.length);
 
     // PROCESAR INVENTARIO PRIMERO (para todas las máquinas)
     processInventoryForReport(newReport);
 
     // PROCESAR VENTAS AUTOMÁTICAS
     processSalesForReport(newReport);
+    
+    console.log('🎉 PROCESO DE CREACIÓN DE REPORTE COMPLETADO EXITOSAMENTE');
   };
 
   const getFilteredReports = (filters: any) => {
-    return filterReports(reports, filters);
+    console.log('🔍 Solicitud de filtrado de reportes con filtros:', filters);
+    const result = filterReports(reports, filters);
+    console.log('📊 Resultado del filtrado:', result.length, 'reportes encontrados');
+    return result;
   };
 
   const value: ReportContextType = {

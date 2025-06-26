@@ -16,7 +16,8 @@ const WorkSiteInput: React.FC<WorkSiteInputProps> = ({
   workSite,
   onClienteChangeForWorkSite
 }) => {
-  if (reportType !== 'Horas Trabajadas') {
+  // Mostrar para Horas Trabajadas Y Horas Extras
+  if (reportType !== 'Horas Trabajadas' && reportType !== 'Horas Extras') {
     return null;
   }
 
@@ -24,7 +25,9 @@ const WorkSiteInput: React.FC<WorkSiteInputProps> = ({
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <MapPin size={24} />
-        <Label className="text-lg">Cliente del Sitio de Trabajo</Label>
+        <Label className="text-lg">
+          {reportType === 'Horas Trabajadas' ? 'Cliente del Sitio de Trabajo' : 'Cliente donde se realizaron las Horas Extras'}
+        </Label>
       </div>
       <ClienteFincaSelector
         selectedCliente={workSite}
