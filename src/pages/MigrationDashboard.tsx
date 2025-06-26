@@ -14,7 +14,7 @@ const MigrationDashboard = () => {
   const localAuth = useAuth();
 
   // Debug para identificar el problema
-  console.log('🔍 MIGRATION DEBUG:', {
+  console.log('🔍 MIGRATION DASHBOARD LOADING:', {
     // Estado de autenticación local
     localAuthUser: localAuth.user,
     localAuthUserExists: !!localAuth.user,
@@ -34,12 +34,15 @@ const MigrationDashboard = () => {
     isAnyLoading: supabaseAuth.loading || localAuth.isLoading
   });
 
-  // ACCESO COMPLETAMENTE ABIERTO - Sin restricciones de autenticación
-  const currentProfile = localAuth.user || supabaseAuth.profile || { 
-    name: 'Usuario Anónimo', 
-    email: 'migración@sistema.com',
-    role: 'Migración'
+  // PANEL DE MIGRACIÓN: ACCESO COMPLETAMENTE LIBRE
+  // No hay restricciones de autenticación para el panel de migración
+  const currentProfile = { 
+    name: 'Panel de Migración', 
+    email: 'acceso@libre.com',
+    role: 'Sistema'
   };
+
+  console.log('✅ MIGRATION DASHBOARD: Acceso libre garantizado');
 
   const {
     machines,
@@ -52,9 +55,12 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  // Solo mostrar loading si hay problemas técnicos, no por autenticación
-  if (supabaseAuth.loading && localAuth.isLoading) {
-    console.log('🔄 Cargando contextos de autenticación...');
+  // El panel de migración NUNCA debe mostrar loading por autenticación
+  // Solo por problemas técnicos reales
+  const showTechnicalLoading = supabaseAuth.loading && localAuth.isLoading;
+  
+  if (showTechnicalLoading) {
+    console.log('🔄 Cargando contextos técnicos...');
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -65,11 +71,18 @@ const MigrationDashboard = () => {
     );
   }
 
-  // SIEMPRE mostrar el dashboard - Panel de migración sin restricciones
-  console.log('✅ Panel de migración accesible - Mostrando dashboard');
+  // RENDERIZADO GARANTIZADO: El panel de migración siempre debe ser accesible
+  console.log('🎯 RENDERIZANDO PANEL DE MIGRACIÓN - Acceso garantizado');
   
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <h2 className="text-green-800 font-semibold">✅ Panel de Migración Activo</h2>
+        <p className="text-green-700 text-sm">
+          Acceso libre al panel de migración - No se requiere autenticación
+        </p>
+      </div>
+
       <MigrationHeader currentProfile={currentProfile} />
 
       <MigrationStatsCards
