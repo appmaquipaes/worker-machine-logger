@@ -24,10 +24,9 @@ const MigrationDashboard = () => {
     hasAnyUser: !!(localAuth.user || supabaseAuth.user)
   });
 
-  // SIMPLIFICAR: Si tenemos cualquier usuario (local o supabase), permitir acceso
+  // SIMPLIFICAR COMPLETAMENTE: Si hay cualquier usuario, permitir acceso
   const hasUser = !!(localAuth.user || supabaseAuth.user);
   const isLoading = supabaseAuth.loading || localAuth.isLoading;
-  const currentUser = localAuth.user || supabaseAuth.user;
   const currentProfile = localAuth.user || supabaseAuth.profile;
 
   const {
@@ -41,7 +40,7 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  // Mostrar loading solo si ambos sistemas están cargando
+  // Mostrar loading solo mientras está cargando Y no hay usuario
   if (isLoading && !hasUser) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
@@ -53,8 +52,8 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Mostrar error de autenticación si es necesario
-  if (!isLoading && !hasUser) {
+  // Si NO hay usuario y NO está cargando, mostrar error
+  if (!hasUser && !isLoading) {
     return (
       <AuthDebugInfo
         supabaseAuth={supabaseAuth}
@@ -65,7 +64,7 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Usuario autenticado - mostrar panel
+  // Si llegamos aquí, hay un usuario autenticado - mostrar panel
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MigrationHeader currentProfile={currentProfile} />
