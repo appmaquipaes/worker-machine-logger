@@ -58,7 +58,17 @@ export const useSupabaseAuth = () => {
         console.error('Error loading profile:', error);
         toast.error('Error al cargar el perfil');
       } else if (data) {
-        setProfile(data);
+        // Type assertion to ensure proper typing
+        const profileData: Profile = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role as 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor',
+          assigned_machines: data.assigned_machines || [],
+          comision_por_hora: data.comision_por_hora,
+          comision_por_viaje: data.comision_por_viaje
+        };
+        setProfile(profileData);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
