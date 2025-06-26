@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,36 +20,22 @@ const MigrationDashboard = () => {
   const [isMigrating, setIsMigrating] = useState(false);
   const [localMachinesCount, setLocalMachinesCount] = useState(0);
   const [localReportsCount, setLocalReportsCount] = useState(0);
-  const [authLoading, setAuthLoading] = useState(true);
 
   // Debug: mostrar estados de autenticación
-  console.log('Migration Auth Debug:', { 
+  console.log('🔍 Migration Auth Debug:', { 
     supabaseAuthenticated: supabaseAuth.isAuthenticated,
     supabaseUser: supabaseAuth.user?.email,
-    localUser: localAuth.user?.email,
     supabaseLoading: supabaseAuth.loading,
+    localUser: localAuth.user?.email,
     localLoading: localAuth.isLoading,
-    localAuthUser: localAuth.user
+    hasAnyUser: !!(localAuth.user || supabaseAuth.user)
   });
 
-  // Determinar si el usuario está autenticado - simplificar la lógica
-  const isAuthenticated = !!localAuth.user || supabaseAuth.isAuthenticated;
+  // SIMPLIFICAR: Si tenemos cualquier usuario (local o supabase), permitir acceso
+  const hasUser = !!(localAuth.user || supabaseAuth.user);
+  const isLoading = supabaseAuth.loading || localAuth.isLoading;
   const currentUser = localAuth.user || supabaseAuth.user;
   const currentProfile = localAuth.user || supabaseAuth.profile;
-
-  // Simplificar la verificación de carga de autenticación
-  useEffect(() => {
-    // Si tenemos usuario en cualquiera de los sistemas, ya no estamos cargando
-    if (localAuth.user || supabaseAuth.user) {
-      setAuthLoading(false);
-      return;
-    }
-    
-    // Si ningún sistema está cargando, tampoco estamos cargando
-    if (!supabaseAuth.loading && !localAuth.isLoading) {
-      setAuthLoading(false);
-    }
-  }, [supabaseAuth.loading, localAuth.isLoading, localAuth.user, supabaseAuth.user]);
 
   useEffect(() => {
     const loadLocalData = () => {
@@ -57,9 +44,9 @@ const MigrationDashboard = () => {
         const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
         setLocalMachinesCount(localMachines.length);
         setLocalReportsCount(localReports.length);
-        console.log('Datos locales cargados - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
+        console.log('📊 Datos locales - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
       } catch (error) {
-        console.error('Error cargando datos locales:', error);
+        console.error('❌ Error cargando datos locales:', error);
         setLocalMachinesCount(0);
         setLocalReportsCount(0);
       }
@@ -70,10 +57,13 @@ const MigrationDashboard = () => {
 
   useEffect(() => {
     const loadSupabaseData = async () => {
-      if (!supabaseAuth.isAuthenticated) return;
+      if (!supabaseAuth.isAuthenticated) {
+        console.log('⏭️ Saltando carga de Supabase - no autenticado');
+        return;
+      }
       
       try {
-        console.log('Cargando datos de Supabase...');
+        console.log('🔄 Cargando datos de Supabase...');
         
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
@@ -81,10 +71,10 @@ const MigrationDashboard = () => {
           .order('name');
 
         if (machinesError) {
-          console.error('Error cargando máquinas:', machinesError);
+          console.error('❌ Error cargando máquinas:', machinesError);
         } else {
           setMachines(machinesData || []);
-          console.log('Máquinas en Supabase:', machinesData?.length || 0);
+          console.log('✅ Máquinas en Supabase:', machinesData?.length || 0);
         }
 
         const { data: reportsData, error: reportsError } = await supabase
@@ -93,13 +83,13 @@ const MigrationDashboard = () => {
           .order('created_at', { ascending: false });
 
         if (reportsError) {
-          console.error('Error cargando reportes:', reportsError);
+          console.error('❌ Error cargando reportes:', reportsError);
         } else {
           setReports(reportsData || []);
-          console.log('Reportes en Supabase:', reportsData?.length || 0);
+          console.log('✅ Reportes en Supabase:', reportsData?.length || 0);
         }
       } catch (error) {
-        console.error('Error general cargando datos de Supabase:', error);
+        console.error('❌ Error general cargando datos de Supabase:', error);
       }
     };
 
@@ -218,8 +208,8 @@ const MigrationDashboard = () => {
     }
   };
 
-  // Mostrar loading mientras se verifica autenticación
-  if (authLoading) {
+  // Mostrar loading solo si ambos sistemas están cargando
+  if (isLoading && !hasUser) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -230,8 +220,8 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Mostrar error de autenticación solo si no está cargando Y no hay usuario
-  if (!isAuthenticated) {
+  // Solo mostrar error si definitivamente no hay usuario después de cargar
+  if (!isLoading && !hasUser) {
     return (
       <div className="container mx-auto p-6">
         <Alert className="max-w-2xl mx-auto">
@@ -240,12 +230,13 @@ const MigrationDashboard = () => {
             <div className="space-y-3">
               <p className="font-medium">Debes iniciar sesión para acceder al panel de migración.</p>
               
-              <div className="text-sm space-y-1">
-                <p><strong>Estado de autenticación:</strong></p>
-                <p>• Supabase: {supabaseAuth.isAuthenticated ? '✅ Conectado' : '❌ No conectado'}</p>
-                <p>• Sistema local: {localAuth.user ? '✅ Conectado' : '❌ No conectado'}</p>
-                <p>• Usuario actual: {currentUser?.email || 'Ninguno'}</p>
-                <p>• Cargando auth: {authLoading ? 'Sí' : 'No'}</p>
+              <div className="text-sm space-y-1 bg-gray-50 p-3 rounded">
+                <p><strong>Estado detallado:</strong></p>
+                <p>• Supabase autenticado: {supabaseAuth.isAuthenticated ? '✅ Sí' : '❌ No'}</p>
+                <p>• Usuario Supabase: {supabaseAuth.user?.email || 'Ninguno'}</p>
+                <p>• Usuario local: {localAuth.user?.email || 'Ninguno'}</p>
+                <p>• Cargando Supabase: {supabaseAuth.loading ? 'Sí' : 'No'}</p>
+                <p>• Cargando local: {localAuth.isLoading ? 'Sí' : 'No'}</p>
               </div>
               
               <div className="flex gap-2 pt-2">
@@ -263,6 +254,7 @@ const MigrationDashboard = () => {
     );
   }
 
+  // Usuario autenticado - mostrar panel
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="text-center space-y-4">
