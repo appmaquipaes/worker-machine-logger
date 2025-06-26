@@ -1,24 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
 import { useAuth } from '@/context/AuthContext';
-import { useSupabaseMachines } from '@/hooks/useSupabaseMachines';
-import { useSupabaseReports } from '@/hooks/useSupabaseReports';
 import { toast } from 'sonner';
 import { Database, Upload, CheckCircle2, AlertCircle, Users, Truck, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MigrationDashboard = () => {
   const supabaseAuth = useSupabaseAuthContext();
   const localAuth = useAuth();
-  const { machines, addMachine } = useSupabaseMachines();
-  const { reports, addReport } = useSupabaseReports();
+  const [machines, setMachines] = useState([]);
+  const [reports, setReports] = useState([]);
   const [migrationProgress, setMigrationProgress] = useState(0);
   const [migrationStep, setMigrationStep] = useState('');
   const [isMigrating, setIsMigrating] = useState(false);
+  const [localMachinesCount, setLocalMachinesCount] = useState(0);
+  const [localReportsCount, setLocalReportsCount] = useState(0);
 
   // Debug: mostrar estados de autenticación
   console.log('Supabase Auth:', { 
@@ -33,6 +34,82 @@ const MigrationDashboard = () => {
   // Usar cualquiera de los dos sistemas de autenticación que esté activo
   const isAuthenticated = supabaseAuth.isAuthenticated || !!localAuth.user;
   const currentProfile = supabaseAuth.profile || localAuth.user;
+
+  // Cargar datos de localStorage y Supabase
+  useEffect(() => {
+    const loadLocalData = () => {
+      const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
+      const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
+      setLocalMachinesCount(localMachines.length);
+      setLocalReportsCount(localReports.length);
+      console.log('Datos locales - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
+    };
+
+    const loadSupabaseData = async () => {
+      if (supabaseAuth.isAuthenticated) {
+        try {
+          // Cargar máquinas de Supabase
+          const { data: machinesData, error: machinesError } = await supabase
+            .from('machines')
+            .select('*')
+            .order('name');
+
+          if (machinesError) throw machinesError;
+          setMachines(machinesData || []);
+          console.log('Máquinas en Supabase:', machinesData?.length || 0);
+
+          // Cargar reportes de Supabase
+          const { data: reportsData, error: reportsError } = await supabase
+            .from('reports')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (reportsError) throw reportsError;
+          setReports(reportsData || []);
+          console.log('Reportes en Supabase:', reportsData?.length || 0);
+        } catch (error) {
+          console.error('Error cargando datos de Supabase:', error);
+        }
+      }
+    };
+
+    loadLocalData();
+    loadSupabaseData();
+  }, [supabaseAuth.isAuthenticated]);
+
+  const addMachine = async (machineData) => {
+    try {
+      const { data, error } = await supabase
+        .from('machines')
+        .insert([machineData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setMachines(prev => [...prev, data]);
+      return data;
+    } catch (error) {
+      console.error('Error adding machine:', error);
+      throw error;
+    }
+  };
+
+  const addReport = async (reportData) => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .insert([reportData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setReports(prev => [data, ...prev]);
+      return data;
+    } catch (error) {
+      console.error('Error adding report:', error);
+      throw error;
+    }
+  };
 
   const migrateLocalStorageData = async () => {
     if (!supabaseAuth.isAuthenticated || !supabaseAuth.profile) {
@@ -61,7 +138,7 @@ const MigrationDashboard = () => {
           status: machine.status === 'Disponible' ? 'active' : 
                  machine.status === 'En Uso' ? 'active' : 'maintenance'
         });
-        setMigrationProgress(((i + 1) / localMachines.length) * 30);
+        setMigrationProgress(((i + 1) / localMachines.length) * 50);
       }
 
       // Migrar reportes
@@ -71,34 +148,46 @@ const MigrationDashboard = () => {
       
       for (let i = 0; i < localReports.length; i++) {
         const report = localReports[i];
+        // Buscar máquina correspondiente
+        const matchingMachine = machines.find(m => 
+          m.name === report.machineName || 
+          m.name.toLowerCase() === report.machineName?.toLowerCase()
+        );
+        
         await addReport({
           user_id: supabaseAuth.profile.id,
-          machine_id: machines.find(m => m.name === report.machineName)?.id || '',
-          machine_name: report.machineName,
-          user_name: report.userName,
-          report_type: report.reportType,
-          description: report.description,
-          report_date: new Date(report.reportDate).toISOString().split('T')[0],
-          trips: report.trips,
-          hours: report.hours,
-          value: report.value,
-          work_site: report.workSite,
-          origin: report.origin,
-          destination: report.destination,
-          cantidad_m3: report.cantidadM3,
-          proveedor: report.proveedor,
-          kilometraje: report.kilometraje
+          machine_id: matchingMachine?.id || null,
+          machine_name: report.machineName || '',
+          user_name: report.userName || supabaseAuth.profile.name,
+          report_type: report.reportType || '',
+          description: report.description || '',
+          report_date: report.reportDate ? new Date(report.reportDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          trips: report.trips || null,
+          hours: report.hours || null,
+          value: report.value || 0,
+          work_site: report.workSite || '',
+          origin: report.origin || '',
+          destination: report.destination || '',
+          cantidad_m3: report.cantidadM3 || null,
+          proveedor: report.proveedor || '',
+          kilometraje: report.kilometraje || null
         });
-        setMigrationProgress(30 + ((i + 1) / localReports.length) * 70);
+        setMigrationProgress(50 + ((i + 1) / localReports.length) * 50);
       }
 
       setMigrationStep('Migración completada');
       setMigrationProgress(100);
       toast.success('Migración completada exitosamente');
       
+      // Recargar datos de Supabase
+      const { data: updatedMachines } = await supabase.from('machines').select('*');
+      const { data: updatedReports } = await supabase.from('reports').select('*');
+      setMachines(updatedMachines || []);
+      setReports(updatedReports || []);
+      
     } catch (error) {
       console.error('Error en migración:', error);
-      toast.error('Error durante la migración');
+      toast.error('Error durante la migración: ' + error.message);
     } finally {
       setIsMigrating(false);
     }
@@ -228,11 +317,20 @@ const MigrationDashboard = () => {
                 onClick={migrateLocalStorageData} 
                 className="w-full"
                 size="lg"
-                disabled={!supabaseAuth.isAuthenticated}
+                disabled={!supabaseAuth.isAuthenticated || (localMachinesCount === 0 && localReportsCount === 0)}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Iniciar Migración
               </Button>
+
+              {localMachinesCount === 0 && localReportsCount === 0 && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No se encontraron datos para migrar en localStorage.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
         </CardContent>
@@ -246,11 +344,11 @@ const MigrationDashboard = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Máquinas en localStorage:</span>
-              <span className="ml-2">{JSON.parse(localStorage.getItem('machines') || '[]').length}</span>
+              <span className="ml-2">{localMachinesCount}</span>
             </div>
             <div>
               <span className="font-medium">Reportes en localStorage:</span>
-              <span className="ml-2">{JSON.parse(localStorage.getItem('reports') || '[]').length}</span>
+              <span className="ml-2">{localReportsCount}</span>
             </div>
           </div>
         </CardContent>
