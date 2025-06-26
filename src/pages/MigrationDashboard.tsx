@@ -20,60 +20,89 @@ const MigrationDashboard = () => {
   const [isMigrating, setIsMigrating] = useState(false);
   const [localMachinesCount, setLocalMachinesCount] = useState(0);
   const [localReportsCount, setLocalReportsCount] = useState(0);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Debug: mostrar estados de autenticación
-  console.log('Supabase Auth:', { 
-    isAuthenticated: supabaseAuth.isAuthenticated, 
-    user: supabaseAuth.user,
-    profile: supabaseAuth.profile 
-  });
-  console.log('Local Auth:', { 
-    user: localAuth.user 
+  console.log('Migration Auth Debug:', { 
+    supabaseAuthenticated: supabaseAuth.isAuthenticated,
+    supabaseUser: supabaseAuth.user?.email,
+    localUser: localAuth.user?.email,
+    supabaseLoading: supabaseAuth.loading,
+    localLoading: localAuth.isLoading
   });
 
-  // Usar cualquiera de los dos sistemas de autenticación que esté activo
+  // Determinar si el usuario está autenticado
   const isAuthenticated = supabaseAuth.isAuthenticated || !!localAuth.user;
+  const currentUser = supabaseAuth.user || localAuth.user;
   const currentProfile = supabaseAuth.profile || localAuth.user;
 
-  // Cargar datos de localStorage y Supabase
+  // Esperar a que termine la carga de autenticación
+  useEffect(() => {
+    const checkAuthLoading = () => {
+      const stillLoading = supabaseAuth.loading || localAuth.isLoading;
+      setAuthLoading(stillLoading);
+    };
+    
+    checkAuthLoading();
+  }, [supabaseAuth.loading, localAuth.isLoading]);
+
+  // Cargar datos de localStorage
   useEffect(() => {
     const loadLocalData = () => {
-      const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
-      const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
-      setLocalMachinesCount(localMachines.length);
-      setLocalReportsCount(localReports.length);
-      console.log('Datos locales - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
-    };
-
-    const loadSupabaseData = async () => {
-      if (supabaseAuth.isAuthenticated) {
-        try {
-          // Cargar máquinas de Supabase
-          const { data: machinesData, error: machinesError } = await supabase
-            .from('machines')
-            .select('*')
-            .order('name');
-
-          if (machinesError) throw machinesError;
-          setMachines(machinesData || []);
-          console.log('Máquinas en Supabase:', machinesData?.length || 0);
-
-          // Cargar reportes de Supabase
-          const { data: reportsData, error: reportsError } = await supabase
-            .from('reports')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (reportsError) throw reportsError;
-          setReports(reportsData || []);
-          console.log('Reportes en Supabase:', reportsData?.length || 0);
-        } catch (error) {
-          console.error('Error cargando datos de Supabase:', error);
-        }
+      try {
+        const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
+        const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
+        setLocalMachinesCount(localMachines.length);
+        setLocalReportsCount(localReports.length);
+        console.log('Datos locales cargados - Máquinas:', localMachines.length, 'Reportes:', localReports.length);
+      } catch (error) {
+        console.error('Error cargando datos locales:', error);
+        setLocalMachinesCount(0);
+        setLocalReportsCount(0);
       }
     };
 
     loadLocalData();
+  }, []);
+
+  // Cargar datos de Supabase solo si está autenticado
+  useEffect(() => {
+    const loadSupabaseData = async () => {
+      if (!supabaseAuth.isAuthenticated) return;
+      
+      try {
+        console.log('Cargando datos de Supabase...');
+        
+        // Cargar máquinas
+        const { data: machinesData, error: machinesError } = await supabase
+          .from('machines')
+          .select('*')
+          .order('name');
+
+        if (machinesError) {
+          console.error('Error cargando máquinas:', machinesError);
+        } else {
+          setMachines(machinesData || []);
+          console.log('Máquinas en Supabase:', machinesData?.length || 0);
+        }
+
+        // Cargar reportes
+        const { data: reportsData, error: reportsError } = await supabase
+          .from('reports')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (reportsError) {
+          console.error('Error cargando reportes:', reportsError);
+        } else {
+          setReports(reportsData || []);
+          console.log('Reportes en Supabase:', reportsData?.length || 0);
+        }
+      } catch (error) {
+        console.error('Error general cargando datos de Supabase:', error);
+      }
+    };
+
     loadSupabaseData();
   }, [supabaseAuth.isAuthenticated]);
 
@@ -193,24 +222,44 @@ const MigrationDashboard = () => {
     }
   };
 
+  // Mostrar loading mientras se verifica autenticación
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error de autenticación solo si no está cargando
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto p-6">
-        <Alert>
+        <Alert className="max-w-2xl mx-auto">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Debes iniciar sesión para acceder al panel de migración.
-            <br />
-            <br />
-            <strong>Debug info:</strong>
-            <br />
-            Supabase autenticado: {supabaseAuth.isAuthenticated ? 'Sí' : 'No'}
-            <br />
-            Usuario local: {localAuth.user ? 'Sí' : 'No'}
-            <br />
-            <a href="/login" className="text-blue-600 hover:underline">
-              Ir a login
-            </a>
+            <div className="space-y-3">
+              <p className="font-medium">Debes iniciar sesión para acceder al panel de migración.</p>
+              
+              <div className="text-sm space-y-1">
+                <p><strong>Estado de autenticación:</strong></p>
+                <p>• Supabase: {supabaseAuth.isAuthenticated ? '✅ Conectado' : '❌ No conectado'}</p>
+                <p>• Sistema local: {localAuth.user ? '✅ Conectado' : '❌ No conectado'}</p>
+                <p>• Usuario actual: {currentUser?.email || 'Ninguno'}</p>
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button asChild size="sm">
+                  <a href="/login">Ir a Login</a>
+                </Button>
+                <Button variant="outline" asChild size="sm">
+                  <a href="/dashboard">Volver al Dashboard</a>
+                </Button>
+              </div>
+            </div>
           </AlertDescription>
         </Alert>
       </div>
@@ -272,6 +321,27 @@ const MigrationDashboard = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle>Datos Locales Disponibles</CardTitle>
+          <CardDescription>
+            Datos encontrados en tu navegador listos para migrar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex justify-between">
+              <span className="font-medium">Máquinas en localStorage:</span>
+              <span className="text-blue-600 font-bold">{localMachinesCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium">Reportes en localStorage:</span>
+              <span className="text-green-600 font-bold">{localReportsCount}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
             Migración de Datos
@@ -320,7 +390,7 @@ const MigrationDashboard = () => {
                 disabled={!supabaseAuth.isAuthenticated || (localMachinesCount === 0 && localReportsCount === 0)}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Iniciar Migración
+                Iniciar Migración ({localMachinesCount} máquinas, {localReportsCount} reportes)
               </Button>
 
               {localMachinesCount === 0 && localReportsCount === 0 && (
@@ -333,24 +403,6 @@ const MigrationDashboard = () => {
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Datos Locales Disponibles</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-medium">Máquinas en localStorage:</span>
-              <span className="ml-2">{localMachinesCount}</span>
-            </div>
-            <div>
-              <span className="font-medium">Reportes en localStorage:</span>
-              <span className="ml-2">{localReportsCount}</span>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
