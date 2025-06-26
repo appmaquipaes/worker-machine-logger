@@ -5,20 +5,41 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
+import { useAuth } from '@/context/AuthContext';
 import { useSupabaseMachines } from '@/hooks/useSupabaseMachines';
 import { useSupabaseReports } from '@/hooks/useSupabaseReports';
 import { toast } from 'sonner';
 import { Database, Upload, CheckCircle2, AlertCircle, Users, Truck, FileText } from 'lucide-react';
 
 const MigrationDashboard = () => {
-  const { isAuthenticated, profile } = useSupabaseAuthContext();
+  const supabaseAuth = useSupabaseAuthContext();
+  const localAuth = useAuth();
   const { machines, addMachine } = useSupabaseMachines();
   const { reports, addReport } = useSupabaseReports();
   const [migrationProgress, setMigrationProgress] = useState(0);
   const [migrationStep, setMigrationStep] = useState('');
   const [isMigrating, setIsMigrating] = useState(false);
 
+  // Debug: mostrar estados de autenticación
+  console.log('Supabase Auth:', { 
+    isAuthenticated: supabaseAuth.isAuthenticated, 
+    user: supabaseAuth.user,
+    profile: supabaseAuth.profile 
+  });
+  console.log('Local Auth:', { 
+    user: localAuth.user 
+  });
+
+  // Usar cualquiera de los dos sistemas de autenticación que esté activo
+  const isAuthenticated = supabaseAuth.isAuthenticated || !!localAuth.user;
+  const currentProfile = supabaseAuth.profile || localAuth.user;
+
   const migrateLocalStorageData = async () => {
+    if (!supabaseAuth.isAuthenticated || !supabaseAuth.profile) {
+      toast.error('Debes estar autenticado con Supabase para migrar datos');
+      return;
+    }
+
     setIsMigrating(true);
     setMigrationProgress(0);
     
@@ -26,13 +47,14 @@ const MigrationDashboard = () => {
       // Migrar máquinas
       setMigrationStep('Migrando máquinas...');
       const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
+      console.log('Máquinas locales encontradas:', localMachines.length);
       
       for (let i = 0; i < localMachines.length; i++) {
         const machine = localMachines[i];
         await addMachine({
           name: machine.name,
           type: machine.type,
-          license_plate: machine.plate,
+          license_plate: machine.plate || '',
           brand: machine.brand || '',
           model: machine.model || '',
           year: machine.year || null,
@@ -45,29 +67,28 @@ const MigrationDashboard = () => {
       // Migrar reportes
       setMigrationStep('Migrando reportes...');
       const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
+      console.log('Reportes locales encontrados:', localReports.length);
       
       for (let i = 0; i < localReports.length; i++) {
         const report = localReports[i];
-        if (profile) {
-          await addReport({
-            user_id: profile.id,
-            machine_id: machines.find(m => m.name === report.machineName)?.id || '',
-            machine_name: report.machineName,
-            user_name: report.userName,
-            report_type: report.reportType,
-            description: report.description,
-            report_date: new Date(report.reportDate).toISOString().split('T')[0],
-            trips: report.trips,
-            hours: report.hours,
-            value: report.value,
-            work_site: report.workSite,
-            origin: report.origin,
-            destination: report.destination,
-            cantidad_m3: report.cantidadM3,
-            proveedor: report.proveedor,
-            kilometraje: report.kilometraje
-          });
-        }
+        await addReport({
+          user_id: supabaseAuth.profile.id,
+          machine_id: machines.find(m => m.name === report.machineName)?.id || '',
+          machine_name: report.machineName,
+          user_name: report.userName,
+          report_type: report.reportType,
+          description: report.description,
+          report_date: new Date(report.reportDate).toISOString().split('T')[0],
+          trips: report.trips,
+          hours: report.hours,
+          value: report.value,
+          work_site: report.workSite,
+          origin: report.origin,
+          destination: report.destination,
+          cantidad_m3: report.cantidadM3,
+          proveedor: report.proveedor,
+          kilometraje: report.kilometraje
+        });
         setMigrationProgress(30 + ((i + 1) / localReports.length) * 70);
       }
 
@@ -90,6 +111,17 @@ const MigrationDashboard = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Debes iniciar sesión para acceder al panel de migración.
+            <br />
+            <br />
+            <strong>Debug info:</strong>
+            <br />
+            Supabase autenticado: {supabaseAuth.isAuthenticated ? 'Sí' : 'No'}
+            <br />
+            Usuario local: {localAuth.user ? 'Sí' : 'No'}
+            <br />
+            <a href="/login" className="text-blue-600 hover:underline">
+              Ir a login
+            </a>
           </AlertDescription>
         </Alert>
       </div>
@@ -107,6 +139,13 @@ const MigrationDashboard = () => {
           Bienvenido al nuevo sistema con Supabase. Aquí puedes migrar tus datos existentes 
           desde localStorage a la base de datos de Supabase para mayor seguridad y persistencia.
         </p>
+        {currentProfile && (
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="text-sm text-blue-800">
+              Conectado como: <strong>{currentProfile.name}</strong> ({currentProfile.role})
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -136,8 +175,8 @@ const MigrationDashboard = () => {
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{profile?.role}</div>
-            <p className="text-xs text-gray-600">{profile?.name}</p>
+            <div className="text-2xl font-bold">{currentProfile?.role}</div>
+            <p className="text-xs text-gray-600">{currentProfile?.name}</p>
           </CardContent>
         </Card>
       </div>
@@ -153,6 +192,18 @@ const MigrationDashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!supabaseAuth.isAuthenticated && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Para migrar datos necesitas estar autenticado con Supabase. 
+                <a href="/login" className="text-blue-600 hover:underline ml-1">
+                  Inicia sesión aquí
+                </a>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {isMigrating ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -177,12 +228,31 @@ const MigrationDashboard = () => {
                 onClick={migrateLocalStorageData} 
                 className="w-full"
                 size="lg"
+                disabled={!supabaseAuth.isAuthenticated}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Iniciar Migración
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Datos Locales Disponibles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Máquinas en localStorage:</span>
+              <span className="ml-2">{JSON.parse(localStorage.getItem('machines') || '[]').length}</span>
+            </div>
+            <div>
+              <span className="font-medium">Reportes en localStorage:</span>
+              <span className="ml-2">{JSON.parse(localStorage.getItem('reports') || '[]').length}</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
