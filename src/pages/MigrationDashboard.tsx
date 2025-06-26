@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,25 +27,29 @@ const MigrationDashboard = () => {
     supabaseUser: supabaseAuth.user?.email,
     localUser: localAuth.user?.email,
     supabaseLoading: supabaseAuth.loading,
-    localLoading: localAuth.isLoading
+    localLoading: localAuth.isLoading,
+    localAuthUser: localAuth.user
   });
 
-  // Determinar si el usuario está autenticado
-  const isAuthenticated = supabaseAuth.isAuthenticated || !!localAuth.user;
-  const currentUser = supabaseAuth.user || localAuth.user;
-  const currentProfile = supabaseAuth.profile || localAuth.user;
+  // Determinar si el usuario está autenticado - simplificar la lógica
+  const isAuthenticated = !!localAuth.user || supabaseAuth.isAuthenticated;
+  const currentUser = localAuth.user || supabaseAuth.user;
+  const currentProfile = localAuth.user || supabaseAuth.profile;
 
-  // Esperar a que termine la carga de autenticación
+  // Simplificar la verificación de carga de autenticación
   useEffect(() => {
-    const checkAuthLoading = () => {
-      const stillLoading = supabaseAuth.loading || localAuth.isLoading;
-      setAuthLoading(stillLoading);
-    };
+    // Si tenemos usuario en cualquiera de los sistemas, ya no estamos cargando
+    if (localAuth.user || supabaseAuth.user) {
+      setAuthLoading(false);
+      return;
+    }
     
-    checkAuthLoading();
-  }, [supabaseAuth.loading, localAuth.isLoading]);
+    // Si ningún sistema está cargando, tampoco estamos cargando
+    if (!supabaseAuth.loading && !localAuth.isLoading) {
+      setAuthLoading(false);
+    }
+  }, [supabaseAuth.loading, localAuth.isLoading, localAuth.user, supabaseAuth.user]);
 
-  // Cargar datos de localStorage
   useEffect(() => {
     const loadLocalData = () => {
       try {
@@ -65,7 +68,6 @@ const MigrationDashboard = () => {
     loadLocalData();
   }, []);
 
-  // Cargar datos de Supabase solo si está autenticado
   useEffect(() => {
     const loadSupabaseData = async () => {
       if (!supabaseAuth.isAuthenticated) return;
@@ -73,7 +75,6 @@ const MigrationDashboard = () => {
       try {
         console.log('Cargando datos de Supabase...');
         
-        // Cargar máquinas
         const { data: machinesData, error: machinesError } = await supabase
           .from('machines')
           .select('*')
@@ -86,7 +87,6 @@ const MigrationDashboard = () => {
           console.log('Máquinas en Supabase:', machinesData?.length || 0);
         }
 
-        // Cargar reportes
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
@@ -150,7 +150,6 @@ const MigrationDashboard = () => {
     setMigrationProgress(0);
     
     try {
-      // Migrar máquinas
       setMigrationStep('Migrando máquinas...');
       const localMachines = JSON.parse(localStorage.getItem('machines') || '[]');
       console.log('Máquinas locales encontradas:', localMachines.length);
@@ -170,14 +169,12 @@ const MigrationDashboard = () => {
         setMigrationProgress(((i + 1) / localMachines.length) * 50);
       }
 
-      // Migrar reportes
       setMigrationStep('Migrando reportes...');
       const localReports = JSON.parse(localStorage.getItem('reports') || '[]');
       console.log('Reportes locales encontrados:', localReports.length);
       
       for (let i = 0; i < localReports.length; i++) {
         const report = localReports[i];
-        // Buscar máquina correspondiente
         const matchingMachine = machines.find(m => 
           m.name === report.machineName || 
           m.name.toLowerCase() === report.machineName?.toLowerCase()
@@ -208,7 +205,6 @@ const MigrationDashboard = () => {
       setMigrationProgress(100);
       toast.success('Migración completada exitosamente');
       
-      // Recargar datos de Supabase
       const { data: updatedMachines } = await supabase.from('machines').select('*');
       const { data: updatedReports } = await supabase.from('reports').select('*');
       setMachines(updatedMachines || []);
@@ -234,7 +230,7 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Mostrar error de autenticación solo si no está cargando
+  // Mostrar error de autenticación solo si no está cargando Y no hay usuario
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto p-6">
@@ -249,6 +245,7 @@ const MigrationDashboard = () => {
                 <p>• Supabase: {supabaseAuth.isAuthenticated ? '✅ Conectado' : '❌ No conectado'}</p>
                 <p>• Sistema local: {localAuth.user ? '✅ Conectado' : '❌ No conectado'}</p>
                 <p>• Usuario actual: {currentUser?.email || 'Ninguno'}</p>
+                <p>• Cargando auth: {authLoading ? 'Sí' : 'No'}</p>
               </div>
               
               <div className="flex gap-2 pt-2">
@@ -280,7 +277,8 @@ const MigrationDashboard = () => {
         {currentProfile && (
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
-              Conectado como: <strong>{currentProfile.name}</strong> ({currentProfile.role})
+              Conectado como: <strong>{currentProfile.name || currentProfile.email}</strong> 
+              {currentProfile.role && ` (${currentProfile.role})`}
             </p>
           </div>
         )}
@@ -313,8 +311,8 @@ const MigrationDashboard = () => {
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentProfile?.role}</div>
-            <p className="text-xs text-gray-600">{currentProfile?.name}</p>
+            <div className="text-2xl font-bold">{currentProfile?.role || 'Usuario'}</div>
+            <p className="text-xs text-gray-600">{currentProfile?.name || currentProfile?.email}</p>
           </CardContent>
         </Card>
       </div>
