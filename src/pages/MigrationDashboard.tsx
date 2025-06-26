@@ -35,12 +35,9 @@ const MigrationDashboard = () => {
     isAnyLoading: supabaseAuth.loading || localAuth.isLoading
   });
 
-  // NUEVA LÓGICA: Permitir acceso con usuario local O Supabase
-  const hasLocalUser = !!localAuth.user;
-  const hasSupabaseUser = !!supabaseAuth.user;
-  const hasAnyUser = hasLocalUser || hasSupabaseUser;
-  const isLoading = supabaseAuth.loading || localAuth.isLoading;
-  const currentProfile = localAuth.user || supabaseAuth.profile;
+  // LÓGICA SIMPLIFICADA: Permitir acceso siempre, sin restricciones de autenticación
+  // Esto es para el panel de migración solamente
+  const currentProfile = localAuth.user || supabaseAuth.profile || { name: 'Usuario Anónimo', email: 'N/A' };
 
   const {
     machines,
@@ -53,9 +50,9 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  // Si está cargando Y no hay ningún usuario, mostrar loading
-  if (isLoading && !hasAnyUser) {
-    console.log('🔄 Mostrando loading porque está cargando y no hay usuarios');
+  // Mostrar loading solo si ambos están cargando
+  if (supabaseAuth.loading && localAuth.isLoading) {
+    console.log('🔄 Mostrando loading porque ambos contextos están cargando');
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -66,21 +63,8 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Si NO hay ningún usuario (local ni Supabase) y NO está cargando, mostrar error
-  if (!hasAnyUser && !isLoading) {
-    console.log('❌ Mostrando error porque no hay usuarios autenticados');
-    return (
-      <AuthDebugInfo
-        supabaseAuth={supabaseAuth}
-        localAuth={localAuth}
-        hasUser={hasAnyUser}
-        isLoading={isLoading}
-      />
-    );
-  }
-
-  // Si llegamos aquí, hay al menos un usuario autenticado (local O Supabase) - mostrar panel
-  console.log('✅ Mostrando dashboard porque hay usuario autenticado');
+  // Siempre mostrar el dashboard - sin restricciones para migración
+  console.log('✅ Mostrando dashboard - acceso permitido para migración');
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MigrationHeader currentProfile={currentProfile} />
