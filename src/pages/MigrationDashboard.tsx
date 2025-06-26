@@ -14,15 +14,12 @@ const MigrationDashboard = () => {
   const supabaseAuth = useSupabaseAuthContext();
   const localAuth = useAuth();
 
-  // Debug exhaustivo para identificar el problema
-  console.log('🔍 MIGRATION DEBUG COMPLETO:', {
+  // Debug para identificar el problema
+  console.log('🔍 MIGRATION DEBUG:', {
     // Estado de autenticación local
     localAuthUser: localAuth.user,
     localAuthUserExists: !!localAuth.user,
     localAuthLoading: localAuth.isLoading,
-    localAuthUserName: localAuth.user?.name,
-    localAuthUserEmail: localAuth.user?.email,
-    localAuthUserRole: localAuth.user?.role,
     
     // Estado de autenticación Supabase
     supabaseAuthUser: supabaseAuth.user,
@@ -35,17 +32,14 @@ const MigrationDashboard = () => {
     hasLocalUser: !!localAuth.user,
     hasSupabaseUser: !!supabaseAuth.user,
     hasAnyUser: !!(localAuth.user || supabaseAuth.user),
-    isAnyLoading: supabaseAuth.loading || localAuth.isLoading,
-    
-    // Condiciones de acceso
-    shouldShowLoading: (supabaseAuth.loading || localAuth.isLoading) && !(localAuth.user || supabaseAuth.user),
-    shouldShowError: !(localAuth.user || supabaseAuth.user) && !supabaseAuth.loading && !localAuth.isLoading,
-    shouldShowDashboard: !!(localAuth.user || supabaseAuth.user)
+    isAnyLoading: supabaseAuth.loading || localAuth.isLoading
   });
 
-  // LÓGICA SIMPLIFICADA: Solo verificar si hay usuario local
-  const hasUser = !!localAuth.user;
-  const isLoading = localAuth.isLoading; // Solo verificar loading local
+  // NUEVA LÓGICA: Permitir acceso con usuario local O Supabase
+  const hasLocalUser = !!localAuth.user;
+  const hasSupabaseUser = !!supabaseAuth.user;
+  const hasAnyUser = hasLocalUser || hasSupabaseUser;
+  const isLoading = supabaseAuth.loading || localAuth.isLoading;
   const currentProfile = localAuth.user || supabaseAuth.profile;
 
   const {
@@ -59,9 +53,9 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  // Si está cargando Y no hay usuario local, mostrar loading
-  if (isLoading && !hasUser) {
-    console.log('🔄 Mostrando loading porque isLoading=true y hasUser=false');
+  // Si está cargando Y no hay ningún usuario, mostrar loading
+  if (isLoading && !hasAnyUser) {
+    console.log('🔄 Mostrando loading porque está cargando y no hay usuarios');
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -72,21 +66,21 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Si NO hay usuario local y NO está cargando, mostrar error
-  if (!hasUser && !isLoading) {
-    console.log('❌ Mostrando error porque hasUser=false y isLoading=false');
+  // Si NO hay ningún usuario (local ni Supabase) y NO está cargando, mostrar error
+  if (!hasAnyUser && !isLoading) {
+    console.log('❌ Mostrando error porque no hay usuarios autenticados');
     return (
       <AuthDebugInfo
         supabaseAuth={supabaseAuth}
         localAuth={localAuth}
-        hasUser={hasUser}
+        hasUser={hasAnyUser}
         isLoading={isLoading}
       />
     );
   }
 
-  // Si llegamos aquí, hay un usuario local autenticado - mostrar panel
-  console.log('✅ Mostrando dashboard porque hasUser=true');
+  // Si llegamos aquí, hay al menos un usuario autenticado (local O Supabase) - mostrar panel
+  console.log('✅ Mostrando dashboard porque hay usuario autenticado');
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MigrationHeader currentProfile={currentProfile} />
