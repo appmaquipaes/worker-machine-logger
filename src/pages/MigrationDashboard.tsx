@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useMigrationData } from '@/hooks/useMigrationData';
 import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
@@ -12,7 +11,7 @@ import { Navigate } from 'react-router-dom';
 const MigrationDashboard = () => {
   const supabaseAuth = useSupabaseAuthContext();
   
-  console.log('🎯 MIGRATION DASHBOARD: Estado completo de autenticación:', {
+  console.log('🎯 MIGRATION DASHBOARD: Estado de autenticación completo:', {
     isAuthenticated: supabaseAuth.isAuthenticated,
     user: supabaseAuth.user,
     profile: supabaseAuth.profile,
@@ -27,7 +26,7 @@ const MigrationDashboard = () => {
       <div className="container mx-auto p-6 text-center">
         <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
           <h2 className="text-xl font-bold text-blue-800 mb-2">Verificando autenticación...</h2>
-          <p className="text-blue-600">Por favor espera mientras verificamos tu sesión.</p>
+          <p className="text-blue-600">Por favor espera mientras verificamos tu sesión de Supabase.</p>
           <div className="mt-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           </div>
@@ -36,19 +35,19 @@ const MigrationDashboard = () => {
     );
   }
 
-  // CAMBIO IMPORTANTE: Solo verificar si hay usuario, no usar isAuthenticated
+  // Verificar si hay usuario autenticado
   if (!supabaseAuth.user) {
-    console.log('❌ MIGRATION DASHBOARD: Usuario no encontrado, redirigiendo al login');
-    console.log('❌ Estado de autenticación:', {
+    console.log('❌ MIGRATION DASHBOARD: No hay usuario, redirigiendo al login');
+    console.log('❌ Detalles:', {
       hasUser: !!supabaseAuth.user,
-      userEmail: supabaseAuth.user?.email,
+      isAuthenticated: supabaseAuth.isAuthenticated,
       loading: supabaseAuth.loading
     });
     return <Navigate to="/login" replace />;
   }
 
-  console.log('✅ MIGRATION DASHBOARD: Usuario encontrado correctamente');
-  console.log('👤 Usuario actual:', supabaseAuth.user.email);
+  console.log('✅ MIGRATION DASHBOARD: Usuario autenticado correctamente');
+  console.log('👤 Usuario:', supabaseAuth.user.email);
 
   const {
     machines,
@@ -79,13 +78,13 @@ const MigrationDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Banner de confirmación de acceso autenticado */}
+      {/* Banner de confirmación de acceso */}
       <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-6">
         <h1 className="text-green-800 font-bold text-3xl mb-3">
-          ✅ Panel de Migración - Acceso Autorizado
+          ✅ Panel de Migración - Acceso Confirmado
         </h1>
         <p className="text-green-700 text-xl mb-3">
-          🚀 Bienvenido {supabaseAuth.user.email} - Sesión activa
+          🚀 Bienvenido {supabaseAuth.user.email} - Sesión Supabase Activa
         </p>
         <div className="bg-green-100 p-4 rounded-lg">
           <div className="text-green-800 font-mono text-sm">
@@ -95,7 +94,7 @@ const MigrationDashboard = () => {
             💾 Supabase: {machines.length} máquinas | {reports.length} reportes
           </div>
           <div className="text-green-800 font-mono text-sm font-bold">
-            🔐 Usuario: {supabaseAuth.user.email} - Autenticado ✓
+            🔐 Usuario: {supabaseAuth.user.email} - ✓ CONECTADO
           </div>
         </div>
       </div>
@@ -125,15 +124,15 @@ const MigrationDashboard = () => {
 
       <NextStepsCard />
 
-      {/* Debug info detallada */}
+      {/* Debug info actualizada */}
       <div className="bg-green-50 border border-green-300 rounded p-4 text-sm">
-        <h3 className="font-bold text-green-800 mb-2">🔧 Debug - Autenticación Supabase</h3>
+        <h3 className="font-bold text-green-800 mb-2">🔧 Debug - Sesión Supabase</h3>
         <div className="text-green-700 space-y-1">
-          <p>✅ Usuario: {supabaseAuth.user.email}</p>
+          <p>✅ Email: {supabaseAuth.user.email}</p>
           <p>🆔 ID: {supabaseAuth.user.id}</p>
           <p>📊 Datos locales: {localMachinesCount + localReportsCount} elementos</p>
           <p>🌐 Datos Supabase: {machines.length + reports.length} elementos</p>
-          <p>🔐 Estado: Usuario encontrado ✓</p>
+          <p>🔐 Sesión: ACTIVA ✓</p>
           <p>⏰ Timestamp: {new Date().toLocaleTimeString()}</p>
         </div>
       </div>

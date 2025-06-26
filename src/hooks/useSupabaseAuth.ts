@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,49 +19,67 @@ export const useSupabaseAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔄 SUPABASE AUTH: Inicializando...');
+    console.log('🔄 SUPABASE AUTH: Inicializando autenticación...');
     
-    // Escuchar cambios de autenticación PRIMERO
+    // Configurar el listener de cambios de autenticación PRIMERO
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔔 SUPABASE AUTH: Cambio de estado:', { 
+        console.log('🔔 SUPABASE AUTH: Evento de cambio:', { 
           event, 
           hasSession: !!session,
           userEmail: session?.user?.email 
         });
         
-        setUser(session?.user ?? null);
         if (session?.user) {
+          console.log('✅ SUPABASE AUTH: Usuario encontrado en sesión:', session.user.email);
+          setUser(session.user);
           await loadProfile(session.user.id);
         } else {
+          console.log('❌ SUPABASE AUTH: No hay usuario en la sesión');
+          setUser(null);
           setProfile(null);
           setLoading(false);
         }
       }
     );
 
-    // DESPUÉS obtener sesión inicial
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('📡 SUPABASE AUTH: Sesión inicial:', { 
-        hasSession: !!session, 
-        userEmail: session?.user?.email,
-        error 
-      });
-      
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
+    // Luego obtener la sesión actual
+    const initializeAuth = async () => {
+      try {
+        console.log('📡 SUPABASE AUTH: Obteniendo sesión actual...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ SUPABASE AUTH: Error obteniendo sesión:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (session?.user) {
+          console.log('✅ SUPABASE AUTH: Sesión encontrada para:', session.user.email);
+          setUser(session.user);
+          await loadProfile(session.user.id);
+        } else {
+          console.log('ℹ️ SUPABASE AUTH: No hay sesión activa');
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ SUPABASE AUTH: Error en inicialización:', error);
         setLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      console.log('🔄 SUPABASE AUTH: Limpiando subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadProfile = async (userId: string) => {
     try {
-      console.log('👤 SUPABASE AUTH: Cargando perfil para usuario:', userId);
+      console.log('👤 SUPABASE AUTH: Cargando perfil para:', userId);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -86,7 +103,7 @@ export const useSupabaseAuth = () => {
         };
         setProfile(profileData);
       } else {
-        console.log('ℹ️ SUPABASE AUTH: No se encontró perfil, usando datos básicos del usuario');
+        console.log('ℹ️ SUPABASE AUTH: No se encontró perfil, usando datos básicos');
       }
     } catch (error) {
       console.error('❌ SUPABASE AUTH: Error general cargando perfil:', error);
@@ -177,10 +194,9 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // CAMBIO IMPORTANTE: Simplificar la lógica de isAuthenticated
   const isAuthenticated = !!user;
   
-  console.log('🔍 SUPABASE AUTH: Estado final:', { 
+  console.log('🔍 SUPABASE AUTH: Estado actual:', { 
     isAuthenticated, 
     hasUser: !!user, 
     userEmail: user?.email,
