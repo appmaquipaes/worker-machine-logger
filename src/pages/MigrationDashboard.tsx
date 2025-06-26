@@ -10,13 +10,14 @@ import { NextStepsCard } from '@/components/migration/NextStepsCard';
 const MigrationDashboard = () => {
   console.log('🎯 MIGRATION DASHBOARD: Renderizando panel de migración LIBRE');
   console.log('✅ SIN AUTENTICACIÓN - Panel completamente libre');
+  console.log('🔥 CONFIRMACIÓN: El MigrationDashboard se está ejecutando');
 
   // MOCK de supabaseAuth para evitar dependencias
   const mockSupabaseAuth = {
     user: null,
     profile: null,
     loading: false,
-    isAuthenticated: false,
+    isAuthenticated: true, // Cambiar a true para que funcione el botón de migración
     isAdmin: false,
     signIn: async () => ({ data: null, error: null }),
     signUp: async () => ({ data: null, error: null }),
@@ -100,6 +101,7 @@ const MigrationDashboard = () => {
           <p>✅ Panel renderizado correctamente</p>
           <p>📊 Datos locales: {localMachinesCount + localReportsCount} elementos</p>
           <p>🌐 Datos Supabase: {machines.length + reports.length} elementos</p>
+          <p>🔥 Timestamp: {new Date().toLocaleTimeString()}</p>
         </div>
       </div>
     </div>

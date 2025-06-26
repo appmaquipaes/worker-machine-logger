@@ -39,35 +39,33 @@ import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
-// Componente especial SOLO para migración - SIN contextos de auth
-const MigrationRoute = () => {
-  console.log('🎯 MIGRATION ROUTE: Renderizando ruta de migración independiente');
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SupabaseAuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="bg-red-100 border border-red-300 p-3 text-center text-sm font-bold">
-              🚨 MIGRACIÓN: Ruta completamente independiente - SIN guards de autenticación
-            </div>
-            <MigrationDashboard />
-          </div>
-          <Toaster />
-        </SupabaseAuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
-
 function App() {
   console.log('🚀 APP: Renderizando aplicación principal');
   
   return (
     <Router>
       <Routes>
-        {/* MIGRACIÓN: Ruta completamente aislada - PRIMERA para evitar conflictos */}
-        <Route path="/migration" element={<MigrationRoute />} />
+        {/* MIGRACIÓN: Ruta completamente aislada y libre - PRIMERA PRIORIDAD */}
+        <Route 
+          path="/migration" 
+          element={
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <SupabaseAuthProvider>
+                  <div className="min-h-screen bg-gray-50">
+                    {/* Banner de confirmación de ruta libre */}
+                    <div className="bg-red-100 border border-red-300 p-3 text-center text-sm font-bold">
+                      🚨 MIGRACIÓN: Ruta completamente independiente - SIN guards de autenticación
+                    </div>
+                    <Navbar />
+                    <MigrationDashboard />
+                  </div>
+                  <Toaster />
+                </SupabaseAuthProvider>
+              </TooltipProvider>
+            </QueryClientProvider>
+          } 
+        />
         
         {/* Resto de rutas con contextos normales */}
         <Route path="/*" element={
