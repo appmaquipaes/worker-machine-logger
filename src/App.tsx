@@ -34,12 +34,14 @@ import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
 import VolquetaManagement from '@/pages/VolquetaManagement';
 import NotFound from '@/pages/NotFound';
 
-// Nueva página de migración - ACCESO LIBRE
+// MIGRACIÓN: Acceso completamente libre
 import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
 function App() {
+  console.log('🚀 APP: Renderizando aplicación principal');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -56,8 +58,20 @@ function App() {
                       <Route path="/register" element={<Register />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/dashboard" element={<Dashboard />} />
-                      {/* MIGRACIÓN: Acceso completamente libre, sin guards */}
-                      <Route path="/migration" element={<MigrationDashboard />} />
+                      
+                      {/* MIGRACIÓN: Ruta completamente libre - SIN guards de autenticación */}
+                      <Route 
+                        path="/migration" 
+                        element={
+                          <div>
+                            <div className="bg-yellow-100 border border-yellow-300 p-2 text-center text-sm">
+                              🔧 DEBUG: Ruta /migration ejecutándose directamente
+                            </div>
+                            <MigrationDashboard />
+                          </div>
+                        } 
+                      />
+                      
                       <Route path="/machine-selection" element={<MachineSelection />} />
                       <Route path="/report" element={<ReportForm />} />
                       <Route path="/reports" element={<Reports />} />
