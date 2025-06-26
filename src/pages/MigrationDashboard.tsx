@@ -1,34 +1,46 @@
 
 import React from 'react';
 import { useMigrationData } from '@/hooks/useMigrationData';
+import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
 import { MigrationHeader } from '@/components/migration/MigrationHeader';
 import { MigrationStatsCards } from '@/components/migration/MigrationStatsCards';
 import { LocalDataCard } from '@/components/migration/LocalDataCard';
 import { MigrationControl } from '@/components/migration/MigrationControl';
 import { NextStepsCard } from '@/components/migration/NextStepsCard';
+import { Navigate } from 'react-router-dom';
 
 const MigrationDashboard = () => {
-  console.log('🎯 MIGRATION DASHBOARD: Panel de migración COMPLETAMENTE LIBRE');
-  console.log('✅ SIN RESTRICCIONES - Panel configurado para acceso libre');
+  const supabaseAuth = useSupabaseAuthContext();
+  
+  console.log('🎯 MIGRATION DASHBOARD: Verificando autenticación...');
+  console.log('📊 Estado de autenticación:', {
+    isAuthenticated: supabaseAuth.isAuthenticated,
+    user: supabaseAuth.user,
+    loading: supabaseAuth.loading
+  });
 
-  // CONFIGURACIÓN LIBRE - No requiere autenticación real de Supabase
-  const mockSupabaseAuth = {
-    user: { id: 'migration-free-user', email: 'libre@maquipaes.com' },
-    profile: { name: 'Usuario Libre', email: 'libre@maquipaes.com', role: 'Migración' },
-    loading: false,
-    isAuthenticated: true, // SIEMPRE true para acceso libre
-    isAdmin: false,
-    signIn: async () => ({ data: null, error: null }),
-    signUp: async () => ({ data: null, error: null }),
-    signOut: async () => {}
-  };
+  // Mostrar loading mientras se verifica la autenticación
+  if (supabaseAuth.loading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-blue-800 mb-2">Verificando autenticación...</h2>
+          <p className="text-blue-600">Por favor espera mientras verificamos tu sesión.</p>
+          <div className="mt-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // PERFIL LIBRE - Funciona sin autenticación real
-  const currentProfile = { 
-    name: 'Usuario del Panel de Migración Libre', 
-    email: 'migracion-libre@maquipaes.com',
-    role: 'Acceso Libre para Migración'
-  };
+  // Redirigir al login si no está autenticado
+  if (!supabaseAuth.isAuthenticated || !supabaseAuth.user) {
+    console.log('❌ MIGRATION DASHBOARD: Usuario no autenticado, redirigiendo al login');
+    return <Navigate to="/login" replace />;
+  }
+
+  console.log('✅ MIGRATION DASHBOARD: Usuario autenticado correctamente');
 
   const {
     machines,
@@ -39,25 +51,25 @@ const MigrationDashboard = () => {
     localMachinesCount,
     localReportsCount,
     migrateLocalStorageData
-  } = useMigrationData(mockSupabaseAuth);
+  } = useMigrationData(supabaseAuth);
 
-  console.log('📊 MIGRACIÓN LIBRE - DATOS:', {
+  console.log('📊 MIGRACIÓN - DATOS:', {
     maquinasEnSupabase: machines.length,
     reportesEnSupabase: reports.length,
     maquinasLocales: localMachinesCount,
     reportesLocales: localReportsCount,
-    accesoLibre: true
+    usuarioAutenticado: supabaseAuth.user?.email
   });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Banner de confirmación de ACCESO LIBRE */}
+      {/* Banner de confirmación de acceso autenticado */}
       <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-6">
         <h1 className="text-green-800 font-bold text-3xl mb-3">
-          ✅ Panel de Migración - ACCESO COMPLETAMENTE LIBRE
+          ✅ Panel de Migración - Usuario Autenticado
         </h1>
         <p className="text-green-700 text-xl mb-3">
-          🚀 Sistema funcionando SIN restricciones de autenticación
+          🚀 Bienvenido {supabaseAuth.user.email} - Acceso autorizado
         </p>
         <div className="bg-green-100 p-4 rounded-lg">
           <div className="text-green-800 font-mono text-sm">
@@ -67,17 +79,17 @@ const MigrationDashboard = () => {
             💾 Supabase: {machines.length} máquinas | {reports.length} reportes
           </div>
           <div className="text-green-800 font-mono text-sm font-bold">
-            🔓 ACCESO: Completamente libre - No requiere login
+            🔐 Usuario: {supabaseAuth.user.email} - Autenticado con Supabase
           </div>
         </div>
       </div>
 
-      <MigrationHeader currentProfile={currentProfile} />
+      <MigrationHeader currentProfile={supabaseAuth.profile || { name: supabaseAuth.user.email, email: supabaseAuth.user.email }} />
 
       <MigrationStatsCards
         machines={machines}
         reports={reports}
-        currentProfile={currentProfile}
+        currentProfile={supabaseAuth.profile || { name: supabaseAuth.user.email, email: supabaseAuth.user.email }}
       />
 
       <LocalDataCard
@@ -86,7 +98,7 @@ const MigrationDashboard = () => {
       />
 
       <MigrationControl
-        supabaseAuth={mockSupabaseAuth}
+        supabaseAuth={supabaseAuth}
         isMigrating={isMigrating}
         migrationStep={migrationStep}
         migrationProgress={migrationProgress}
@@ -97,14 +109,14 @@ const MigrationDashboard = () => {
 
       <NextStepsCard />
 
-      {/* Debug info con confirmación de acceso libre */}
+      {/* Debug info con información de autenticación real */}
       <div className="bg-green-50 border border-green-300 rounded p-4 text-sm">
-        <h3 className="font-bold text-green-800 mb-2">🔧 Información de Debug - ACCESO LIBRE</h3>
+        <h3 className="font-bold text-green-800 mb-2">🔧 Información de Debug - Autenticación Supabase</h3>
         <div className="text-green-700">
-          <p>✅ Panel renderizado correctamente SIN autenticación</p>
+          <p>✅ Usuario autenticado: {supabaseAuth.user.email}</p>
           <p>📊 Datos locales: {localMachinesCount + localReportsCount} elementos</p>
           <p>🌐 Datos Supabase: {machines.length + reports.length} elementos</p>
-          <p>🔓 Acceso: COMPLETAMENTE LIBRE</p>
+          <p>🔐 Autenticación: Verificada con Supabase</p>
           <p>🔥 Timestamp: {new Date().toLocaleTimeString()}</p>
         </div>
       </div>

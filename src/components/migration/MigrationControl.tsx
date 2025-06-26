@@ -30,18 +30,18 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-5 w-5" />
-          Migración de Datos - ACCESO LIBRE
+          Migración de Datos a Supabase
         </CardTitle>
         <CardDescription>
-          Migra tus datos desde localStorage a Supabase. No requiere autenticación previa.
+          Migra tus datos desde localStorage a Supabase. Usuario autenticado: {supabaseAuth.user?.email}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
-            ✅ Panel de migración configurado para acceso completamente libre.
-            La migración copiará todos tus datos de localStorage a Supabase sin requerir autenticación.
+            ✅ Autenticación verificada con Supabase como {supabaseAuth.user?.email}.
+            La migración transferirá todos tus datos de localStorage a la base de datos de Supabase.
           </AlertDescription>
         </Alert>
         
@@ -64,7 +64,7 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
               disabled={localMachinesCount === 0 && localReportsCount === 0}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Iniciar Migración Libre ({localMachinesCount} máquinas, {localReportsCount} reportes)
+              Iniciar Migración ({localMachinesCount} máquinas, {localReportsCount} reportes)
             </Button>
 
             {localMachinesCount === 0 && localReportsCount === 0 && (
