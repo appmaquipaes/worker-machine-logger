@@ -1,14 +1,15 @@
-import React from 'react';
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from '@/context/AuthContext';
 import { MachineProvider } from '@/context/MachineContext';
 import { ReportProvider } from '@/context/ReportContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from '@/components/ui/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
+import { SupabaseAuthProvider } from '@/context/SupabaseAuthProvider';
 import Navbar from '@/components/Navbar';
 
-// Pages
+// Páginas existentes
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -17,74 +18,72 @@ import Dashboard from '@/pages/Dashboard';
 import MachineSelection from '@/pages/MachineSelection';
 import ReportForm from '@/pages/ReportForm';
 import Reports from '@/pages/Reports';
-import InformesPage from '@/pages/InformesPage';
-import NotFound from '@/pages/NotFound';
-
-// Admin Pages
-import AdminPanel from '@/pages/AdminPanel';
-import UserManagement from '@/pages/UserManagement';
 import MachineManagement from '@/pages/MachineManagement';
-import VolquetaManagement from '@/pages/VolquetaManagement';
-import ProveedoresPage from '@/pages/ProveedoresPage';
+import UserManagement from '@/pages/UserManagement';
+import AdminPanel from '@/pages/AdminPanel';
 import ClientesPage from '@/pages/ClientesPage';
+import ProveedoresPage from '@/pages/ProveedoresPage';
 import ComprasPage from '@/pages/ComprasPage';
 import ComprasMaterialPage from '@/pages/ComprasMaterialPage';
 import VentasPage from '@/pages/VentasPage';
 import VentasMaterialPage from '@/pages/VentasMaterialPage';
 import InventarioPage from '@/pages/InventarioPage';
+import InformesPage from '@/pages/InformesPage';
 import TarifasClientePage from '@/pages/TarifasClientePage';
 import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
+import VolquetaManagement from '@/pages/VolquetaManagement';
+import NotFound from '@/pages/NotFound';
 
-import './App.css';
+// Nueva página de migración
+import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <AuthProvider>
-          <MachineProvider>
-            <ReportProvider>
-              <Router>
-                <div className="min-h-screen bg-background">
-                  <Navbar />
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/machines" element={<MachineSelection />} />
-                    <Route path="/report-form" element={<ReportForm />} />
-                    <Route path="/machines/:machineId/report" element={<ReportForm />} />
-                    <Route path="/machines/:machineId/reports" element={<Reports />} />
-                    <Route path="/informes" element={<InformesPage />} />
-                    
-                    {/* Admin Routes */}
-                    <Route path="/admin" element={<AdminPanel />} />
-                    <Route path="/admin/users" element={<UserManagement />} />
-                    <Route path="/admin/machines" element={<MachineManagement />} />
-                    <Route path="/admin/volquetas" element={<VolquetaManagement />} />
-                    <Route path="/admin/proveedores" element={<ProveedoresPage />} />
-                    <Route path="/admin/clientes" element={<ClientesPage />} />
-                    <Route path="/admin/tarifas-cliente" element={<TarifasClientePage />} />
-                    <Route path="/admin/servicios-transporte" element={<ServiciosTransportePage />} />
-                    <Route path="/admin/compras" element={<ComprasPage />} />
-                    <Route path="/admin/compras-material" element={<ComprasMaterialPage />} />
-                    <Route path="/admin/ventas" element={<VentasPage />} />
-                    <Route path="/admin/ventas-material" element={<VentasMaterialPage />} />
-                    <Route path="/admin/inventario" element={<InventarioPage />} />
-                    
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+      <TooltipProvider>
+        <SupabaseAuthProvider>
+          <AuthProvider>
+            <MachineProvider>
+              <ReportProvider>
+                <Router>
+                  <div className="min-h-screen bg-gray-50">
+                    <Navbar />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/migration" element={<MigrationDashboard />} />
+                      <Route path="/machine-selection" element={<MachineSelection />} />
+                      <Route path="/report" element={<ReportForm />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/machine-management" element={<MachineManagement />} />
+                      <Route path="/user-management" element={<UserManagement />} />
+                      <Route path="/admin" element={<AdminPanel />} />
+                      <Route path="/clientes" element={<ClientesPage />} />
+                      <Route path="/proveedores" element={<ProveedoresPage />} />
+                      <Route path="/compras" element={<ComprasPage />} />
+                      <Route path="/compras-material" element={<ComprasMaterialPage />} />
+                      <Route path="/ventas" element={<VentasPage />} />
+                      <Route path="/ventas-material" element={<VentasMaterialPage />} />
+                      <Route path="/inventario" element={<InventarioPage />} />
+                      <Route path="/informes" element={<InformesPage />} />
+                      <Route path="/tarifas-cliente" element={<TarifasClientePage />} />
+                      <Route path="/servicios-transporte" element={<ServiciosTransportePage />} />
+                      <Route path="/volqueta-management" element={<VolquetaManagement />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </div>
                   <Toaster />
-                </div>
-              </Router>
-            </ReportProvider>
-          </MachineProvider>
-        </AuthProvider>
-      </ThemeProvider>
+                </Router>
+              </ReportProvider>
+            </MachineProvider>
+          </AuthProvider>
+        </SupabaseAuthProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
