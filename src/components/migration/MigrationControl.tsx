@@ -25,6 +25,12 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
   localReportsCount,
   onMigrate
 }) => {
+  console.log('🎛️ MIGRATION CONTROL: Datos recibidos:', {
+    userEmail: supabaseAuth?.user?.email,
+    isAuthenticated: supabaseAuth?.isAuthenticated,
+    localData: { machines: localMachinesCount, reports: localReportsCount }
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -33,14 +39,16 @@ export const MigrationControl: React.FC<MigrationControlProps> = ({
           Migración de Datos a Supabase
         </CardTitle>
         <CardDescription>
-          Migra tus datos desde localStorage a Supabase. Usuario autenticado: {supabaseAuth.user?.email}
+          Migra tus datos desde localStorage a Supabase
+          {supabaseAuth?.user?.email && ` - Usuario: ${supabaseAuth.user.email}`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
-            ✅ Autenticación verificada con Supabase como {supabaseAuth.user?.email}.
+            ✅ Conexión verificada con Supabase
+            {supabaseAuth?.user?.email && ` como ${supabaseAuth.user.email}`}.
             La migración transferirá todos tus datos de localStorage a la base de datos de Supabase.
           </AlertDescription>
         </Alert>

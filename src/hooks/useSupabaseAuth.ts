@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,8 +19,16 @@ export const useSupabaseAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔄 SUPABASE AUTH: Inicializando...');
+    
     // Obtener sesión inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('📡 SUPABASE AUTH: Sesión inicial:', { 
+        hasSession: !!session, 
+        userEmail: session?.user?.email,
+        error 
+      });
+      
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id);
@@ -33,6 +40,12 @@ export const useSupabaseAuth = () => {
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔔 SUPABASE AUTH: Cambio de estado:', { 
+          event, 
+          hasSession: !!session,
+          userEmail: session?.user?.email 
+        });
+        
         setUser(session?.user ?? null);
         if (session?.user) {
           await loadProfile(session.user.id);
@@ -48,6 +61,8 @@ export const useSupabaseAuth = () => {
 
   const loadProfile = async (userId: string) => {
     try {
+      console.log('👤 SUPABASE AUTH: Cargando perfil para usuario:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -55,10 +70,10 @@ export const useSupabaseAuth = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
+        console.error('❌ SUPABASE AUTH: Error cargando perfil:', error);
         toast.error('Error al cargar el perfil');
       } else if (data) {
-        // Type assertion to ensure proper typing
+        console.log('✅ SUPABASE AUTH: Perfil cargado:', data);
         const profileData: Profile = {
           id: data.id,
           name: data.name,
@@ -69,9 +84,11 @@ export const useSupabaseAuth = () => {
           comision_por_viaje: data.comision_por_viaje
         };
         setProfile(profileData);
+      } else {
+        console.log('ℹ️ SUPABASE AUTH: No se encontró perfil, usando datos básicos del usuario');
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('❌ SUPABASE AUTH: Error general cargando perfil:', error);
     } finally {
       setLoading(false);
     }
@@ -159,6 +176,14 @@ export const useSupabaseAuth = () => {
     }
   };
 
+  const isAuthenticated = !!user;
+  console.log('🔍 SUPABASE AUTH: Estado final:', { 
+    isAuthenticated, 
+    hasUser: !!user, 
+    userEmail: user?.email,
+    loading 
+  });
+
   return {
     user,
     profile,
@@ -166,7 +191,7 @@ export const useSupabaseAuth = () => {
     signUp,
     signIn,
     signOut,
-    isAuthenticated: !!user,
+    isAuthenticated,
     isAdmin: profile?.role === 'Administrador'
   };
 };

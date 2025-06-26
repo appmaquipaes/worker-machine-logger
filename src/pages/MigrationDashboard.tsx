@@ -12,15 +12,17 @@ import { Navigate } from 'react-router-dom';
 const MigrationDashboard = () => {
   const supabaseAuth = useSupabaseAuthContext();
   
-  console.log('🎯 MIGRATION DASHBOARD: Verificando autenticación...');
-  console.log('📊 Estado de autenticación:', {
+  console.log('🎯 MIGRATION DASHBOARD: Estado completo de autenticación:', {
     isAuthenticated: supabaseAuth.isAuthenticated,
     user: supabaseAuth.user,
-    loading: supabaseAuth.loading
+    profile: supabaseAuth.profile,
+    loading: supabaseAuth.loading,
+    userEmail: supabaseAuth.user?.email
   });
 
   // Mostrar loading mientras se verifica la autenticación
   if (supabaseAuth.loading) {
+    console.log('⏳ MIGRATION DASHBOARD: Cargando autenticación...');
     return (
       <div className="container mx-auto p-6 text-center">
         <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
@@ -34,13 +36,19 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Redirigir al login si no está autenticado
+  // Verificar si el usuario está autenticado
   if (!supabaseAuth.isAuthenticated || !supabaseAuth.user) {
     console.log('❌ MIGRATION DASHBOARD: Usuario no autenticado, redirigiendo al login');
+    console.log('❌ Estado de autenticación:', {
+      isAuthenticated: supabaseAuth.isAuthenticated,
+      hasUser: !!supabaseAuth.user,
+      userEmail: supabaseAuth.user?.email
+    });
     return <Navigate to="/login" replace />;
   }
 
   console.log('✅ MIGRATION DASHBOARD: Usuario autenticado correctamente');
+  console.log('👤 Usuario actual:', supabaseAuth.user.email);
 
   const {
     machines,
@@ -61,35 +69,43 @@ const MigrationDashboard = () => {
     usuarioAutenticado: supabaseAuth.user?.email
   });
 
+  // Crear perfil básico si no existe
+  const currentProfile = supabaseAuth.profile || {
+    id: supabaseAuth.user.id,
+    name: supabaseAuth.user.email?.split('@')[0] || 'Usuario',
+    email: supabaseAuth.user.email,
+    role: 'Trabajador'
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Banner de confirmación de acceso autenticado */}
       <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-6">
         <h1 className="text-green-800 font-bold text-3xl mb-3">
-          ✅ Panel de Migración - Usuario Autenticado
+          ✅ Panel de Migración - Acceso Autorizado
         </h1>
         <p className="text-green-700 text-xl mb-3">
-          🚀 Bienvenido {supabaseAuth.user.email} - Acceso autorizado
+          🚀 Bienvenido {supabaseAuth.user.email} - Sesión activa
         </p>
         <div className="bg-green-100 p-4 rounded-lg">
           <div className="text-green-800 font-mono text-sm">
-            📈 Estado actual: {localMachinesCount} máquinas locales | {localReportsCount} reportes locales
+            📈 Datos locales: {localMachinesCount} máquinas | {localReportsCount} reportes
           </div>
           <div className="text-green-800 font-mono text-sm">
             💾 Supabase: {machines.length} máquinas | {reports.length} reportes
           </div>
           <div className="text-green-800 font-mono text-sm font-bold">
-            🔐 Usuario: {supabaseAuth.user.email} - Autenticado con Supabase
+            🔐 Usuario: {supabaseAuth.user.email} - Autenticado ✓
           </div>
         </div>
       </div>
 
-      <MigrationHeader currentProfile={supabaseAuth.profile || { name: supabaseAuth.user.email, email: supabaseAuth.user.email }} />
+      <MigrationHeader currentProfile={currentProfile} />
 
       <MigrationStatsCards
         machines={machines}
         reports={reports}
-        currentProfile={supabaseAuth.profile || { name: supabaseAuth.user.email, email: supabaseAuth.user.email }}
+        currentProfile={currentProfile}
       />
 
       <LocalDataCard
@@ -109,15 +125,16 @@ const MigrationDashboard = () => {
 
       <NextStepsCard />
 
-      {/* Debug info con información de autenticación real */}
+      {/* Debug info detallada */}
       <div className="bg-green-50 border border-green-300 rounded p-4 text-sm">
-        <h3 className="font-bold text-green-800 mb-2">🔧 Información de Debug - Autenticación Supabase</h3>
-        <div className="text-green-700">
-          <p>✅ Usuario autenticado: {supabaseAuth.user.email}</p>
+        <h3 className="font-bold text-green-800 mb-2">🔧 Debug - Autenticación Supabase</h3>
+        <div className="text-green-700 space-y-1">
+          <p>✅ Usuario: {supabaseAuth.user.email}</p>
+          <p>🆔 ID: {supabaseAuth.user.id}</p>
           <p>📊 Datos locales: {localMachinesCount + localReportsCount} elementos</p>
           <p>🌐 Datos Supabase: {machines.length + reports.length} elementos</p>
-          <p>🔐 Autenticación: Verificada con Supabase</p>
-          <p>🔥 Timestamp: {new Date().toLocaleTimeString()}</p>
+          <p>🔐 Estado: Autenticado con Supabase ✓</p>
+          <p>⏰ Timestamp: {new Date().toLocaleTimeString()}</p>
         </div>
       </div>
     </div>
