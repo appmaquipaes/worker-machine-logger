@@ -7,13 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
-import CreateUserForm from '@/components/admin/CreateUserForm';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -35,29 +33,15 @@ const Login: React.FC = () => {
 
   return (
     <div className="container max-w-md mx-auto py-10">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex justify-start">
         <Button
-          variant="ghost"
+          variant="back"
           onClick={() => navigate('/')}
         >
           <ArrowLeft size={18} />
           Volver al inicio
         </Button>
-        
-        <Button
-          variant="outline"
-          onClick={() => setShowAdminPanel(!showAdminPanel)}
-          className="text-xs"
-        >
-          {showAdminPanel ? 'Ocultar' : 'Panel Admin'}
-        </Button>
       </div>
-      
-      {showAdminPanel && (
-        <div className="mb-6">
-          <CreateUserForm />
-        </div>
-      )}
       
       <Card>
         <CardHeader className="space-y-1">
@@ -109,9 +93,6 @@ const Login: React.FC = () => {
             <Link to="/register" className="text-primary hover:underline">
               Regístrate
             </Link>
-          </div>
-          <div className="text-xs text-center text-muted-foreground">
-            Usuario de prueba: marketingdigital859@gmail.com / password123
           </div>
         </CardFooter>
       </Card>
