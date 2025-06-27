@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,6 +39,27 @@ import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
+// Componente separado para la ruta de migración
+const MigrationRoute = () => {
+  console.log('🚀 MIGRATION ROUTE: Cargando ruta de migración independiente');
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-green-500 text-white p-4 text-center font-bold text-lg">
+        ✅ PANEL DE MIGRACIÓN - ACCESO COMPLETAMENTE LIBRE
+      </div>
+      <div className="bg-blue-500 text-white p-2 text-center font-semibold">
+        🎯 Ruta: /migration - Estado: ACTIVO - Cero restricciones
+      </div>
+      <SupabaseAuthProvider>
+        <MigrationNavbar />
+        <MigrationDashboard />
+      </SupabaseAuthProvider>
+      <Toaster />
+    </div>
+  );
+};
+
 function App() {
   console.log('🚀 APP: Inicializando aplicación - Ruta actual:', window.location.pathname);
   
@@ -48,25 +68,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Routes>
-            {/* 🔥 RUTA DE MIGRACIÓN - MÁXIMA PRIORIDAD ABSOLUTA */}
-            <Route 
-              path="/migration" 
-              element={
-                <div className="min-h-screen bg-gray-50">
-                  <div className="bg-green-500 text-white p-4 text-center font-bold text-lg">
-                    ✅ PANEL DE MIGRACIÓN - ACCESO TOTALMENTE LIBRE
-                  </div>
-                  <div className="bg-blue-500 text-white p-2 text-center font-semibold">
-                    🎯 Ruta: /migration - Estado: ACTIVO - Sin restricciones de autenticación
-                  </div>
-                  <SupabaseAuthProvider>
-                    <MigrationNavbar />
-                    <MigrationDashboard />
-                  </SupabaseAuthProvider>
-                  <Toaster />
-                </div>
-              } 
-            />
+            {/* 🔥 RUTA DE MIGRACIÓN - MÁXIMA PRIORIDAD TOTAL Y ABSOLUTA */}
+            <Route path="/migration" element={<MigrationRoute />} />
             
             {/* Todas las demás rutas normales */}
             <Route path="/" element={
@@ -84,6 +87,7 @@ function App() {
                 </AuthProvider>
               </SupabaseAuthProvider>
             } />
+            
             
             <Route path="/login" element={
               <SupabaseAuthProvider>
@@ -133,7 +137,6 @@ function App() {
               </SupabaseAuthProvider>
             } />
             
-            {/* Resto de rutas con autenticación */}
             <Route path="/dashboard" element={
               <SupabaseAuthProvider>
                 <AuthProvider>

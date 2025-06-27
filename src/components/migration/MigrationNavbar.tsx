@@ -9,9 +9,9 @@ export const MigrationNavbar: React.FC = () => {
           Maquipaes SAS - Panel de Migración
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm">Hola, Fernando Pacheco</span>
+          <span className="text-sm">Herramienta de Migración</span>
           <div className="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-            MIGRACIÓN ACTIVA
+            ACCESO LIBRE ✓
           </div>
         </div>
       </div>
