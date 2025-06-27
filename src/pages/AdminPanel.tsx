@@ -26,56 +26,56 @@ const AdminPanel = () => {
       title: 'Gestión de Usuarios',
       description: 'Administrar operadores y sus permisos en el sistema',
       icon: <User className="mobile-icon-large text-blue-600" />,
-      path: '/admin/users',
+      path: '/user-management',
       color: 'from-blue-500 to-blue-600'
     },
     {
       title: 'Gestión de Máquinas',
       description: 'Administrar máquinas, volquetas y equipos',
       icon: <Building className="mobile-icon-large text-orange-600" />,
-      path: '/admin/machines',
+      path: '/machine-management',
       color: 'from-orange-500 to-orange-600'
     },
     {
       title: 'Proveedores',
       description: 'Administrar proveedores de material',
       icon: <MapPin className="mobile-icon-large text-green-600" />,
-      path: '/admin/proveedores',
+      path: '/proveedores',
       color: 'from-green-500 to-green-600'
     },
     {
       title: 'Clientes',
       description: 'Gestionar clientes que reciben materiales',
       icon: <Users className="mobile-icon-large text-purple-600" />,
-      path: '/admin/clientes',
+      path: '/clientes',
       color: 'from-purple-500 to-purple-600'
     },
     {
       title: 'Tarifas por Cliente',
       description: 'Configurar tarifas de flete personalizadas por cliente y destino',
       icon: <DollarSign className="mobile-icon-large text-amber-600" />,
-      path: '/admin/tarifas-cliente',
+      path: '/tarifas-cliente',
       color: 'from-amber-500 to-yellow-500'
     },
     {
       title: 'Gestión de Compras',
       description: 'Registrar y gestionar compras de materiales y servicios',
       icon: <Database className="mobile-icon-large text-indigo-600" />,
-      path: '/admin/compras',
+      path: '/compras',
       color: 'from-indigo-500 to-indigo-600'
     },
     {
       title: 'Ventas',
       description: 'Gestionar ventas de material y servicios de transporte',
       icon: <ShoppingCart className="mobile-icon-large text-teal-600" />,
-      path: '/admin/ventas',
+      path: '/ventas',
       color: 'from-teal-500 to-teal-600'
     },
     {
       title: 'Inventario Acopio',
       description: 'Ver y gestionar el inventario actual del acopio',
       icon: <Database className="mobile-icon-large text-slate-600" />,
-      path: '/admin/inventario',
+      path: '/inventario',
       color: 'from-slate-500 to-slate-600'
     },
   ];
