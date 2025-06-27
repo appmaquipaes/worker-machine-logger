@@ -35,43 +35,38 @@ import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
 import VolquetaManagement from '@/pages/VolquetaManagement';
 import NotFound from '@/pages/NotFound';
 
-// MIGRACIÓN: Acceso completamente libre
+// MIGRACIÓN: Página completamente independiente
 import MigrationDashboard from '@/pages/MigrationDashboard';
 
 const queryClient = new QueryClient();
 
 function App() {
-  console.log('🚀 APP: Renderizando aplicación principal');
+  console.log('🚀 APP: Inicializando aplicación');
   
   return (
     <Router>
-      <Routes>
-        {/* MIGRACIÓN: Ruta completamente aislada y libre - PRIMERA PRIORIDAD */}
-        <Route 
-          path="/migration" 
-          element={
-            <QueryClientProvider client={queryClient}>
-              <TooltipProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Routes>
+            {/* 🔥 RUTA DE MIGRACIÓN - MÁXIMA PRIORIDAD - SIN RESTRICCIONES */}
+            <Route 
+              path="/migration" 
+              element={
                 <SupabaseAuthProvider>
                   <div className="min-h-screen bg-gray-50">
-                    {/* Banner de confirmación de ruta libre */}
-                    <div className="bg-green-100 border border-green-300 p-3 text-center text-sm font-bold">
-                      ✅ MIGRACIÓN: Ruta completamente funcional - Acceso garantizado
+                    <div className="bg-green-500 text-white p-2 text-center font-bold text-sm">
+                      ✅ MIGRACIÓN ACTIVA - Acceso completamente libre - Sin validaciones
                     </div>
                     <MigrationNavbar />
                     <MigrationDashboard />
                   </div>
                   <Toaster />
                 </SupabaseAuthProvider>
-              </TooltipProvider>
-            </QueryClientProvider>
-          } 
-        />
-        
-        {/* Resto de rutas con contextos normales */}
-        <Route path="/*" element={
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
+              } 
+            />
+            
+            {/* Todas las demás rutas con contextos completos */}
+            <Route path="/*" element={
               <SupabaseAuthProvider>
                 <AuthProvider>
                   <MachineProvider>
@@ -109,10 +104,10 @@ function App() {
                   </MachineProvider>
                 </AuthProvider>
               </SupabaseAuthProvider>
-            </TooltipProvider>
-          </QueryClientProvider>
-        } />
-      </Routes>
+            } />
+          </Routes>
+        </TooltipProvider>
+      </QueryClientProvider>
     </Router>
   );
 }
