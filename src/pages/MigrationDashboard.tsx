@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useMigrationData } from '@/hooks/useMigrationData';
 import { useSupabaseAuthContext } from '@/context/SupabaseAuthProvider';
 import { MigrationHeader } from '@/components/migration/MigrationHeader';
@@ -10,17 +11,26 @@ import { Navigate } from 'react-router-dom';
 
 const MigrationDashboard = () => {
   const supabaseAuth = useSupabaseAuthContext();
+  const [isInitialized, setIsInitialized] = useState(false);
   
+  // Esperar a que la autenticación se inicialice completamente
+  useEffect(() => {
+    if (!supabaseAuth.loading) {
+      setIsInitialized(true);
+    }
+  }, [supabaseAuth.loading]);
+
   console.log('🎯 MIGRATION DASHBOARD: Estado de autenticación completo:', {
     isAuthenticated: supabaseAuth.isAuthenticated,
     user: supabaseAuth.user,
     profile: supabaseAuth.profile,
     loading: supabaseAuth.loading,
+    isInitialized,
     userEmail: supabaseAuth.user?.email
   });
 
   // Mostrar loading mientras se verifica la autenticación
-  if (supabaseAuth.loading) {
+  if (supabaseAuth.loading || !isInitialized) {
     console.log('⏳ MIGRATION DASHBOARD: Cargando autenticación...');
     return (
       <div className="container mx-auto p-6 text-center">
@@ -35,19 +45,23 @@ const MigrationDashboard = () => {
     );
   }
 
-  // Verificar si hay usuario autenticado
-  if (!supabaseAuth.user) {
-    console.log('❌ MIGRATION DASHBOARD: No hay usuario, redirigiendo al login');
-    console.log('❌ Detalles:', {
-      hasUser: !!supabaseAuth.user,
-      isAuthenticated: supabaseAuth.isAuthenticated,
-      loading: supabaseAuth.loading
-    });
-    return <Navigate to="/login" replace />;
+  // Verificar si hay usuario autenticado SOLO después de la inicialización
+  if (isInitialized && !supabaseAuth.user) {
+    console.log('❌ MIGRATION DASHBOARD: No hay usuario después de inicialización, redirigiendo al login');
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="bg-red-50 border border-red-300 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Acceso Denegado</h2>
+          <p className="text-red-600 mb-4">Debes iniciar sesión para acceder al panel de migración.</p>
+          <p className="text-sm text-red-500">Redirigiendo al login...</p>
+        </div>
+      </div>
+    );
   }
 
+  // Si llegamos aquí, el usuario está autenticado
   console.log('✅ MIGRATION DASHBOARD: Usuario autenticado correctamente');
-  console.log('👤 Usuario:', supabaseAuth.user.email);
+  console.log('👤 Usuario:', supabaseAuth.user?.email);
 
   const {
     machines,
