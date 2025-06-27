@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMachine } from '@/context/MachineContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import UserManagementHeader from '@/components/user-management/UserManagementHeader';
 import UserStatsCards from '@/components/user-management/UserStatsCards';
@@ -37,7 +37,6 @@ const UserManagement: React.FC = () => {
   const [viewMachinesUser, setViewMachinesUser] = useState<User | null>(null);
   const [isViewMachinesOpen, setIsViewMachinesOpen] = useState(false);
   
-  // Redirigir si no hay un usuario o no es administrador
   React.useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -51,34 +50,70 @@ const UserManagement: React.FC = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    const loadUsers = () => {
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const usersWithoutPassword = storedUsers.map(
-        ({ password, ...userWithoutPassword }: any) => userWithoutPassword
-      );
-      setUsers(usersWithoutPassword);
+    const loadUsers = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (error) {
+          console.error('Error loading users from Supabase:', error);
+          // Fallback to localStorage
+          const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+          const usersWithoutPassword = storedUsers.map(
+            ({ password, ...userWithoutPassword }: any) => ({
+              ...userWithoutPassword,
+              assignedMachines: userWithoutPassword.assignedMachines || []
+            })
+          );
+          setUsers(usersWithoutPassword);
+        } else {
+          const mappedUsers = profiles?.map(profile => ({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
+            role: profile.role,
+            assignedMachines: profile.assigned_machines || [],
+            comisionPorHora: profile.comision_por_hora,
+            comisionPorViaje: profile.comision_por_viaje
+          })) || [];
+          setUsers(mappedUsers);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
     };
     
     loadUsers();
   }, []);
 
-  const handleRemoveUser = (id: string) => {
+  const handleRemoveUser = async (id: string) => {
     if (id === user?.id) {
       toast.error('No puedes eliminar tu propia cuenta');
       return;
     }
     
-    const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
-    
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
-    const usersWithoutPassword = updatedUsers.map(
-      ({ password, ...userWithoutPassword }: any) => userWithoutPassword
-    );
-    setUsers(usersWithoutPassword);
-    
-    toast.success('Usuario eliminado correctamente');
+    try {
+      // Try to delete from Supabase first
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting from Supabase:', error);
+        // Fallback to localStorage
+        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      }
+      
+      setUsers(prev => prev.filter(u => u.id !== id));
+      toast.success('Usuario eliminado correctamente');
+    } catch (error) {
+      console.error('Error removing user:', error);
+      toast.error('Error al eliminar usuario');
+    }
   };
 
   const handleEditMachines = (userToEdit: User) => {
@@ -120,42 +155,60 @@ const UserManagement: React.FC = () => {
     setIsTripCommissionDialogOpen(true);
   };
 
-  const handleSaveCommission = (userId: string, commission: number) => {
-    // Actualizar en localStorage
-    const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = currentUsers.map((u: any) => 
-      u.id === userId 
-        ? { ...u, comisionPorHora: commission }
-        : u
-    );
-    
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
-    // Actualizar estado local
-    setUsers(prev => prev.map(u => 
-      u.id === userId 
-        ? { ...u, comisionPorHora: commission }
-        : u
-    ));
+  const handleSaveCommission = async (userId: string, commission: number) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ comision_por_hora: commission })
+        .eq('id', userId);
+      
+      if (error) {
+        // Fallback to localStorage
+        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const updatedUsers = currentUsers.map((u: any) => 
+          u.id === userId 
+            ? { ...u, comisionPorHora: commission }
+            : u
+        );
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      }
+      
+      setUsers(prev => prev.map(u => 
+        u.id === userId 
+          ? { ...u, comisionPorHora: commission }
+          : u
+      ));
+    } catch (error) {
+      console.error('Error saving commission:', error);
+    }
   };
 
-  const handleSaveTripCommission = (userId: string, commission: number) => {
-    // Actualizar en localStorage
-    const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = currentUsers.map((u: any) => 
-      u.id === userId 
-        ? { ...u, comisionPorViaje: commission }
-        : u
-    );
-    
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
-    // Actualizar estado local
-    setUsers(prev => prev.map(u => 
-      u.id === userId 
-        ? { ...u, comisionPorViaje: commission }
-        : u
-    ));
+  const handleSaveTripCommission = async (userId: string, commission: number) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ comision_por_viaje: commission })
+        .eq('id', userId);
+      
+      if (error) {
+        // Fallback to localStorage
+        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const updatedUsers = currentUsers.map((u: any) => 
+          u.id === userId 
+            ? { ...u, comisionPorViaje: commission }
+            : u
+        );
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      }
+      
+      setUsers(prev => prev.map(u => 
+        u.id === userId 
+          ? { ...u, comisionPorViaje: commission }
+          : u
+      ));
+    } catch (error) {
+      console.error('Error saving trip commission:', error);
+    }
   };
 
   const handleViewMachines = (userToView: User) => {

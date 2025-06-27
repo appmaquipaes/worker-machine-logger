@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
@@ -6,6 +7,7 @@ import { ReportProvider } from '@/context/ReportContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { useLocalStorageMigration } from '@/hooks/useLocalStorageMigration';
 import Navbar from '@/components/Navbar';
 
 // Pages
@@ -39,11 +41,18 @@ import './App.css';
 
 const queryClient = new QueryClient();
 
+// Component to handle migration
+const MigrationHandler: React.FC = () => {
+  useLocalStorageMigration();
+  return null;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <AuthProvider>
+          <MigrationHandler />
           <MachineProvider>
             <ReportProvider>
               <Router>
