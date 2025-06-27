@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,73 +19,121 @@ export const useSupabaseAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.log('Profile not found, might be first login');
+        setProfile(null);
+      } else {
+        console.log('Profile loaded successfully:', profileData);
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setProfile(null);
+    }
+  };
+
   useEffect(() => {
+    let mounted = true;
+
+    // Get initial session first
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (initialSession) {
+          console.log('Initial session found:', initialSession.user.email);
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          // Fetch profile for initial session
+          await fetchUserProfile(initialSession.user.id);
+        } else {
+          console.log('No initial session found');
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
-          setTimeout(async () => {
-            try {
-              const { data: profileData, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (error) {
-                console.log('Profile not found, might be first login');
-                setProfile(null);
-              } else {
-                setProfile(profileData);
-              }
-            } catch (error) {
-              console.error('Error fetching profile:', error);
+          // Use setTimeout to avoid potential auth callback issues
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserProfile(session.user.id);
             }
           }, 0);
         } else {
           setProfile(null);
         }
         
-        setIsLoading(false);
+        // Only set loading to false if we haven't done it already
+        if (event !== 'INITIAL_SESSION') {
+          setIsLoading(false);
+        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    // Get initial session
+    getInitialSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
         toast.error(error.message);
+        setIsLoading(false);
         return false;
       }
 
       if (data.user) {
+        console.log('Login successful for:', data.user.email);
         toast.success("Inicio de sesión exitoso");
         return true;
       }
       
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
       toast.error("Error al iniciar sesión");
+      setIsLoading(false);
       return false;
     }
   };
@@ -149,8 +196,12 @@ export const useSupabaseAuth = () => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Sesión cerrada");
+    try {
+      await supabase.auth.signOut();
+      toast.success("Sesión cerrada");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   const resetPassword = async (email: string): Promise<boolean> => {

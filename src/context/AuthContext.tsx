@@ -30,5 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUserMachines: supabaseAuth.updateUserMachines
   };
 
+  // Show loading state while auth is initializing
+  if (supabaseAuth.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="text-slate-600 font-medium">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
