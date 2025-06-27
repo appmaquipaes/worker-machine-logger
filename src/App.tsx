@@ -41,63 +41,395 @@ import MigrationDashboard from '@/pages/MigrationDashboard';
 const queryClient = new QueryClient();
 
 function App() {
-  console.log('🚀 APP: Inicializando aplicación');
+  console.log('🚀 APP: Inicializando aplicación - Ruta actual:', window.location.pathname);
   
   return (
     <Router>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Routes>
-            {/* 🔥 RUTA DE MIGRACIÓN - MÁXIMA PRIORIDAD - SIN RESTRICCIONES */}
+            {/* 🔥 RUTA DE MIGRACIÓN - MÁXIMA PRIORIDAD ABSOLUTA */}
             <Route 
               path="/migration" 
               element={
-                <SupabaseAuthProvider>
-                  <div className="min-h-screen bg-gray-50">
-                    <div className="bg-green-500 text-white p-2 text-center font-bold text-sm">
-                      ✅ MIGRACIÓN ACTIVA - Acceso completamente libre - Sin validaciones
-                    </div>
+                <div className="min-h-screen bg-gray-50">
+                  <div className="bg-green-500 text-white p-4 text-center font-bold text-lg">
+                    ✅ PANEL DE MIGRACIÓN - ACCESO TOTALMENTE LIBRE
+                  </div>
+                  <div className="bg-blue-500 text-white p-2 text-center font-semibold">
+                    🎯 Ruta: /migration - Estado: ACTIVO - Sin restricciones de autenticación
+                  </div>
+                  <SupabaseAuthProvider>
                     <MigrationNavbar />
                     <MigrationDashboard />
-                  </div>
+                  </SupabaseAuthProvider>
                   <Toaster />
-                </SupabaseAuthProvider>
+                </div>
               } 
             />
             
-            {/* Todas las demás rutas con contextos completos */}
-            <Route path="/*" element={
+            {/* Todas las demás rutas normales */}
+            <Route path="/" element={
               <SupabaseAuthProvider>
                 <AuthProvider>
                   <MachineProvider>
                     <ReportProvider>
                       <div className="min-h-screen bg-gray-50">
                         <Navbar />
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/register" element={<Register />} />
-                          <Route path="/forgot-password" element={<ForgotPassword />} />
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/machine-selection" element={<MachineSelection />} />
-                          <Route path="/report" element={<ReportForm />} />
-                          <Route path="/reports" element={<Reports />} />
-                          <Route path="/machine-management" element={<MachineManagement />} />
-                          <Route path="/user-management" element={<UserManagement />} />
-                          <Route path="/admin" element={<AdminPanel />} />
-                          <Route path="/clientes" element={<ClientesPage />} />
-                          <Route path="/proveedores" element={<ProveedoresPage />} />
-                          <Route path="/compras" element={<ComprasPage />} />
-                          <Route path="/compras-material" element={<ComprasMaterialPage />} />
-                          <Route path="/ventas" element={<VentasPage />} />
-                          <Route path="/ventas-material" element={<VentasMaterialPage />} />
-                          <Route path="/inventario" element={<InventarioPage />} />
-                          <Route path="/informes" element={<InformesPage />} />
-                          <Route path="/tarifas-cliente" element={<TarifasClientePage />} />
-                          <Route path="/servicios-transporte" element={<ServiciosTransportePage />} />
-                          <Route path="/volqueta-management" element={<VolquetaManagement />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
+                        <Index />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/login" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <Login />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/register" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <Register />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/forgot-password" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ForgotPassword />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            {/* Resto de rutas con autenticación */}
+            <Route path="/dashboard" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <Dashboard />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/machine-selection" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <MachineSelection />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/report" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ReportForm />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/reports" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <Reports />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/machine-management" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <MachineManagement />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/user-management" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <UserManagement />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/admin" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <AdminPanel />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/clientes" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ClientesPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/proveedores" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ProveedoresPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/compras" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ComprasPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/compras-material" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ComprasMaterialPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/ventas" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <VentasPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/ventas-material" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <VentasMaterialPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/inventario" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <InventarioPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/informes" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <InformesPage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/tarifas-cliente" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <TarifasClientePage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/servicios-transporte" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <ServiciosTransportePage />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="/volqueta-management" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <VolquetaManagement />
+                      </div>
+                      <Toaster />
+                    </ReportProvider>
+                  </MachineProvider>
+                </AuthProvider>
+              </SupabaseAuthProvider>
+            } />
+            
+            <Route path="*" element={
+              <SupabaseAuthProvider>
+                <AuthProvider>
+                  <MachineProvider>
+                    <ReportProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <Navbar />
+                        <NotFound />
                       </div>
                       <Toaster />
                     </ReportProvider>

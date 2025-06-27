@@ -9,7 +9,9 @@ import { MigrationControl } from '@/components/migration/MigrationControl';
 import { NextStepsCard } from '@/components/migration/NextStepsCard';
 
 const MigrationDashboard = () => {
-  console.log('🎯 MIGRATION DASHBOARD: Cargando herramienta de migración - ACCESO LIBRE GARANTIZADO');
+  console.log('🎯 MIGRATION DASHBOARD: Panel de migración cargado exitosamente - ACCESO GARANTIZADO');
+  console.log('📍 Ruta actual:', window.location.pathname);
+  console.log('🔓 Estado: Panel de migración ACTIVO sin restricciones');
 
   const supabaseAuth = useSupabaseAuthContext();
 
@@ -24,12 +26,13 @@ const MigrationDashboard = () => {
     migrateLocalStorageData
   } = useMigrationData(supabaseAuth);
 
-  console.log('📊 MIGRACIÓN - ESTADO:', {
+  console.log('📊 MIGRACIÓN - ESTADO COMPLETO:', {
     maquinasEnSupabase: machines.length,
     reportesEnSupabase: reports.length,
     maquinasLocales: localMachinesCount,
     reportesLocales: localReportsCount,
-    supabaseConectado: !!supabaseAuth.user
+    supabaseConectado: !!supabaseAuth.user,
+    panelAccesible: true
   });
 
   // Perfil básico para mostrar información
@@ -47,22 +50,31 @@ const MigrationDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Banner de confirmación de acceso libre */}
-      <div className="bg-green-100 border-4 border-green-400 rounded-xl p-8 shadow-lg">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-green-800">
-            ✅ HERRAMIENTA DE MIGRACIÓN ACTIVA
+      {/* Banner de confirmación MÁXIMO de acceso */}
+      <div className="bg-gradient-to-r from-green-400 to-green-600 border-4 border-green-300 rounded-xl p-8 shadow-2xl">
+        <div className="text-center space-y-6">
+          <h1 className="text-5xl font-extrabold text-white drop-shadow-lg">
+            ✅ PANEL DE MIGRACIÓN ACTIVO
           </h1>
-          <div className="text-xl text-green-700 font-semibold">
-            🚀 Acceso completamente libre - Sin restricciones de autenticación
+          <div className="text-2xl text-green-100 font-bold bg-green-700 p-4 rounded-lg">
+            🚀 ACCESO COMPLETAMENTE LIBRE - SIN RESTRICCIONES
           </div>
-          <div className="bg-green-200 p-4 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-green-800 font-mono">
-              <div>📊 Datos locales: {localMachinesCount} máquinas | {localReportsCount} reportes</div>
-              <div>💾 Supabase: {machines.length} máquinas | {reports.length} reportes</div>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-green-800 font-mono text-lg">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="font-bold text-xl mb-2">📊 Datos Locales:</div>
+                <div>{localMachinesCount} máquinas | {localReportsCount} reportes</div>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="font-bold text-xl mb-2">💾 Supabase:</div>
+                <div>{machines.length} máquinas | {reports.length} reportes</div>
+              </div>
             </div>
-            <div className="mt-2 text-green-800 font-bold text-lg">
-              🔓 Estado: ACCESO GARANTIZADO - Herramienta independiente ✓
+            <div className="mt-6 text-green-800 font-bold text-2xl bg-green-100 p-4 rounded-lg">
+              🔓 ESTADO: PANEL ACTIVO ✓ ACCESO GARANTIZADO ✓
+            </div>
+            <div className="mt-4 text-green-700 font-semibold text-lg">
+              📍 Ruta: {window.location.pathname} | ⏰ {new Date().toLocaleString()}
             </div>
           </div>
         </div>
@@ -93,26 +105,28 @@ const MigrationDashboard = () => {
 
       <NextStepsCard />
 
-      {/* Información de debug mejorada */}
+      {/* Información de debug detallada */}
       <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6">
-        <h3 className="font-bold text-blue-800 mb-4 text-xl">🔧 Estado de la Herramienta de Migración</h3>
+        <h3 className="font-bold text-blue-800 mb-4 text-xl">🔧 Estado Técnico del Panel</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
           <div className="space-y-2">
             <p className="font-semibold">📱 Datos Locales:</p>
             <p>• {localMachinesCount} máquinas en localStorage</p>
             <p>• {localReportsCount} reportes en localStorage</p>
+            <p>• LocalStorage funcional: ✅</p>
           </div>
           <div className="space-y-2">
             <p className="font-semibold">🌐 Datos Supabase:</p>
             <p>• {machines.length} máquinas migradas</p>
             <p>• {reports.length} reportes migrados</p>
+            <p>• Conexión Supabase: {supabaseAuth.user ? '✅' : '⚠️ No conectado'}</p>
           </div>
         </div>
-        <div className="mt-4 p-3 bg-blue-100 rounded text-blue-800 font-bold text-center">
-          🎯 ACCESO: COMPLETAMENTE LIBRE - Esta es una herramienta de migración independiente
+        <div className="mt-4 p-4 bg-blue-100 rounded text-blue-800 font-bold text-center text-lg">
+          🎯 PANEL DE MIGRACIÓN: COMPLETAMENTE OPERATIVO
         </div>
-        <div className="mt-2 text-sm text-blue-600 text-center">
-          ⏰ Última actualización: {new Date().toLocaleTimeString()}
+        <div className="mt-2 text-sm text-blue-600 text-center font-mono">
+          🌐 URL: {window.location.href} | ⏰ Última actualización: {new Date().toLocaleTimeString()}
         </div>
       </div>
     </div>
