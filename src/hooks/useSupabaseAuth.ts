@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,13 +120,24 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         console.error('Login error:', error);
-        toast.error(`Error de login: ${error.message}`);
+        console.error('Error code:', error.status);
+        console.error('Error message:', error.message);
+        
+        // Mensajes más específicos según el error
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error("Email o contraseña incorrectos");
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error("Por favor confirma tu email antes de iniciar sesión");
+        } else {
+          toast.error(`Error de login: ${error.message}`);
+        }
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
+        console.log('User data:', data.user);
         
         // Fetch profile immediately after successful login
         const profile = await fetchUserProfile(data.user.id);
@@ -135,6 +145,8 @@ export const useSupabaseAuth = () => {
         if (!profile) {
           console.warn('No profile found for user, login might have issues');
           toast.warning("Usuario sin perfil configurado");
+        } else {
+          console.log('Profile found after login:', profile);
         }
         
         toast.success("Inicio de sesión exitoso");
