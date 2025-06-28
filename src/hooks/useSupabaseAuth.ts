@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,7 @@ export const useSupabaseAuth = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -28,22 +30,27 @@ export const useSupabaseAuth = () => {
         .single();
       
       if (error) {
-        console.log('Profile not found, might be first login');
+        console.error('Error fetching profile:', error);
+        if (error.code === 'PGRST116') {
+          console.log('No profile found for user:', userId);
+        }
         setProfile(null);
+        return null;
       } else {
         console.log('Profile loaded successfully:', profileData);
         setProfile(profileData);
+        return profileData;
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+      return null;
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session first
     const getInitialSession = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -55,7 +62,6 @@ export const useSupabaseAuth = () => {
           setSession(initialSession);
           setUser(initialSession.user);
           
-          // Fetch profile for initial session
           await fetchUserProfile(initialSession.user.id);
         } else {
           console.log('No initial session found');
@@ -70,7 +76,6 @@ export const useSupabaseAuth = () => {
       }
     };
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -81,24 +86,21 @@ export const useSupabaseAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid potential auth callback issues
-          setTimeout(() => {
+          setTimeout(async () => {
             if (mounted) {
-              fetchUserProfile(session.user.id);
+              await fetchUserProfile(session.user.id);
             }
           }, 0);
         } else {
           setProfile(null);
         }
         
-        // Only set loading to false if we haven't done it already
         if (event !== 'INITIAL_SESSION') {
           setIsLoading(false);
         }
       }
     );
 
-    // Get initial session
     getInitialSession();
 
     return () => {
@@ -110,6 +112,8 @@ export const useSupabaseAuth = () => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -117,14 +121,24 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         console.error('Login error:', error);
-        toast.error(error.message);
+        toast.error(`Error de login: ${error.message}`);
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
+        
+        // Fetch profile immediately after successful login
+        const profile = await fetchUserProfile(data.user.id);
+        
+        if (!profile) {
+          console.warn('No profile found for user, login might have issues');
+          toast.warning("Usuario sin perfil configurado");
+        }
+        
         toast.success("Inicio de sesión exitoso");
+        setIsLoading(false);
         return true;
       }
       
@@ -146,6 +160,7 @@ export const useSupabaseAuth = () => {
     assignedMachines: string[] = []
   ): Promise<boolean> => {
     try {
+      console.log('Starting registration for:', email, 'with role:', role);
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -161,12 +176,15 @@ export const useSupabaseAuth = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        console.error('Registration error:', error);
+        toast.error(`Error de registro: ${error.message}`);
         return false;
       }
 
       if (data.user) {
-        // Create profile
+        console.log('User created in auth, now creating profile for:', data.user.id);
+        
+        // Create profile with better error handling
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -178,11 +196,12 @@ export const useSupabaseAuth = () => {
           });
 
         if (profileError) {
-          console.error('Error creating profile:', profileError);
-          toast.error("Usuario creado pero error al crear perfil");
+          console.error('Profile creation error:', profileError);
+          toast.error(`Usuario creado pero error al crear perfil: ${profileError.message}`);
           return false;
         }
 
+        console.log('Profile created successfully');
         toast.success("Usuario registrado exitosamente");
         return true;
       }
@@ -198,6 +217,7 @@ export const useSupabaseAuth = () => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      setProfile(null);
       toast.success("Sesión cerrada");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
