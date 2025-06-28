@@ -7,6 +7,10 @@ import { AlertCircle, Database, CheckCircle } from 'lucide-react';
 const MigrationAccess: React.FC = () => {
   const { user, isLoading } = useAuth();
 
+  console.log('MigrationAccess - Current user:', user);
+  console.log('MigrationAccess - Loading state:', isLoading);
+  console.log('MigrationAccess - User role:', user?.role);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center">
@@ -47,6 +51,7 @@ const MigrationAccess: React.FC = () => {
     );
   }
 
+  // Verificar que el usuario tenga rol de Administrador
   if (user.role !== 'Administrador') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center p-4">
@@ -61,12 +66,20 @@ const MigrationAccess: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-sm text-slate-600 mb-2">
-              <strong>Usuario actual:</strong> {user.name}
-            </p>
-            <p className="text-sm text-slate-600 mb-4">
-              <strong>Rol:</strong> {user.role}
-            </p>
+            <div className="space-y-2 mb-4">
+              <p className="text-sm text-slate-600">
+                <strong>Usuario actual:</strong> {user.name}
+              </p>
+              <p className="text-sm text-slate-600">
+                <strong>Email:</strong> {user.email}
+              </p>
+              <p className="text-sm text-slate-600">
+                <strong>Rol actual:</strong> {user.role}
+              </p>
+              <p className="text-sm text-red-600 font-medium">
+                <strong>Rol requerido:</strong> Administrador
+              </p>
+            </div>
             <a 
               href="/dashboard" 
               className="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -79,6 +92,7 @@ const MigrationAccess: React.FC = () => {
     );
   }
 
+  // Usuario autorizado (Administrador)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -92,19 +106,32 @@ const MigrationAccess: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-sm text-slate-600 mb-2">
-            <strong>Bienvenido:</strong> {user.name}
-          </p>
-          <p className="text-sm text-slate-600 mb-4">
-            <strong>Email:</strong> {user.email}
-          </p>
+          <div className="space-y-2 mb-4">
+            <p className="text-sm text-slate-600">
+              <strong>Bienvenido:</strong> {user.name}
+            </p>
+            <p className="text-sm text-slate-600">
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p className="text-sm text-slate-600">
+              <strong>Rol:</strong> {user.role}
+            </p>
+          </div>
           <div className="flex items-center justify-center gap-2 text-green-600 mb-4">
             <Database className="w-4 h-4" />
             <span className="text-sm font-medium">Listo para migrar datos</span>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 mb-4">
             Tienes permisos de administrador para ejecutar la migración de datos desde localStorage a Supabase.
           </p>
+          
+          {/* Información adicional de debug */}
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg text-left">
+            <p className="text-xs text-slate-600 font-medium mb-1">Estado de autenticación:</p>
+            <p className="text-xs text-slate-500">✅ Usuario autenticado</p>
+            <p className="text-xs text-slate-500">✅ Rol: {user.role}</p>
+            <p className="text-xs text-slate-500">✅ ID: {user.id}</p>
+          </div>
         </CardContent>
       </Card>
     </div>
