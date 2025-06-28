@@ -1,22 +1,40 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Database, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MigrationAccess: React.FC = () => {
   const { user, isLoading } = useAuth();
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    // Verificar el estado de autenticación directamente con Supabase
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('MigrationAccess - Direct Supabase session:', session);
+      console.log('MigrationAccess - Auth context user:', user);
+      console.log('MigrationAccess - Auth context loading:', isLoading);
+      setAuthChecked(true);
+    };
+
+    checkAuth();
+  }, [user, isLoading]);
 
   console.log('MigrationAccess - Current user:', user);
   console.log('MigrationAccess - Loading state:', isLoading);
   console.log('MigrationAccess - User role:', user?.role);
+  console.log('MigrationAccess - Auth checked:', authChecked);
 
-  if (isLoading) {
+  // Mostrar loading mientras se verifica la autenticación
+  if (isLoading || !authChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p className="text-slate-600 font-medium">Verificando acceso...</p>
+          <p className="text-xs text-slate-500">Cargando: {isLoading ? 'Sí' : 'No'} | Verificado: {authChecked ? 'Sí' : 'No'}</p>
         </div>
       </div>
     );
