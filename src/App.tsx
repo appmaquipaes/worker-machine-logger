@@ -37,6 +37,9 @@ import InventarioPage from '@/pages/InventarioPage';
 import TarifasClientePage from '@/pages/TarifasClientePage';
 import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
 
+// Migration Component
+import MigrationAccess from '@/components/MigrationAccess';
+
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -69,6 +72,9 @@ function App() {
                     <Route path="/machines/:machineId/report" element={<ReportForm />} />
                     <Route path="/machines/:machineId/reports" element={<Reports />} />
                     <Route path="/informes" element={<InformesPage />} />
+                    
+                    {/* Migration Route */}
+                    <Route path="/migration" element={<MigrationAccess />} />
                     
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminPanel />} />
