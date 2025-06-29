@@ -1,3 +1,4 @@
+
 import { loadProveedores } from '@/models/Proveedores';
 import { loadClientes } from '@/models/Clientes';
 import { loadFincas } from '@/models/Fincas';
@@ -77,15 +78,24 @@ const createUsersIfNotExists = () => {
 };
 
 const createMachinesIfNotExists = () => {
-  const machines = JSON.parse(localStorage.getItem('machines') || '[]');
-  if (machines.length === 0) {
-    const initialMachines = [
-      { id: '1', name: 'Excavadora 1', type: 'Retroexcavadora de Oruga' },
-      { id: '2', name: 'Volqueta 1', type: 'Volqueta' },
-      { id: '3', name: 'Cargador 1', type: 'Cargador' }
-    ];
-    localStorage.setItem('machines', JSON.stringify(initialMachines));
-    console.log('Máquinas iniciales creadas automáticamente');
+  // Verificar si ya se hizo la inicialización inicial de máquinas
+  const machinesInitialized = localStorage.getItem('machines_initialized');
+  
+  if (!machinesInitialized) {
+    // Solo crear máquinas iniciales si nunca se ha hecho la inicialización
+    const machines = JSON.parse(localStorage.getItem('machines') || '[]');
+    if (machines.length === 0) {
+      const initialMachines = [
+        { id: '1', name: 'Excavadora 1', type: 'Retroexcavadora de Oruga' },
+        { id: '2', name: 'Volqueta 1', type: 'Volqueta' },
+        { id: '3', name: 'Cargador 1', type: 'Cargador' }
+      ];
+      localStorage.setItem('machines', JSON.stringify(initialMachines));
+      console.log('Máquinas iniciales creadas automáticamente');
+    }
+    
+    // Marcar que la inicialización ya se hizo
+    localStorage.setItem('machines_initialized', 'true');
   }
 };
 

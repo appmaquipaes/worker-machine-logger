@@ -47,24 +47,28 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setMachines(machinesWithStatus);
       console.log('Loaded machines from localStorage:', machinesWithStatus);
     } else {
-      // Datos iniciales actualizados con los nuevos tipos y estado en español
-      const initialMachines: Machine[] = [
-        { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'Disponible' },
-        { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
-        { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'Disponible' },
-        { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'Disponible' },
-        { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'Disponible' },
-        { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'Disponible' },
-        { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
-        { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'Disponible' },
-        { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'Disponible' },
-        { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'Disponible' },
-        { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'Disponible' },
-        { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'Disponible' },
-      ];
-      setMachines(initialMachines);
-      localStorage.setItem('machines', JSON.stringify(initialMachines));
-      console.log('Created initial machines:', initialMachines);
+      // Solo crear máquinas iniciales si no hay máquinas y no se ha inicializado antes
+      const machinesInitialized = localStorage.getItem('machines_initialized');
+      if (!machinesInitialized) {
+        const initialMachines: Machine[] = [
+          { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'Disponible' },
+          { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+          { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'Disponible' },
+          { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'Disponible' },
+          { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'Disponible' },
+          { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'Disponible' },
+          { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+          { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'Disponible' },
+          { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'Disponible' },
+          { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'Disponible' },
+          { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'Disponible' },
+          { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'Disponible' },
+        ];
+        setMachines(initialMachines);
+        localStorage.setItem('machines', JSON.stringify(initialMachines));
+        localStorage.setItem('machines_initialized', 'true');
+        console.log('Created initial machines:', initialMachines);
+      }
     }
   }, []);
 
