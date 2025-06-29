@@ -9,6 +9,43 @@ export const useReportFormSubmission = () => {
   const { addReport } = useReport();
   const { isCargador } = useMachineSpecificReports();
 
+  const generateReportDescription = (
+    reportType: ReportType,
+    machine: Machine,
+    formData: any
+  ): string => {
+    switch (reportType) {
+      case 'Horas Trabajadas':
+        return `Horas trabajadas - ${formData.hours} horas en ${formData.workSite}`;
+      
+      case 'Horas Extras':
+        return `Horas extras - ${formData.hours} horas en ${formData.workSite}`;
+      
+      case 'Combustible':
+        return `Combustible - $${formData.value} - Km: ${formData.kilometraje}`;
+      
+      case 'Mantenimiento':
+        return `Mantenimiento - $${formData.maintenanceValue} - ${formData.proveedor}`;
+      
+      case 'Viajes':
+        if (isCargador(machine) && formData.tipoMateria) {
+          return formData.tipoMateria;
+        } else if (formData.origin === 'Acopio Maquipaes' && formData.tipoMateria) {
+          return formData.tipoMateria;
+        }
+        return `Viaje desde ${formData.origin} hasta ${formData.selectedCliente}`;
+      
+      case 'Recepción Escombrera':
+        return `Recepción ${formData.tipoMateria} - ${formData.trips} volquetas`;
+      
+      case 'Novedades':
+        return formData.description; // Para novedades sí usar la descripción manual
+      
+      default:
+        return `${reportType} - ${machine.name}`;
+    }
+  };
+
   const submitReport = (
     selectedMachine: Machine,
     formData: {
@@ -31,7 +68,6 @@ export const useReportFormSubmission = () => {
   ) => {
     const {
       reportType,
-      description,
       reportDate,
       trips,
       hours,
@@ -47,22 +83,8 @@ export const useReportFormSubmission = () => {
       tipoMateria
     } = formData;
 
-    // Para viajes del Cargador, usar el tipo de materia como descripción
-    let reportDescription = '';
-    if (reportType === 'Viajes' && isCargador(selectedMachine) && tipoMateria) {
-      reportDescription = tipoMateria;
-      console.log('Cargador - usando tipoMateria como descripción:', tipoMateria);
-    } else if (reportType === 'Viajes' && origin === 'Acopio Maquipaes' && tipoMateria) {
-      // Para cualquier vehículo que transporte desde acopio, usar el material seleccionado
-      reportDescription = tipoMateria;
-      console.log('Viaje desde acopio - usando tipoMateria como descripción:', tipoMateria);
-    } else if (reportType === 'Novedades') {
-      reportDescription = description;
-    } else if (reportType === 'Recepción Escombrera') {
-      reportDescription = `Recepción ${tipoMateria} - ${trips} volquetas`;
-    } else {
-      reportDescription = description;
-    }
+    // Generar descripción automática basada en el tipo de reporte
+    const reportDescription = generateReportDescription(reportType, selectedMachine, formData);
     
     const finalDestination = reportType === 'Viajes' 
       ? `${selectedCliente} - ${selectedFinca}`
@@ -96,7 +118,7 @@ export const useReportFormSubmission = () => {
         (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') ? hours : undefined,
         reportType === 'Combustible' ? value : 
         reportType === 'Mantenimiento' ? maintenanceValue : undefined,
-        reportType === 'Horas Trabajadas' ? workSite : undefined,
+        reportType === 'Horas Trabajadas' || reportType === 'Horas Extras' ? workSite : undefined,
         reportType === 'Viajes' ? origin : undefined,
         reportType === 'Viajes' ? finalDestination : undefined,
         reportType === 'Viajes' ? cantidadM3 : undefined,

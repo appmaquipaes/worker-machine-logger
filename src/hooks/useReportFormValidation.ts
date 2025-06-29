@@ -31,7 +31,9 @@ export const useReportFormValidation = () => {
       return false;
     }
 
-    if (!description?.trim()) {
+    // Solo validar descripción para tipos específicos que la requieren explícitamente
+    const requiresExplicitDescription = ['Novedades'];
+    if (requiresExplicitDescription.includes(reportType) && !description?.trim()) {
       toast.error("Ingresa una descripción para el reporte");
       return false;
     }
@@ -92,7 +94,7 @@ export const useReportFormValidation = () => {
           return false;
         }
         
-        // FIX: Solo validar m³ si NO es Camabaja
+        // Solo validar m³ si NO es Camabaja
         const isCamabaja = selectedMachine?.type === 'Camabaja';
         if (!isCamabaja) {
           // Para otras máquinas, validar según el tipo de máquina
@@ -119,7 +121,7 @@ export const useReportFormValidation = () => {
         break;
 
       case 'Novedades':
-        // Solo requiere descripción, que ya se validó arriba
+        // Ya se validó arriba con requiresExplicitDescription
         break;
 
       default:
