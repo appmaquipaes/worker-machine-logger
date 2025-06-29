@@ -17,7 +17,7 @@ export const useReportForm = () => {
   const [destination, setDestination] = useState<string>('');
   
   const formState = useReportFormState();
-  const { validateForm } = useReportFormValidation();
+  const { validateReportForm } = useReportFormValidation();
   const { submitReport } = useReportFormSubmission();
   
   const handlers = useReportFormHandlers(
@@ -49,27 +49,24 @@ export const useReportForm = () => {
     
     formState.setIsSubmitting(true);
     
-    const validationError = validateForm({
-      reportType: formState.reportType,
-      description: formState.description,
-      trips: formState.trips,
-      hours: formState.hours,
-      value: formState.value,
-      origin: formState.origin,
-      selectedCliente: formState.selectedCliente,
-      selectedFinca: formState.selectedFinca,
-      workSite: formState.workSite,
-      maintenanceValue: formState.maintenanceValue,
-      cantidadM3: formState.cantidadM3,
-      proveedor: formState.proveedor,
-      kilometraje: formState.kilometraje,
-      tipoMateria: formState.tipoMateria,
-      inventarioAcopio: formState.inventarioAcopio,
-      selectedMaquinaria: formState.selectedMaquinaria
-    });
+    const isValid = validateReportForm(
+      formState.reportType,
+      formState.description,
+      formState.reportDate,
+      formState.trips,
+      formState.hours,
+      formState.value,
+      formState.workSite,
+      formState.origin,
+      destination,
+      formState.cantidadM3,
+      selectedMachine,
+      formState.maintenanceValue,
+      formState.proveedor,
+      formState.kilometraje
+    );
     
-    if (validationError) {
-      toast.error(validationError);
+    if (!isValid) {
       formState.setIsSubmitting(false);
       return;
     }

@@ -81,13 +81,13 @@ export const useVentaCreation = () => {
           const tarifas = loadTarifasCliente();
           const tarifaCliente = tarifas.find(t => 
             t.cliente === cliente && 
-            t.material === report.description
+            t.tipo_material === report.description
           );
           
           let valorUnitario = 0;
           
           if (tarifaCliente) {
-            valorUnitario = tarifaCliente.precio_venta_m3;
+            valorUnitario = tarifaCliente.valor_material_cliente_m3 || 0;
             console.log('💰 Tarifa encontrada:', valorUnitario);
           } else {
             // Calcular tarifa automáticamente
