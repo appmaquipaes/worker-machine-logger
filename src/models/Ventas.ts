@@ -4,7 +4,7 @@ export type Venta = {
   fecha: Date;
   cliente: string;
   ciudad_entrega: string;
-  tipo_venta: 'Solo material' | 'Solo transporte' | 'Material + transporte';
+  tipo_venta: 'Solo material' | 'Solo transporte' | 'Material + transporte' | 'Alquiler por horas' | 'Horas extras' | 'Mantenimiento' | 'Combustible';
   origen_material: string;
   destino_material: string;
   forma_pago: string;
@@ -14,22 +14,31 @@ export type Venta = {
   // Nuevos campos mejorados
   actividad_generadora?: string; // Qué actividad generó la venta
   tipo_registro?: 'Automática' | 'Manual';
+  // Nuevos campos para enriquecer el reporte
+  maquina_utilizada?: string;
+  horas_trabajadas?: number;
+  viajes_realizados?: number;
+  cantidad_material_m3?: number;
 };
 
 export type DetalleVenta = {
   id: string;
-  tipo: 'Material' | 'Flete';
+  tipo: 'Material' | 'Flete' | 'Alquiler' | 'Servicio';
   producto_servicio: string;
   cantidad_m3: number;
   valor_unitario: number;
   subtotal: number;
 };
 
-// Tipos de venta disponibles - actualizado para incluir "Solo transporte"
+// Tipos de venta disponibles - actualizado para incluir servicios de maquinaria
 export const tiposVenta = [
   'Solo material',
   'Solo transporte', 
-  'Material + transporte'
+  'Material + transporte',
+  'Alquiler por horas',
+  'Horas extras',
+  'Mantenimiento',
+  'Combustible'
 ];
 
 // Formas de pago disponibles - actualizado con opciones más específicas
@@ -83,7 +92,7 @@ export const createVenta = (
 
 // Función para crear un nuevo detalle de venta
 export const createDetalleVenta = (
-  tipo: 'Material' | 'Flete',
+  tipo: 'Material' | 'Flete' | 'Alquiler' | 'Servicio',
   producto_servicio: string,
   cantidad_m3: number,
   valor_unitario: number
@@ -109,6 +118,59 @@ export const updateVentaTotal = (venta: Venta): Venta => {
     ...venta,
     total_venta: calculateVentaTotal(venta.detalles)
   };
+};
+
+// Función para determinar el tipo de venta basado en la actividad
+export const determinarTipoVentaPorActividad = (
+  actividad: string,
+  reportType: string,
+  maquina: string
+): string => {
+  // Para reportes de horas
+  if (reportType === 'Horas Trabajadas') {
+    return 'Alquiler por horas';
+  }
+  
+  if (reportType === 'Horas Extras') {
+    return 'Horas extras';
+  }
+  
+  if (reportType === 'Mantenimiento') {
+    return 'Mantenimiento';
+  }
+  
+  if (reportType === 'Combustible') {
+    return 'Combustible';
+  }
+  
+  // Para reportes de viajes
+  if (reportType === 'Viajes') {
+    const maquinaLower = maquina.toLowerCase();
+    
+    // Cargador: depende de la actividad específica
+    if (maquinaLower.includes('cargador')) {
+      if (actividad.includes('Carga y transporte')) {
+        return 'Material + transporte';
+      } else if (actividad.includes('transporte')) {
+        return 'Solo transporte';
+      } else if (actividad.includes('carga')) {
+        return 'Solo material';
+      }
+      return 'Material + transporte'; // Por defecto para cargadores
+    }
+    
+    // Volquetas y camiones: principalmente transporte
+    if (maquinaLower.includes('volqueta') || maquinaLower.includes('camión')) {
+      return 'Solo transporte';
+    }
+    
+    // Camabaja: solo transporte
+    if (maquinaLower.includes('camabaja')) {
+      return 'Solo transporte';
+    }
+  }
+  
+  return 'Material + transporte'; // Por defecto
 };
 
 // Función para guardar ventas en localStorage

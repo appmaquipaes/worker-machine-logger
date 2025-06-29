@@ -51,6 +51,15 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
   onExportToExcel,
   totalFiltrado
 }) => {
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('es-CO', { 
+      style: 'currency', 
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  };
+
   return (
     <Card className="mb-6 shadow-xs border border-muted">
       <CardHeader className="pb-3">
@@ -111,7 +120,7 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
             </Select>
           </div>
           
-          {/* Tipo de Venta */}
+          {/* Tipo de Venta - Actualizado con todos los tipos */}
           <div>
             <Label className="text-xs mb-1">Tipo de Venta</Label>
             <Select onValueChange={setFiltroTipoVenta} value={filtroTipoVenta}>
@@ -203,7 +212,7 @@ const VentasFilters: React.FC<VentasFiltersProps> = ({
               Exportar Excel
             </Button>
             <div className="text-sm md:text-base font-semibold whitespace-nowrap">
-              Total Filtrado: <span className="text-primary">${totalFiltrado.toLocaleString()}</span>
+              Total Filtrado: <span className="text-primary">{formatCurrency(totalFiltrado)}</span>
             </div>
           </div>
         </div>

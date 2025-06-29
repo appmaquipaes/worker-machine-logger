@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Zap, User, Calendar, MapPin, CreditCard, Activity } from 'lucide-react';
+import { Eye, Zap, User, Calendar, MapPin, CreditCard, Activity, Clock, Truck, Package } from 'lucide-react';
 import { Venta } from '@/models/Ventas';
 
 interface VentasTableProps {
@@ -24,7 +24,11 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
     const styles = {
       'Solo material': 'bg-blue-100 text-blue-800 border border-blue-200',
       'Solo transporte': 'bg-green-100 text-green-800 border border-green-200',
-      'Material + transporte': 'bg-purple-100 text-purple-800 border border-purple-200'
+      'Material + transporte': 'bg-purple-100 text-purple-800 border border-purple-200',
+      'Alquiler por horas': 'bg-orange-100 text-orange-800 border border-orange-200',
+      'Horas extras': 'bg-red-100 text-red-800 border border-red-200',
+      'Mantenimiento': 'bg-gray-100 text-gray-800 border border-gray-200',
+      'Combustible': 'bg-yellow-100 text-yellow-800 border border-yellow-200'
     };
     return styles[tipo as keyof typeof styles] || 'bg-gray-100 text-gray-800 border border-gray-200';
   };
@@ -47,6 +51,62 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     });
+  };
+
+  const formatNumber = (value: number) => {
+    return value.toLocaleString('es-CO');
+  };
+
+  const getDetallesVenta = (venta: Venta): string => {
+    const detalles = [];
+    
+    if (venta.horas_trabajadas) {
+      detalles.push(`${formatNumber(venta.horas_trabajadas)} horas`);
+    }
+    
+    if (venta.viajes_realizados) {
+      detalles.push(`${formatNumber(venta.viajes_realizados)} viajes`);
+    }
+    
+    if (venta.cantidad_material_m3) {
+      detalles.push(`${formatNumber(venta.cantidad_material_m3)} m³`);
+    }
+    
+    if (venta.maquina_utilizada) {
+      detalles.push(venta.maquina_utilizada);
+    }
+    
+    return detalles.join(' • ') || 'Ver detalles';
+  };
+
+  const mostrarDetallesVenta = (venta: Venta) => {
+    const detallesTexto = venta.detalles.map(detalle => 
+      `• ${detalle.producto_servicio}: ${formatCurrency(detalle.subtotal)}`
+    ).join('\n');
+    
+    const resumen = `
+DETALLES DE LA VENTA
+
+Cliente: ${venta.cliente}
+Fecha: ${new Date(venta.fecha).toLocaleDateString('es-CO')}
+Tipo de Venta: ${venta.tipo_venta}
+Actividad: ${venta.actividad_generadora || 'No especificada'}
+
+${venta.maquina_utilizada ? `Máquina: ${venta.maquina_utilizada}` : ''}
+${venta.horas_trabajadas ? `Horas: ${formatNumber(venta.horas_trabajadas)}` : ''}
+${venta.viajes_realizados ? `Viajes: ${formatNumber(venta.viajes_realizados)}` : ''}
+${venta.cantidad_material_m3 ? `Material: ${formatNumber(venta.cantidad_material_m3)} m³` : ''}
+
+DETALLES DE FACTURACIÓN:
+${detallesTexto}
+
+TOTAL: ${formatCurrency(venta.total_venta)}
+Forma de Pago: ${venta.forma_pago}
+
+${venta.observaciones ? `Observaciones: ${venta.observaciones}` : ''}
+    `;
+    
+    alert(resumen.trim());
   };
 
   return (
@@ -100,7 +160,6 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Origen</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Forma de Pago</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Total</TableHead>
-                  <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Tipo</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -150,6 +209,9 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                         <span className="text-base text-slate-700">
                           {venta.actividad_generadora || 'Venta manual'}
                         </span>
+                        {esVentaAutomatica(venta) && (
+                          <Zap className="h-4 w-4 text-green-600" />
+                        )}
                       </div>
                     </TableCell>
                     
@@ -170,38 +232,14 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">
-                      <div className="flex items-center gap-2">
-                        {esVentaAutomatica(venta) ? (
-                          <>
-                            <Zap className="h-5 w-5 text-green-600" />
-                            <span className="px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
-                              Automática
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <User className="h-5 w-5 text-blue-600" />
-                            <span className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                              Manual
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="py-5 px-6">
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => {
-                          // Mostrar detalles de la venta
-                          console.log('Ver detalles de venta:', venta);
-                          alert(`Detalles de venta:\n\nCliente: ${venta.cliente}\nTotal: ${formatCurrency(venta.total_venta)}\nFecha: ${new Date(venta.fecha).toLocaleDateString('es-CO')}\n\nFuncionalidad de vista detallada próximamente...`);
-                        }}
-                        className="h-10 px-4 text-sm font-medium border-2 border-slate-300 hover:bg-slate-50 rounded-lg transition-colors duration-200"
+                        onClick={() => mostrarDetallesVenta(venta)}
+                        className="h-10 px-4 text-sm font-medium border-2 border-slate-300 hover:bg-slate-50 rounded-lg transition-colors duration-200 flex items-center gap-2"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ver
+                        <Eye className="h-4 w-4" />
+                        {getDetallesVenta(venta)}
                       </Button>
                     </TableCell>
                   </TableRow>

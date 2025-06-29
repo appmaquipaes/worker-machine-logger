@@ -1,6 +1,6 @@
 
 import { Report } from '@/types/report';
-import { createVenta, createDetalleVenta, DetalleVenta } from '@/models/Ventas';
+import { createVenta, createDetalleVenta, DetalleVenta, determinarTipoVentaPorActividad } from '@/models/Ventas';
 import { useVentaCalculations } from '@/hooks/useVentaCalculations';
 import { useTarifasCalculation } from '@/hooks/useTarifasCalculation';
 import { loadTarifasCliente } from '@/models/TarifasCliente';
@@ -8,8 +8,7 @@ import { loadTarifasCliente } from '@/models/TarifasCliente';
 export const useVentaCreation = () => {
   const { 
     extractClienteFromDestination, 
-    extractFincaFromDestination,
-    determinarTipoVenta 
+    extractFincaFromDestination 
   } = useVentaCalculations();
   
   const { calcularTarifa } = useTarifasCalculation();
@@ -34,9 +33,15 @@ export const useVentaCreation = () => {
         return null;
       }
 
-      // Determinar tipo de venta y actividad generadora
-      const tipoVenta = determinarTipoVenta(report);
+      // Determinar actividad generadora
       const actividadGeneradora = getActividadGeneradora(report);
+      
+      // Determinar tipo de venta usando la nueva función
+      const tipoVenta = determinarTipoVentaPorActividad(
+        actividadGeneradora,
+        report.reportType,
+        report.machineName
+      );
       
       console.log('📋 Datos de venta:', {
         cliente,
@@ -58,17 +63,23 @@ export const useVentaCreation = () => {
         actividadGeneradora
       );
 
+      // Agregar campos adicionales para enriquecer el reporte
+      ventaBase.maquina_utilizada = report.machineName;
+      if (report.hours) ventaBase.horas_trabajadas = report.hours;
+      if (report.trips) ventaBase.viajes_realizados = report.trips;
+      if (report.cantidadM3) ventaBase.cantidad_material_m3 = report.cantidadM3;
+
       // Crear detalles de venta
       const detalles: DetalleVenta[] = [];
       
-      if (report.reportType === 'Horas Trabajadas') {
+      if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
         // Para horas trabajadas
         const horas = report.hours || 0;
         const valorHora = report.value || 0;
         
         const detalleHoras = createDetalleVenta(
-          'Flete',
-          `Alquiler ${report.machineName} - ${horas} horas`,
+          'Alquiler',
+          `${report.reportType} ${report.machineName} - ${horas} horas`,
           horas,
           valorHora,
         );
@@ -121,6 +132,22 @@ export const useVentaCreation = () => {
           );
           detalles.push(detalleFlete);
         }
+      } else if (report.reportType === 'Mantenimiento') {
+        const detalleMantenimiento = createDetalleVenta(
+          'Servicio',
+          `Mantenimiento ${report.machineName}`,
+          1,
+          report.value || 0
+        );
+        detalles.push(detalleMantenimiento);
+      } else if (report.reportType === 'Combustible') {
+        const detalleCombustible = createDetalleVenta(
+          'Servicio',
+          `Combustible ${report.machineName} - ${report.kilometraje || 0} km`,
+          report.kilometraje || 1,
+          report.value || 0
+        );
+        detalles.push(detalleCombustible);
       }
 
       // Asignar detalles y calcular total
@@ -143,11 +170,19 @@ export const useVentaCreation = () => {
     switch (tipo) {
       case 'Horas Trabajadas':
         return `Alquiler ${maquina}`;
+      case 'Horas Extras':
+        return `Horas extras ${maquina}`;
+      case 'Mantenimiento':
+        return `Mantenimiento ${maquina}`;
+      case 'Combustible':
+        return `Combustible ${maquina}`;
       case 'Viajes':
         if (maquina.toLowerCase().includes('cargador')) {
           return `Carga y transporte - ${maquina}`;
         } else if (maquina.toLowerCase().includes('volqueta') || maquina.toLowerCase().includes('camión')) {
           return `Transporte material - ${maquina}`;
+        } else if (maquina.toLowerCase().includes('camabaja')) {
+          return `Transporte - ${maquina}`;
         } else {
           return `Transporte - ${maquina}`;
         }
