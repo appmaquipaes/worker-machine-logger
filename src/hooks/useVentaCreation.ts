@@ -1,164 +1,160 @@
 
 import { Report } from '@/types/report';
-import { Venta, createVenta, createDetalleVenta } from '@/models/Ventas';
-import { findTarifaCliente, findTarifaEscombrera } from '@/models/TarifasCliente';
-import { extractClienteFromDestination, extractFincaFromDestination } from '@/utils/reportUtils';
-import { useVentaCalculationsFixed } from '@/hooks/useVentaCalculationsFixed';
+import { createVenta, createDetalleVenta, DetalleVenta } from '@/models/Ventas';
+import { useVentaCalculations } from '@/hooks/useVentaCalculations';
+import { useTarifasCalculation } from '@/hooks/useTarifasCalculation';
+import { loadTarifasCliente } from '@/models/TarifasCliente';
 
 export const useVentaCreation = () => {
-  const { updateVentaWithCalculatedTotal } = useVentaCalculationsFixed();
+  const { 
+    extractClienteFromDestination, 
+    extractFincaFromDestination,
+    determinarTipoVenta 
+  } = useVentaCalculations();
+  
+  const { calcularTarifa } = useTarifasCalculation();
 
-  const crearVentaAutomatica = (report: Report): Venta | null => {
-    console.log('🔄 Iniciando creación de venta automática para reporte:', report);
+  const crearVentaAutomatica = (report: Report) => {
+    console.log('🔥 Creando venta automática desde reporte:', report.reportType, report.machineName);
     
     try {
-      // Determinar cliente y finca según el tipo de reporte
+      // Determinar cliente y destino
       let cliente = '';
-      let finca = '';
-      let tipoVenta: 'Solo material' | 'Solo transporte' | 'Material + transporte' = 'Material + transporte';
-      let origenMaterial = '';
-      let destinoMaterial = '';
-
-      if (report.reportType === 'Viajes') {
-        cliente = extractClienteFromDestination(report.destination || '');
-        finca = extractFincaFromDestination(report.destination || '');
-        origenMaterial = report.origin || 'No especificado';
-        destinoMaterial = report.destination || 'No especificado';
-        
-        // Determinar tipo de venta basado en origen
-        if (report.origin?.toLowerCase().includes('acopio')) {
-          tipoVenta = 'Material + transporte';
-        } else {
-          tipoVenta = 'Solo transporte';
-        }
-      } else if (report.reportType === 'Horas Trabajadas') {
+      let destino = '';
+      
+      if (report.reportType === 'Horas Trabajadas') {
         cliente = report.workSite || 'Cliente no especificado';
-        finca = 'N/A';
-        tipoVenta = 'Solo transporte'; // Horas trabajadas es servicio de transporte
-        origenMaterial = 'Servicio de maquinaria';
-        destinoMaterial = cliente;
-      } else if (report.reportType === 'Recepción Escombrera') {
-        cliente = report.clienteEscombrera || 'Cliente no especificado';
-        finca = 'N/A';
-        tipoVenta = 'Solo transporte';
-        origenMaterial = 'Escombrera MAQUIPAES';
-        destinoMaterial = cliente;
-      }
-
-      if (!cliente || cliente === 'Cliente no especificado') {
-        console.log('⚠️ No se puede crear venta sin cliente válido');
+        destino = `${cliente} - Sitio de trabajo`;
+      } else if (report.destination) {
+        cliente = extractClienteFromDestination(report.destination);
+        const finca = extractFincaFromDestination(report.destination);
+        destino = report.destination;
+      } else {
+        console.log('❌ No se puede determinar cliente/destino');
         return null;
       }
 
-      console.log('📋 Datos de venta a crear:');
-      console.log('- Cliente:', cliente);
-      console.log('- Finca:', finca);
-      console.log('- Tipo venta:', tipoVenta);
-      console.log('- Origen:', origenMaterial);
-      console.log('- Destino:', destinoMaterial);
+      // Determinar tipo de venta y actividad generadora
+      const tipoVenta = determinarTipoVenta(report);
+      const actividadGeneradora = getActividadGeneradora(report);
+      
+      console.log('📋 Datos de venta:', {
+        cliente,
+        destino,
+        tipoVenta,
+        actividadGeneradora
+      });
 
-      // Crear la venta base
-      const nuevaVenta = createVenta(
+      // Crear venta base
+      const ventaBase = createVenta(
         report.reportDate,
         cliente,
-        finca || 'No especificada',
+        'Villavicencio', // Ciudad por defecto
         tipoVenta,
-        origenMaterial,
-        destinoMaterial,
+        report.origin || 'Origen no especificado',
+        destino,
         'Crédito', // Forma de pago por defecto
-        `Venta automática generada desde reporte de ${report.machineName} - ${report.reportType}`
+        `Venta automática generada desde reporte ${report.reportType} - ${report.machineName}`,
+        actividadGeneradora
       );
 
-      // Crear detalles según el tipo de reporte
-      if (report.reportType === 'Viajes' && report.cantidadM3) {
-        // Buscar tarifa específica
-        const tarifa = findTarifaCliente(cliente, finca, origenMaterial, destinoMaterial);
+      // Crear detalles de venta
+      const detalles: DetalleVenta[] = [];
+      
+      if (report.reportType === 'Horas Trabajadas') {
+        // Para horas trabajadas
+        const horas = report.hours || 0;
+        const valorHora = report.value || 0;
         
-        if (tarifa) {
-          console.log('💰 Tarifa encontrada:', tarifa);
-          
-          // Agregar detalle de material si aplica
-          if (tarifa.valor_material_cliente_m3 && report.origin?.toLowerCase().includes('acopio')) {
-            const detalleMaterial = createDetalleVenta(
-              'Material',
-              report.description || 'Material no especificado',
-              report.cantidadM3,
-              tarifa.valor_material_cliente_m3
-            );
-            nuevaVenta.detalles.push(detalleMaterial);
-          }
-          
-          // Agregar detalle de flete
-          if (tarifa.valor_flete_m3) {
-            const detalleFlete = createDetalleVenta(
-              'Flete',
-              `Transporte ${report.machineName}`,
-              report.cantidadM3,
-              tarifa.valor_flete_m3
-            );
-            nuevaVenta.detalles.push(detalleFlete);
-          }
-        } else {
-          console.log('⚠️ No se encontró tarifa específica, usando valores del reporte');
-          
-          // Usar valor calculado del reporte
-          const valorUnitario = report.value && report.cantidadM3 
-            ? report.value / report.cantidadM3 
-            : 0;
-          
-          if (valorUnitario > 0) {
-            const detalleGenerico = createDetalleVenta(
-              tipoVenta === 'Solo transporte' ? 'Flete' : 'Material',
-              report.description || 'Servicio de transporte',
-              report.cantidadM3,
-              valorUnitario
-            );
-            nuevaVenta.detalles.push(detalleGenerico);
-          }
-        }
-      } else if (report.reportType === 'Horas Trabajadas' && report.hours) {
-        // Para horas trabajadas, crear detalle de servicio
-        const valorPorHora = report.value && report.hours ? report.value / report.hours : 0;
+        const detalleHoras = createDetalleVenta(
+          'Flete',
+          `Alquiler ${report.machineName} - ${horas} horas`,
+          horas,
+          valorHora,
+        );
+        detalles.push(detalleHoras);
         
-        if (valorPorHora > 0) {
-          const detalleHoras = createDetalleVenta(
-            'Flete',
-            `Servicio de ${report.machineName} - ${report.hours} horas`,
-            report.hours,
-            valorPorHora
+      } else if (report.reportType === 'Viajes') {
+        // Para viajes con material
+        if (report.cantidadM3 && report.cantidadM3 > 0) {
+          // Buscar tarifa del cliente
+          const tarifas = loadTarifasCliente();
+          const tarifaCliente = tarifas.find(t => 
+            t.cliente === cliente && 
+            t.material === report.description
           );
-          nuevaVenta.detalles.push(detalleHoras);
-        }
-      } else if (report.reportType === 'Recepción Escombrera' && report.cantidadVolquetas) {
-        // Para escombrera
-        const tarifa = findTarifaEscombrera(cliente, 'escombrera_maquipaes', finca);
-        
-        if (tarifa) {
-          const valorPorVolqueta = report.tipoVolqueta === 'Doble Troque' 
-            ? tarifa.valor_volqueta_doble_troque || 0
-            : tarifa.valor_volqueta_sencilla || 0;
           
-          if (valorPorVolqueta > 0) {
-            const detalleEscombrera = createDetalleVenta(
-              'Flete',
-              `Recepción escombrera - ${report.cantidadVolquetas} volquetas ${report.tipoVolqueta}`,
-              report.cantidadVolquetas,
-              valorPorVolqueta
+          let valorUnitario = 0;
+          
+          if (tarifaCliente) {
+            valorUnitario = tarifaCliente.precio_venta_m3;
+            console.log('💰 Tarifa encontrada:', valorUnitario);
+          } else {
+            // Calcular tarifa automáticamente
+            const tarifaCalculada = calcularTarifa(
+              report.description || 'Material',
+              report.origin || '',
+              destino,
+              report.cantidadM3
             );
-            nuevaVenta.detalles.push(detalleEscombrera);
+            valorUnitario = tarifaCalculada.precio_venta_total / report.cantidadM3;
+            console.log('🧮 Tarifa calculada:', valorUnitario);
           }
+          
+          const detalleMaterial = createDetalleVenta(
+            'Material',
+            `${report.description} - ${report.cantidadM3} m³`,
+            report.cantidadM3,
+            valorUnitario
+          );
+          detalles.push(detalleMaterial);
+        }
+        
+        // Agregar flete si aplica
+        const viajes = report.trips || 1;
+        if (viajes > 0) {
+          const detalleFlete = createDetalleVenta(
+            'Flete',
+            `Transporte ${report.machineName} - ${viajes} viajes`,
+            viajes,
+            report.value || 0
+          );
+          detalles.push(detalleFlete);
         }
       }
 
-      // Calcular total correctamente
-      const ventaFinal = updateVentaWithCalculatedTotal(nuevaVenta);
+      // Asignar detalles y calcular total
+      ventaBase.detalles = detalles;
+      ventaBase.total_venta = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
       
-      console.log('✅ Venta automática creada con total calculado:', ventaFinal.total_venta);
-      return ventaFinal;
+      console.log('✅ Venta creada:', ventaBase);
+      return ventaBase;
       
     } catch (error) {
       console.error('❌ Error creando venta automática:', error);
       return null;
+    }
+  };
+
+  const getActividadGeneradora = (report: Report): string => {
+    const maquina = report.machineName;
+    const tipo = report.reportType;
+    
+    switch (tipo) {
+      case 'Horas Trabajadas':
+        return `Alquiler ${maquina}`;
+      case 'Viajes':
+        if (maquina.toLowerCase().includes('cargador')) {
+          return `Carga y transporte - ${maquina}`;
+        } else if (maquina.toLowerCase().includes('volqueta') || maquina.toLowerCase().includes('camión')) {
+          return `Transporte material - ${maquina}`;
+        } else {
+          return `Transporte - ${maquina}`;
+        }
+      case 'Recepción Escombrera':
+        return `Recepción escombrera - ${maquina}`;
+      default:
+        return `${tipo} - ${maquina}`;
     }
   };
 

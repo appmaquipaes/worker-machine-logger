@@ -1,4 +1,3 @@
-
 // Define el tipo para las ventas
 export type Venta = {
   id: string;
@@ -12,6 +11,9 @@ export type Venta = {
   observaciones?: string;
   total_venta: number;
   detalles: DetalleVenta[];
+  // Nuevos campos mejorados
+  actividad_generadora?: string; // Qué actividad generó la venta
+  tipo_registro?: 'Automática' | 'Manual';
 };
 
 export type DetalleVenta = {
@@ -30,7 +32,7 @@ export const tiposVenta = [
   'Material + transporte'
 ];
 
-// Formas de pago disponibles
+// Formas de pago disponibles - actualizado con opciones más específicas
 export const formasPago = [
   'Efectivo',
   'Transferencia',
@@ -57,8 +59,11 @@ export const createVenta = (
   origen_material: string,
   destino_material: string,
   forma_pago: string,
-  observaciones?: string
+  observaciones?: string,
+  actividad_generadora?: string
 ): Venta => {
+  const esAutomatica = observaciones?.includes('Venta automática') || false;
+  
   return {
     id: Date.now().toString(),
     fecha,
@@ -70,7 +75,9 @@ export const createVenta = (
     forma_pago,
     observaciones,
     total_venta: 0,
-    detalles: []
+    detalles: [],
+    actividad_generadora: actividad_generadora || 'Venta manual',
+    tipo_registro: esAutomatica ? 'Automática' : 'Manual'
   };
 };
 

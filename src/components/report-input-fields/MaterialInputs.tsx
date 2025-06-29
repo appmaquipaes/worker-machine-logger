@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Truck, Wrench, AlertTriangle, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -50,14 +49,36 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   // Verificar si es Camabaja (transporta maquinaria, no material)
   const isCamabaja = selectedMachine?.type === 'Camabaja';
 
-  // Solo mostrar si es reporte de viajes y es una máquina que transporta material (excluyendo Camabaja)
-  if (reportType !== 'Viajes' || isCamabaja || (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine))) {
+  // FIX: No mostrar inputs de material para Camabaja
+  if (reportType !== 'Viajes' || isCamabaja) {
+    return null;
+  }
+
+  // Solo mostrar si es reporte de viajes y es una máquina que transporta material
+  if (!isMaterialTransportVehicle(selectedMachine) && !isCargador(selectedMachine)) {
     return null;
   }
 
   console.log('MaterialInputs - selectedMachine:', selectedMachine);
   console.log('MaterialInputs - isCargador:', isCargador(selectedMachine));
   console.log('MaterialInputs - origin:', origin);
+
+  // Función para formatear números con separador de miles
+  const formatNumber = (value: string) => {
+    // Remover cualquier carácter que no sea número o punto decimal
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    // Convertir a número y formatear
+    const num = parseFloat(cleanValue);
+    if (isNaN(num)) return '';
+    return num.toLocaleString('es-CO', { maximumFractionDigits: 1 });
+  };
+
+  const handleNumberChange = (value: string) => {
+    // Limpiar el valor y convertir a número
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    const numValue = parseFloat(cleanValue);
+    setCantidadM3(isNaN(numValue) ? undefined : numValue);
+  };
 
   // LÓGICA CORREGIDA: Determinar qué selector mostrar
   const origenEsAcopio = esAcopio(origin);
@@ -117,15 +138,15 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
           )}
           
           <Select onValueChange={setTipoMateria} value={tipoMateria}>
-            <SelectTrigger className="text-lg p-6">
+            <SelectTrigger className="text-lg p-6 bg-white border-2 border-gray-300 focus:border-blue-500 z-50">
               <SelectValue placeholder="Selecciona el material del inventario" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
               {inventarioActual.filter(item => item.cantidad_disponible > 0).map((item) => (
-                <SelectItem key={item.id} value={item.tipo_material}>
+                <SelectItem key={item.id} value={item.tipo_material} className="hover:bg-gray-100">
                   {item.tipo_material} 
                   <span className="ml-2 font-medium text-green-600">
-                    ({item.cantidad_disponible} m³ disponibles)
+                    ({item.cantidad_disponible.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m³ disponibles)
                   </span>
                 </SelectItem>
               ))}
@@ -159,15 +180,15 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
               </Alert>
               
               <Select onValueChange={setTipoMateria} value={tipoMateria}>
-                <SelectTrigger className="text-lg p-6">
+                <SelectTrigger className="text-lg p-6 bg-white border-2 border-gray-300 focus:border-blue-500 z-50">
                   <SelectValue placeholder="Selecciona el material del proveedor" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
                   {materialesProveedor.map((material) => (
-                    <SelectItem key={material.id} value={material.tipo_material}>
+                    <SelectItem key={material.id} value={material.tipo_material} className="hover:bg-gray-100">
                       {material.tipo_material}
                       <span className="ml-2 text-sm text-gray-600">
-                        (${material.precio_por_m3?.toLocaleString()}/m³)
+                        (${material.precio_por_m3?.toLocaleString('es-CO')}/m³)
                       </span>
                     </SelectItem>
                   ))}
@@ -185,12 +206,12 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
               </Alert>
               
               <Select onValueChange={setTipoMateria} value={tipoMateria}>
-                <SelectTrigger className="text-lg p-6">
+                <SelectTrigger className="text-lg p-6 bg-white border-2 border-gray-300 focus:border-blue-500 z-50">
                   <SelectValue placeholder="Selecciona el tipo de material" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
                   {tiposMaterial.map((tipo) => (
-                    <SelectItem key={tipo} value={tipo}>
+                    <SelectItem key={tipo} value={tipo} className="hover:bg-gray-100">
                       {tipo}
                     </SelectItem>
                   ))}
@@ -212,7 +233,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
               }
               {shouldShowInventoryMaterialSelect && tipoMateria && (
                 <span className={`text-sm ml-2 font-medium ${stockDisponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  (Disponibles: {stockDisponible} m³)
+                  (Disponibles: {stockDisponible.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m³)
                 </span>
               )}
             </Label>
@@ -222,21 +243,18 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-700 font-medium">
-                <strong>Stock insuficiente:</strong> Cantidad solicitada ({cantidadM3} m³) supera 
-                el stock disponible ({stockDisponible} m³)
+                <strong>Stock insuficiente:</strong> Cantidad solicitada ({cantidadM3?.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m³) supera 
+                el stock disponible ({stockDisponible.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m³)
               </AlertDescription>
             </Alert>
           )}
           
           <Input 
             id="cantidad-m3"
-            type="number"
-            min="0.1"
-            step="0.1"
-            max={shouldShowInventoryMaterialSelect && tipoMateria ? stockDisponible : undefined}
-            placeholder={esCargadorMachine ? "Ej: 6 (cantidad cargada)" : "Ej: 6"}
-            value={cantidadM3 === undefined ? '' : cantidadM3}
-            onChange={(e) => setCantidadM3(parseFloat(e.target.value) || undefined)}
+            type="text"
+            placeholder={esCargadorMachine ? "Ej: 6.5 (cantidad cargada)" : "Ej: 6.5"}
+            value={cantidadM3 !== undefined ? formatNumber(cantidadM3.toString()) : ''}
+            onChange={(e) => handleNumberChange(e.target.value)}
             className={`text-lg p-6 ${stockInsuficiente && shouldShowInventoryMaterialSelect ? 'border-red-300 focus:border-red-500' : ''}`}
             required
           />

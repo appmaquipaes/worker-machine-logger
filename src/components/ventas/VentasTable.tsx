@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Zap, User, Calendar, MapPin, CreditCard } from 'lucide-react';
+import { Eye, Zap, User, Calendar, MapPin, CreditCard, Activity } from 'lucide-react';
 import { Venta } from '@/models/Ventas';
 
 interface VentasTableProps {
@@ -17,7 +17,7 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
   };
 
   const esVentaAutomatica = (venta: Venta): boolean => {
-    return venta.observaciones?.includes('Venta automática') || false;
+    return venta.observaciones?.includes('Venta automática') || venta.tipo_registro === 'Automática';
   };
 
   const getTipoVentaStyle = (tipo: string) => {
@@ -27,6 +27,26 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
       'Material + transporte': 'bg-purple-100 text-purple-800 border border-purple-200'
     };
     return styles[tipo as keyof typeof styles] || 'bg-gray-100 text-gray-800 border border-gray-200';
+  };
+
+  const getFormaPagoStyle = (forma: string) => {
+    const styles = {
+      'Efectivo': 'bg-green-100 text-green-800',
+      'Transferencia': 'bg-blue-100 text-blue-800',
+      'Cheque': 'bg-yellow-100 text-yellow-800',
+      'Crédito': 'bg-orange-100 text-orange-800',
+      'Mixto': 'bg-purple-100 text-purple-800'
+    };
+    return styles[forma as keyof typeof styles] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('es-CO', { 
+      style: 'currency', 
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
   };
 
   return (
@@ -76,7 +96,7 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Cliente</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Finca/Destino</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Tipo de Venta</TableHead>
-                  <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Ciudad</TableHead>
+                  <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Actividad</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Origen</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Forma de Pago</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Total</TableHead>
@@ -98,7 +118,7 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-slate-500" />
                         <span className="text-base font-medium text-slate-700">
-                          {new Date(venta.fecha).toLocaleDateString()}
+                          {new Date(venta.fecha).toLocaleDateString('es-CO')}
                         </span>
                       </div>
                     </TableCell>
@@ -125,7 +145,12 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">
-                      <span className="text-base text-slate-700">{venta.ciudad_entrega}</span>
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-slate-500" />
+                        <span className="text-base text-slate-700">
+                          {venta.actividad_generadora || 'Venta manual'}
+                        </span>
+                      </div>
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">
@@ -133,15 +158,14 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-slate-500" />
-                        <span className="text-base text-slate-700">{venta.forma_pago}</span>
-                      </div>
+                      <span className={`px-3 py-2 rounded-lg text-sm font-semibold ${getFormaPagoStyle(venta.forma_pago)}`}>
+                        {venta.forma_pago}
+                      </span>
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">
                       <span className="text-base font-bold text-green-600">
-                        ${venta.total_venta.toLocaleString()}
+                        {formatCurrency(venta.total_venta)}
                       </span>
                     </TableCell>
                     
@@ -169,6 +193,11 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => {
+                          // Mostrar detalles de la venta
+                          console.log('Ver detalles de venta:', venta);
+                          alert(`Detalles de venta:\n\nCliente: ${venta.cliente}\nTotal: ${formatCurrency(venta.total_venta)}\nFecha: ${new Date(venta.fecha).toLocaleDateString('es-CO')}\n\nFuncionalidad de vista detallada próximamente...`);
+                        }}
                         className="h-10 px-4 text-sm font-medium border-2 border-slate-300 hover:bg-slate-50 rounded-lg transition-colors duration-200"
                       >
                         <Eye className="h-4 w-4 mr-2" />
