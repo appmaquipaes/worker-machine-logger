@@ -1,7 +1,6 @@
 
 import { Report } from '@/types/report';
 import { DetalleVenta, createDetalleVenta } from '@/models/Ventas';
-import { getDefaultPricing } from '@/utils/ventaPricing';
 
 export const useVentaDetails = () => {
   const crearDetallesVenta = (report: Report, cliente: string, destino: string): DetalleVenta[] => {
