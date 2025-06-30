@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +87,7 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  const register = async (email: string, password: string, name: string, role: string) => {
+  const register = async (email: string, password: string, name: string, role: string, assignedMachines?: string[]) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -117,7 +116,7 @@ export const useSupabaseAuth = () => {
             name: name,
             email: email,
             role: role,
-            assigned_machines: []
+            assigned_machines: assignedMachines || []
           });
 
         if (profileError) {
