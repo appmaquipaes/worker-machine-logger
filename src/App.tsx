@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
@@ -36,6 +35,7 @@ import VentasMaterialPage from '@/pages/VentasMaterialPage';
 import InventarioPage from '@/pages/InventarioPage';
 import TarifasClientePage from '@/pages/TarifasClientePage';
 import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
+import ControlTransportePage from '@/pages/ControlTransportePage';
 
 // Migration Component
 import MigrationAccess from '@/components/MigrationAccess';
@@ -90,6 +90,7 @@ function App() {
                     <Route path="/admin/ventas" element={<VentasPage />} />
                     <Route path="/admin/ventas-material" element={<VentasMaterialPage />} />
                     <Route path="/admin/inventario" element={<InventarioPage />} />
+                    <Route path="/admin/control-transporte" element={<ControlTransportePage />} />
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
