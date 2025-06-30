@@ -54,21 +54,17 @@ const UserManagement: React.FC = () => {
       try {
         const { data: profiles, error } = await supabase
           .from('profiles')
-          .select('*');
+          .select('*')
+          .order('name');
         
         if (error) {
           console.error('Error loading users from Supabase:', error);
-          // Fallback to localStorage
-          const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-          const usersWithoutPassword = storedUsers.map(
-            ({ password, ...userWithoutPassword }: any) => ({
-              ...userWithoutPassword,
-              assignedMachines: userWithoutPassword.assignedMachines || []
-            })
-          );
-          setUsers(usersWithoutPassword);
-        } else {
-          const mappedUsers = profiles?.map(profile => ({
+          toast.error('Error al cargar usuarios');
+          return;
+        }
+
+        if (profiles) {
+          const mappedUsers = profiles.map(profile => ({
             id: profile.id,
             name: profile.name,
             email: profile.email,
@@ -76,11 +72,12 @@ const UserManagement: React.FC = () => {
             assignedMachines: profile.assigned_machines || [],
             comisionPorHora: profile.comision_por_hora,
             comisionPorViaje: profile.comision_por_viaje
-          })) || [];
+          }));
           setUsers(mappedUsers);
         }
       } catch (error) {
         console.error('Error loading users:', error);
+        toast.error('Error al cargar usuarios');
       }
     };
     
@@ -94,18 +91,15 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      // Try to delete from Supabase first
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', id);
       
       if (error) {
-        console.error('Error deleting from Supabase:', error);
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.error('Error deleting user:', error);
+        toast.error('Error al eliminar usuario');
+        return;
       }
       
       setUsers(prev => prev.filter(u => u.id !== id));
@@ -163,14 +157,9 @@ const UserManagement: React.FC = () => {
         .eq('id', userId);
       
       if (error) {
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.map((u: any) => 
-          u.id === userId 
-            ? { ...u, comisionPorHora: commission }
-            : u
-        );
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.error('Error saving commission:', error);
+        toast.error('Error al guardar comisión');
+        return;
       }
       
       setUsers(prev => prev.map(u => 
@@ -178,8 +167,10 @@ const UserManagement: React.FC = () => {
           ? { ...u, comisionPorHora: commission }
           : u
       ));
+      toast.success('Comisión guardada exitosamente');
     } catch (error) {
       console.error('Error saving commission:', error);
+      toast.error('Error al guardar comisión');
     }
   };
 
@@ -191,14 +182,9 @@ const UserManagement: React.FC = () => {
         .eq('id', userId);
       
       if (error) {
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.map((u: any) => 
-          u.id === userId 
-            ? { ...u, comisionPorViaje: commission }
-            : u
-        );
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.error('Error saving trip commission:', error);
+        toast.error('Error al guardar comisión por viaje');
+        return;
       }
       
       setUsers(prev => prev.map(u => 
@@ -206,8 +192,10 @@ const UserManagement: React.FC = () => {
           ? { ...u, comisionPorViaje: commission }
           : u
       ));
+      toast.success('Comisión por viaje guardada exitosamente');
     } catch (error) {
       console.error('Error saving trip commission:', error);
+      toast.error('Error al guardar comisión por viaje');
     }
   };
 
