@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,19 +76,19 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         toast.error(error.message);
-        return { error };
+        return false;
       }
 
       toast.success('Sesión iniciada correctamente');
-      return { data, error: null };
+      return true;
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Error al iniciar sesión');
-      return { error };
+      return false;
     }
   };
 
-  const register = async (email: string, password: string, name: string, role: string, assignedMachines?: string[]) => {
+  const register = async (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor', assignedMachines?: string[]) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -104,7 +105,7 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         toast.error(error.message);
-        return { error };
+        return false;
       }
 
       // If user was created successfully, create profile
@@ -125,11 +126,11 @@ export const useSupabaseAuth = () => {
       }
 
       toast.success('Usuario registrado correctamente');
-      return { data, error: null };
+      return true;
     } catch (error) {
       console.error('Register error:', error);
       toast.error('Error al registrar usuario');
-      return { error };
+      return false;
     }
   };
 
@@ -160,15 +161,15 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         toast.error(error.message);
-        return { error };
+        return false;
       }
 
       toast.success('Correo de recuperación enviado');
-      return { error: null };
+      return true;
     } catch (error) {
       console.error('Reset password error:', error);
       toast.error('Error al enviar correo de recuperación');
-      return { error };
+      return false;
     }
   };
 
@@ -180,15 +181,15 @@ export const useSupabaseAuth = () => {
 
       if (error) {
         toast.error(error.message);
-        return { error };
+        return false;
       }
 
       toast.success('Contraseña actualizada correctamente');
-      return { error: null };
+      return true;
     } catch (error) {
       console.error('Update password error:', error);
       toast.error('Error al actualizar contraseña');
-      return { error };
+      return false;
     }
   };
 

@@ -58,24 +58,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value: AuthContextType = {
     user: fullUser,
-    login: async (email: string, password: string) => {
-      const result = await supabaseAuth.login(email, password);
-      return !result.error;
-    },
-    register: async (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor', assignedMachines?: string[]) => {
-      const result = await supabaseAuth.register(email, password, name, role);
-      return !result.error;
-    },
+    login: supabaseAuth.login,
+    register: supabaseAuth.register,
     logout: supabaseAuth.logout,
     isLoading: supabaseAuth.isLoading,
-    resetPassword: async (email: string) => {
-      const result = await supabaseAuth.resetPassword(email);
-      return !result.error;
-    },
-    updatePassword: async (email: string, resetCode: string, newPassword: string) => {
-      const result = await supabaseAuth.updatePassword(newPassword);
-      return !result.error;
-    },
+    resetPassword: supabaseAuth.resetPassword,
+    updatePassword: supabaseAuth.updatePassword,
     updateUserMachines: supabaseAuth.updateUserMachines
   };
 
