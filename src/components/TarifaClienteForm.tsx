@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,7 +11,7 @@ import {
 } from '@/models/TarifasCliente';
 import { loadProveedores } from '@/models/Proveedores';
 import { loadMateriales } from '@/models/Materiales';
-import { getClienteByName } from '@/models/Clientes';
+import { loadClientes, getClienteByName } from '@/models/Clientes';
 import { getFincasByCliente } from '@/models/Fincas';
 import { useMachine } from '@/context/MachineContext';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
@@ -35,6 +34,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   const { machines } = useMachine();
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [materiales, setMateriales] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
   
   // Estados del formulario
   const [tipoServicio, setTipoServicio] = useState<'transporte' | 'alquiler_maquina' | 'recepcion_escombrera'>('transporte');
@@ -65,6 +65,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   useEffect(() => {
     setProveedores(loadProveedores());
     setMateriales(loadMateriales());
+    setClientes(loadClientes());
   }, []);
 
   useEffect(() => {
@@ -117,18 +118,31 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   };
 
   const handleClienteChange = (nuevoCliente: string) => {
+    console.log('🔍 Cliente seleccionado:', nuevoCliente);
     setCliente(nuevoCliente);
     setFinca('');
     
-    if (tipoServicio === 'transporte' && nuevoCliente) {
-      const clienteData = getClienteByName(nuevoCliente);
+    if (nuevoCliente) {
+      // Buscar el cliente por nombre para obtener su ID  
+      const clienteData = clientes.find(c => 
+        (c.nombre_cliente === nuevoCliente || c.nombre === nuevoCliente) && c.activo
+      );
+      
+      console.log('📋 Cliente encontrado:', clienteData);
+      
       if (clienteData) {
-        const fincas = getFincasByCliente(clienteData.id);
-        if (fincas.length === 0) {
-          setDestino(nuevoCliente);
-        } else {
-          setDestino('');
+        const fincasDelCliente = getFincasByCliente(clienteData.id);
+        console.log('🏢 Fincas del cliente:', fincasDelCliente);
+        
+        if (tipoServicio === 'transporte') {
+          if (fincasDelCliente.length === 0) {
+            setDestino(nuevoCliente);
+          } else {
+            setDestino('');
+          }
         }
+      } else {
+        console.log('⚠️ Cliente no encontrado en la lista');
       }
     } else {
       setDestino('');
@@ -136,15 +150,19 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
   };
 
   const handleFincaChange = (nuevaFinca: string) => {
+    console.log('🏢 Finca seleccionada:', nuevaFinca);
     setFinca(nuevaFinca);
+    
     if (tipoServicio === 'transporte') {
       if (nuevaFinca) {
         setDestino(nuevaFinca);
       } else if (cliente) {
-        const clienteData = getClienteByName(cliente);
+        const clienteData = clientes.find(c => 
+          (c.nombre_cliente === cliente || c.nombre === cliente) && c.activo
+        );
         if (clienteData) {
-          const fincas = getFincasByCliente(clienteData.id);
-          if (fincas.length === 0) {
+          const fincasDelCliente = getFincasByCliente(clienteData.id);
+          if (fincasDelCliente.length === 0) {
             setDestino(cliente);
           } else {
             setDestino('');
@@ -244,10 +262,20 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     }
   };
 
-  // Determinar si el cliente tiene fincas
-  const clienteData = cliente ? getClienteByName(cliente) : null;
+  // Determinar si el cliente tiene fincas - CORREGIDO
+  const clienteData = cliente ? clientes.find(c => 
+    (c.nombre_cliente === cliente || c.nombre === cliente) && c.activo
+  ) : null;
+  
   const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
   const clienteTieneFincas = fincasDisponibles.length > 0;
+
+  console.log('🔍 Debug info:', {
+    cliente,
+    clienteData: clienteData ? { id: clienteData.id, nombre: clienteData.nombre_cliente } : null,
+    fincasDisponibles: fincasDisponibles.length,
+    clienteTieneFincas
+  });
 
   const getServiceIcon = (tipo: string) => {
     switch (tipo) {
