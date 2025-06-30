@@ -76,15 +76,19 @@ export const useVentaCreation = () => {
       
       if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
         const horas = report.hours || 0;
-        let valorTotal = report.value || 0;
+        let valorPorHora = 0;
         
-        // Si no viene valor del reporte, usar valor por defecto según tipo de máquina
-        if (valorTotal === 0) {
-          valorTotal = getValorPorDefecto(report.machineName, horas);
-          console.log(`💡 Usando valor por defecto: ${valorTotal} para ${horas} horas`);
+        // Si viene valor del reporte, usarlo para calcular valor por hora
+        if (report.value && report.value > 0) {
+          valorPorHora = report.value; // El valor del reporte ya es el valor por hora
+          console.log(`💰 Usando valor del reporte: ${valorPorHora} por hora`);
+        } else {
+          // Si no viene valor del reporte, usar valor por defecto según tipo de máquina
+          valorPorHora = getValorPorHoraPorDefecto(report.machineName);
+          console.log(`💡 Usando valor por defecto: ${valorPorHora} por hora`);
         }
         
-        const valorPorHora = horas > 0 ? valorTotal / horas : valorTotal;
+        const valorTotal = valorPorHora * horas;
         
         console.log(`💰 Creando detalle: ${horas} horas x ${valorPorHora} = ${valorTotal}`);
         
@@ -190,26 +194,22 @@ export const useVentaCreation = () => {
     }
   };
 
-  // Función para obtener valor por defecto según tipo de máquina
-  const getValorPorDefecto = (maquina: string, horas: number): number => {
+  // Función para obtener valor por hora por defecto según tipo de máquina
+  const getValorPorHoraPorDefecto = (maquina: string): number => {
     const maquinaLower = maquina.toLowerCase();
     
     // Valores por hora según tipo de máquina
-    let valorPorHora = 0;
-    
     if (maquinaLower.includes('315') || maquinaLower.includes('excavat')) {
-      valorPorHora = 80000; // Retroexcavadoras
+      return 80000; // Retroexcavadoras
     } else if (maquinaLower.includes('vibro') || maquinaLower.includes('compact')) {
-      valorPorHora = 60000; // Compactadores
+      return 60000; // Compactadores
     } else if (maquinaLower.includes('bulldozer')) {
-      valorPorHora = 100000; // Bulldozers
+      return 100000; // Bulldozers
     } else if (maquinaLower.includes('cargador')) {
-      valorPorHora = 70000; // Cargadores
+      return 70000; // Cargadores
     } else {
-      valorPorHora = 50000; // Valor genérico
+      return 50000; // Valor genérico
     }
-    
-    return valorPorHora * horas;
   };
 
   // Función para obtener valor de flete por defecto
