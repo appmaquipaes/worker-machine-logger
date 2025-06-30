@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useReportPersistence } from '@/hooks/useReportPersistence';
-import { loadVentas } from '@/models/Ventas';
+import { useViajesTransporte } from './useViajesTransporte';
+import { useRutasTransporte } from './useRutasTransporte';
 
 interface TransporteStats {
   viajesDelMes: number;
@@ -15,7 +15,6 @@ interface TransporteStats {
   viajesPorVehiculo: Array<{
     nombre: string;
     viajes: number;
-    ingresos: number;
   }>;
   rutasMasUtilizadas: Array<{
     origen: string;
@@ -39,108 +38,88 @@ export const useTransporteData = () => {
     rutasMasUtilizadas: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const { reports } = useReportPersistence();
+
+  const { viajes } = useViajesTransporte();
+  const { rutas } = useRutasTransporte();
 
   useEffect(() => {
     const calcularStats = () => {
-      const ventas = loadVentas();
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
+      const ahora = new Date();
+      const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+      const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+      const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
 
-      // Filtrar reportes de transporte del mes actual
-      const reportesTransporte = reports.filter(report => {
-        const reportDate = new Date(report.reportDate);
-        const isTransporte = ['Volqueta', 'Camión'].some(tipo => 
-          report.machineName.toLowerCase().includes(tipo.toLowerCase())
-        );
-        const isCurrentMonth = reportDate.getMonth() === currentMonth && 
-                              reportDate.getFullYear() === currentYear;
-        return isTransporte && isCurrentMonth && report.reportType === 'Viajes';
-      });
+      // Viajes del mes actual
+      const viajesDelMes = viajes.filter(viaje => viaje.fecha >= inicioMes);
+      const viajesMesAnterior = viajes.filter(viaje => 
+        viaje.fecha >= inicioMesAnterior && viaje.fecha <= finMesAnterior
+      );
 
-      // Filtrar ventas de transporte del mes actual
-      const ventasTransporte = ventas.filter(venta => {
-        const ventaDate = new Date(venta.fecha);
-        const isCurrentMonth = ventaDate.getMonth() === currentMonth && 
-                              ventaDate.getFullYear() === currentYear;
-        const isTransporte = ['Solo transporte', 'Material + transporte'].includes(venta.tipo_venta);
-        return isTransporte && isCurrentMonth;
-      });
+      // Ingresos del mes
+      const ingresosDelMes = viajesDelMes.reduce((total, viaje) => 
+        total + viaje.valorTransporte + viaje.valorMaterial, 0
+      );
+      const ingresosMesAnterior = viajesMesAnterior.reduce((total, viaje) => 
+        total + viaje.valorTransporte + viaje.valorMaterial, 0
+      );
 
-      // Calcular estadísticas
-      const viajesDelMes = reportesTransporte.reduce((total, report) => total + (report.trips || 0), 0);
-      const ingresosDelMes = ventasTransporte.reduce((total, venta) => total + venta.total_venta, 0);
-      
-      // Gastos de combustible del mes
-      const reportesCombustible = reports.filter(report => {
-        const reportDate = new Date(report.reportDate);
-        const isTransporte = ['Volqueta', 'Camión'].some(tipo => 
-          report.machineName.toLowerCase().includes(tipo.toLowerCase())
-        );
-        const isCurrentMonth = reportDate.getMonth() === currentMonth && 
-                              reportDate.getFullYear() === currentYear;
-        return isTransporte && isCurrentMonth && report.reportType === 'Combustible';
-      });
+      // Cálculo de crecimientos
+      const crecimientoViajes = viajesMesAnterior.length > 0 
+        ? Math.round(((viajesDelMes.length - viajesMesAnterior.length) / viajesMesAnterior.length) * 100)
+        : 0;
 
-      const gastoCombustible = reportesCombustible.reduce((total, report) => total + (report.value || 0), 0);
-      const totalKilometraje = reportesCombustible.reduce((total, report) => total + (report.kilometraje || 0), 0);
-      const eficienciaCombustible = totalKilometraje > 0 ? Math.round(totalKilometraje / (gastoCombustible / 12000)) : 0; // Asumiendo 12000 pesos por galón
+      const crecimientoIngresos = ingresosMesAnterior > 0 
+        ? Math.round(((ingresosDelMes - ingresosMesAnterior) / ingresosMesAnterior) * 100)
+        : 0;
 
       // Viajes por vehículo
-      const viajesPorVehiculo = reportesTransporte.reduce((acc, report) => {
-        const existing = acc.find(v => v.nombre === report.machineName);
+      const viajesPorVehiculo = viajesDelMes.reduce((acc, viaje) => {
+        const existing = acc.find(v => v.nombre === viaje.maquina);
         if (existing) {
-          existing.viajes += report.trips || 0;
+          existing.viajes += viaje.numeroViajes;
+        } else {
+          acc.push({ nombre: viaje.maquina, viajes: viaje.numeroViajes });
+        }
+        return acc;
+      }, [] as Array<{nombre: string, viajes: number}>);
+
+      // Rutas más utilizadas
+      const rutasMasUtilizadas = viajesDelMes.reduce((acc, viaje) => {
+        const key = `${viaje.origen}-${viaje.destino}`;
+        const existing = acc.find(r => r.origen === viaje.origen && r.destino === viaje.destino);
+        if (existing) {
+          existing.viajes += viaje.numeroViajes;
         } else {
           acc.push({
-            nombre: report.machineName,
-            viajes: report.trips || 0,
-            ingresos: 0
+            origen: viaje.origen,
+            destino: viaje.destino,
+            viajes: viaje.numeroViajes,
+            distancia: viaje.distancia
           });
         }
         return acc;
-      }, [] as Array<{nombre: string; viajes: number; ingresos: number}>);
-
-      // Rutas más utilizadas
-      const rutasMasUtilizadas = reportesTransporte.reduce((acc, report) => {
-        if (report.origin && report.destination) {
-          const key = `${report.origin}-${report.destination}`;
-          const existing = acc.find(r => `${r.origen}-${r.destino}` === key);
-          if (existing) {
-            existing.viajes += report.trips || 0;
-          } else {
-            acc.push({
-              origen: report.origin,
-              destino: report.destination,
-              viajes: report.trips || 0,
-              distancia: 50 // Placeholder, se actualizará con gestión de rutas
-            });
-          }
-        }
-        return acc;
-      }, [] as Array<{origen: string; destino: string; viajes: number; distancia: number}>);
+      }, [] as Array<{origen: string, destino: string, viajes: number, distancia: number}>)
+      .sort((a, b) => b.viajes - a.viajes)
+      .slice(0, 5);
 
       setStats({
-        viajesDelMes,
-        crecimientoViajes: 15, // Placeholder
+        viajesDelMes: viajesDelMes.reduce((total, viaje) => total + viaje.numeroViajes, 0),
+        crecimientoViajes,
         ingresosDelMes,
-        crecimientoIngresos: 12, // Placeholder
-        gastoCombustible,
-        eficienciaCombustible,
-        rutasActivas: rutasMasUtilizadas.length,
-        rutaMasRentable: rutasMasUtilizadas.length > 0 ? rutasMasUtilizadas[0].origen : 'N/A',
+        crecimientoIngresos,
+        gastoCombustible: 150000, // Placeholder - se calculará con datos reales
+        eficienciaCombustible: 8.5, // Placeholder - se calculará con datos reales
+        rutasActivas: rutas.length,
+        rutaMasRentable: rutasMasUtilizadas[0]?.origen + ' → ' + rutasMasUtilizadas[0]?.destino || 'N/A',
         viajesPorVehiculo: viajesPorVehiculo.slice(0, 5),
-        rutasMasUtilizadas: rutasMasUtilizadas.slice(0, 5)
+        rutasMasUtilizadas
       });
 
       setIsLoading(false);
     };
 
     calcularStats();
-  }, [reports]);
+  }, [viajes, rutas]);
 
-  return {
-    stats,
-    isLoading
-  };
+  return { stats, isLoading };
 };

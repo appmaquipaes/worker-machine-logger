@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useViajesTransporte } from './useViajesTransporte';
-import { useReportPersistence } from './useReportPersistence';
 
 interface AnalisisRentabilidad {
   ingresosTotales: number;
@@ -11,13 +10,11 @@ interface AnalisisRentabilidad {
   margenRentabilidad: number;
   crecimientoIngresos: number;
   eficienciaPromedio: number;
-  costoPorKm: number;
+  costoPorKm: string;
   rentabilidadPorVehiculo: Array<{
     nombre: string;
     viajes: number;
     kilometraje: number;
-    ingresos: number;
-    gastos: number;
     utilidad: number;
     margen: number;
   }>;
@@ -27,7 +24,6 @@ interface AnalisisRentabilidad {
     viajes: number;
     distancia: number;
     ingresoPromedio: number;
-    margen: number;
   }>;
 }
 
@@ -40,125 +36,108 @@ export const useAnalisisRentabilidad = (filtroTiempo: string, filtroVehiculo: st
     margenRentabilidad: 0,
     crecimientoIngresos: 0,
     eficienciaPromedio: 0,
-    costoPorKm: 0,
+    costoPorKm: '0',
     rentabilidadPorVehiculo: [],
     rutasMasRentables: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const { viajes } = useViajesTransporte();
-  const { reports } = useReportPersistence();
 
   useEffect(() => {
     const calcularAnalisis = () => {
-      const fechaLimite = obtenerFechaLimite(filtroTiempo);
+      // Filtrar por tiempo
+      const ahora = new Date();
+      let fechaInicio: Date;
       
-      // Filtrar viajes por tiempo y vehículo
-      const viajesFiltrados = viajes.filter(viaje => {
-        const cumpleTiempo = viaje.fecha >= fechaLimite;
-        const cumpleVehiculo = filtroVehiculo === 'todos' || 
-          (filtroVehiculo === 'volquetas' && viaje.maquina.toLowerCase().includes('volqueta')) ||
-          (filtroVehiculo === 'camiones' && viaje.maquina.toLowerCase().includes('camión'));
-        return cumpleTiempo && cumpleVehiculo;
-      });
+      switch (filtroTiempo) {
+        case 'semana':
+          fechaInicio = new Date(ahora.getTime() - (7 * 24 * 60 * 60 * 1000));
+          break;
+        case 'trimestre':
+          fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth() - 3, 1);
+          break;
+        default: // mes
+          fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+      }
 
-      // Filtrar reportes de gastos
-      const reportesGastos = reports.filter(report => {
-        const reportDate = new Date(report.reportDate);
-        const esTransporte = ['Volqueta', 'Camión'].some(tipo => 
-          report.machineName.toLowerCase().includes(tipo.toLowerCase())
-        );
-        const cumpleTiempo = reportDate >= fechaLimite;
-        const cumpleVehiculo = filtroVehiculo === 'todos' || 
-          (filtroVehiculo === 'volquetas' && report.machineName.toLowerCase().includes('volqueta')) ||
-          (filtroVehiculo === 'camiones' && report.machineName.toLowerCase().includes('camión'));
-        
-        return esTransporte && cumpleTiempo && cumpleVehiculo && 
-               ['Combustible', 'Mantenimiento'].includes(report.reportType);
-      });
+      let viajesFiltrados = viajes.filter(viaje => viaje.fecha >= fechaInicio);
 
-      // Calcular métricas principales
+      // Filtrar por vehículo
+      if (filtroVehiculo !== 'todos') {
+        viajesFiltrados = viajesFiltrados.filter(viaje => {
+          if (filtroVehiculo === 'volquetas') {
+            return viaje.maquina.toLowerCase().includes('volqueta');
+          } else if (filtroVehiculo === 'camiones') {
+            return viaje.maquina.toLowerCase().includes('camión');
+          }
+          return true;
+        });
+      }
+
+      // Cálculos básicos
       const ingresosTotales = viajesFiltrados.reduce((total, viaje) => 
         total + viaje.valorTransporte + viaje.valorMaterial, 0
       );
 
-      const gastoCombustible = reportesGastos
-        .filter(r => r.reportType === 'Combustible')
-        .reduce((total, report) => total + (report.value || 0), 0);
+      const gastoCombustible = viajesFiltrados.reduce((total, viaje) => 
+        total + (viaje.consumoCombustible || 0), 0
+      );
 
-      const gastoMantenimiento = reportesGastos
-        .filter(r => r.reportType === 'Mantenimiento')
-        .reduce((total, report) => total + (report.value || 0), 0);
-
-      const gastosTotales = gastoCombustible + gastoMantenimiento;
+      const gastosTotales = gastoCombustible; // Se pueden agregar más gastos
       const utilidadNeta = ingresosTotales - gastosTotales;
       const margenRentabilidad = ingresosTotales > 0 ? 
         Math.round((utilidadNeta / ingresosTotales) * 100) : 0;
 
-      // Calcular eficiencia
-      const totalKilometraje = viajesFiltrados.reduce((total, viaje) => 
-        total + (viaje.distancia * viaje.numeroViajes), 0
-      );
-      const eficienciaPromedio = gastoCombustible > 0 ? 
-        Math.round(totalKilometraje / (gastoCombustible / 12000)) : 0; // 12000 pesos por galón
-      const costoPorKm = totalKilometraje > 0 ? 
-        Math.round(gastosTotales / totalKilometraje) : 0;
-
-      // Análisis por vehículo
-      const vehiculosUnicos = [...new Set(viajesFiltrados.map(v => v.maquina))];
-      const rentabilidadPorVehiculo = vehiculosUnicos.map(vehiculo => {
-        const viajesVehiculo = viajesFiltrados.filter(v => v.maquina === vehiculo);
-        const reportesVehiculo = reportesGastos.filter(r => r.machineName === vehiculo);
+      // Rentabilidad por vehículo
+      const rentabilidadPorVehiculo = viajesFiltrados.reduce((acc, viaje) => {
+        const existing = acc.find(v => v.nombre === viaje.maquina);
+        const ingresos = viaje.valorTransporte + viaje.valorMaterial;
+        const gastos = viaje.consumoCombustible || 0;
         
-        const ingresos = viajesVehiculo.reduce((total, viaje) => 
-          total + viaje.valorTransporte + viaje.valorMaterial, 0
-        );
-        const gastos = reportesVehiculo.reduce((total, report) => total + (report.value || 0), 0);
-        const utilidad = ingresos - gastos;
-        const viajes = viajesVehiculo.reduce((total, viaje) => total + viaje.numeroViajes, 0);
-        const kilometraje = viajesVehiculo.reduce((total, viaje) => 
-          total + (viaje.distancia * viaje.numeroViajes), 0
-        );
-
-        return {
-          nombre: vehiculo,
-          viajes,
-          kilometraje,
-          ingresos,
-          gastos,
-          utilidad,
-          margen: ingresos > 0 ? Math.round((utilidad / ingresos) * 100) : 0
-        };
-      });
-
-      // Rutas más rentables
-      const rutasMap = new Map();
-      viajesFiltrados.forEach(viaje => {
-        const key = `${viaje.origen}-${viaje.destino}`;
-        if (!rutasMap.has(key)) {
-          rutasMap.set(key, {
-            origen: viaje.origen,
-            destino: viaje.destino,
-            viajes: 0,
-            ingresoTotal: 0,
-            distanciaTotal: 0
+        if (existing) {
+          existing.viajes += viaje.numeroViajes;
+          existing.kilometraje += viaje.distancia * viaje.numeroViajes;
+          existing.utilidad += (ingresos - gastos);
+        } else {
+          acc.push({
+            nombre: viaje.maquina,
+            viajes: viaje.numeroViajes,
+            kilometraje: viaje.distancia * viaje.numeroViajes,
+            utilidad: ingresos - gastos,
+            margen: 0 // Se calculará después
           });
         }
-        const ruta = rutasMap.get(key);
-        ruta.viajes += viaje.numeroViajes;
-        ruta.ingresoTotal += viaje.valorTransporte + viaje.valorMaterial;
-        ruta.distanciaTotal += viaje.distancia * viaje.numeroViajes;
-      });
+        return acc;
+      }, [] as Array<{nombre: string, viajes: number, kilometraje: number, utilidad: number, margen: number}>)
+      .map(vehiculo => ({
+        ...vehiculo,
+        margen: vehiculo.utilidad > 0 ? Math.round((vehiculo.utilidad / (vehiculo.utilidad + 50000)) * 100) : 0
+      }))
+      .sort((a, b) => b.utilidad - a.utilidad);
 
-      const rutasMasRentables = Array.from(rutasMap.values())
-        .map(ruta => ({
-          ...ruta,
-          distancia: Math.round(ruta.distanciaTotal / ruta.viajes),
-          ingresoPromedio: Math.round(ruta.ingresoTotal / ruta.viajes),
-          margen: 80 // Placeholder, se puede calcular con más detalle
-        }))
-        .sort((a, b) => b.ingresoPromedio - a.ingresoPromedio)
-        .slice(0, 5);
+      // Rutas más rentables
+      const rutasMasRentables = viajesFiltrados.reduce((acc, viaje) => {
+        const key = `${viaje.origen}-${viaje.destino}`;
+        const existing = acc.find(r => r.origen === viaje.origen && r.destino === viaje.destino);
+        const ingresoViaje = viaje.valorTransporte + viaje.valorMaterial;
+        
+        if (existing) {
+          existing.viajes += viaje.numeroViajes;
+          existing.ingresoPromedio = ((existing.ingresoPromedio * (existing.viajes - viaje.numeroViajes)) + ingresoViaje) / existing.viajes;
+        } else {
+          acc.push({
+            origen: viaje.origen,
+            destino: viaje.destino,
+            viajes: viaje.numeroViajes,
+            distancia: viaje.distancia,
+            ingresoPromedio: ingresoViaje / viaje.numeroViajes
+          });
+        }
+        return acc;
+      }, [] as Array<{origen: string, destino: string, viajes: number, distancia: number, ingresoPromedio: number}>)
+      .sort((a, b) => b.ingresoPromedio - a.ingresoPromedio)
+      .slice(0, 5);
 
       setAnalisis({
         ingresosTotales,
@@ -166,10 +145,10 @@ export const useAnalisisRentabilidad = (filtroTiempo: string, filtroVehiculo: st
         gastoCombustible,
         utilidadNeta,
         margenRentabilidad,
-        crecimientoIngresos: 15, // Placeholder
-        eficienciaPromedio,
-        costoPorKm,
-        rentabilidadPorVehiculo: rentabilidadPorVehiculo.sort((a, b) => b.utilidad - a.utilidad),
+        crecimientoIngresos: 12, // Placeholder
+        eficienciaPromedio: 8.5, // Placeholder
+        costoPorKm: (gastosTotales / Math.max(1, viajesFiltrados.reduce((total, viaje) => total + (viaje.distancia * viaje.numeroViajes), 0))).toFixed(2),
+        rentabilidadPorVehiculo,
         rutasMasRentables
       });
 
@@ -177,24 +156,7 @@ export const useAnalisisRentabilidad = (filtroTiempo: string, filtroVehiculo: st
     };
 
     calcularAnalisis();
-  }, [viajes, reports, filtroTiempo, filtroVehiculo]);
+  }, [viajes, filtroTiempo, filtroVehiculo]);
 
-  const obtenerFechaLimite = (filtro: string): Date => {
-    const ahora = new Date();
-    switch (filtro) {
-      case 'semana':
-        return new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000);
-      case 'mes':
-        return new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-      case 'trimestre':
-        return new Date(ahora.getFullYear(), ahora.getMonth() - 3, 1);
-      default:
-        return new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    }
-  };
-
-  return {
-    analisis,
-    isLoading
-  };
+  return { analisis, isLoading };
 };
