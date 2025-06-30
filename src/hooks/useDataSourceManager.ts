@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,7 +21,7 @@ export const useDataSourceManager = () => {
     reports: 'localStorage', // Mantenemos reports en localStorage por ahora
     clients: 'supabase', // Ahora clientes usa Supabase
     fincas: 'supabase', // Ahora fincas usa Supabase
-    ventas: 'localStorage' // Mantenemos ventas en localStorage por ahora
+    ventas: 'localStorage' // Mantenemos ventas en localStorage hasta migración
   });
 
   // Verificar conectividad a Supabase
