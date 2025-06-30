@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -496,8 +495,13 @@ const InventarioPage = () => {
 
         {/* Modales */}
         <DesgloseMaterialModal 
-          isOpen={showDesgloseModal}
-          onClose={() => setShowDesgloseModal(false)}
+          open={showDesgloseModal}
+          onOpenChange={setShowDesgloseModal}
+          inventario={inventario}
+          onDesgloseRealizado={(movimiento) => {
+            console.log("Desglose realizado:", movimiento);
+            // Aquí se implementaría la lógica para procesar el desglose
+          }}
         />
         
         <MovimientoInventarioModal 
