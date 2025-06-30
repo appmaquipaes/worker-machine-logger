@@ -26,6 +26,21 @@ export const useReportForm = () => {
     formState.setSelectedFinca,
     setDestination
   );
+
+  // Actualizar destination cuando cambie cliente o finca
+  useEffect(() => {
+    if (formState.selectedCliente && formState.selectedFinca) {
+      const newDestination = `${formState.selectedCliente} - ${formState.selectedFinca}`;
+      console.log('🎯 Actualizando destination:', newDestination);
+      setDestination(newDestination);
+    } else if (formState.selectedCliente && !formState.selectedFinca) {
+      // Para clientes sin fincas registradas
+      console.log('🎯 Cliente sin fincas, usando cliente como destino:', formState.selectedCliente);
+      setDestination(formState.selectedCliente);
+    } else if (!formState.selectedCliente) {
+      setDestination('');
+    }
+  }, [formState.selectedCliente, formState.selectedFinca]);
   
   useEffect(() => {
     if (!user) {
@@ -48,6 +63,14 @@ export const useReportForm = () => {
     }
     
     formState.setIsSubmitting(true);
+    
+    // Log para debug
+    console.log('🔍 Validando formulario con:', {
+      destination,
+      selectedCliente: formState.selectedCliente,
+      selectedFinca: formState.selectedFinca,
+      reportType: formState.reportType
+    });
     
     const isValid = validateReportForm(
       formState.reportType,
@@ -92,6 +115,7 @@ export const useReportForm = () => {
       
       formState.setLastSubmitSuccess(true);
       formState.clearForm();
+      setDestination(''); // Limpiar destination también
       
       setTimeout(() => {
         formState.setLastSubmitSuccess(false);

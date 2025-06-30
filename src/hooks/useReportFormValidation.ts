@@ -86,7 +86,8 @@ export const useReportFormValidation = () => {
           return false;
         }
         if (!destination?.trim()) {
-          toast.error("Selecciona el destino");
+          console.log('❌ Error de validación - destination vacío:', destination);
+          toast.error("Selecciona el cliente y punto de entrega");
           return false;
         }
         if (!trips || trips <= 0) {
