@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Truck } from 'lucide-react';
+import { Plus, Truck, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { useViajesTransporte } from '@/hooks/useViajesTransporte';
+import { useViajesTransporteIntegrado } from '@/hooks/useViajesTransporteIntegrado';
 
 const RegistroViajesTransporte = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const { viajes, registrarViaje, isLoading } = useViajesTransporte();
+  const { viajes, viajesFromReports, registrarViaje, isLoading } = useViajesTransporteIntegrado();
   
   const [formData, setFormData] = useState({
     maquina: '',
@@ -79,11 +78,55 @@ const RegistroViajesTransporte = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Registro de Viajes</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Registro de Viajes</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Incluye viajes registrados directamente y desde reportes de trabajadores
+          </p>
+        </div>
         <Button onClick={() => setIsFormOpen(!isFormOpen)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Nuevo Viaje
         </Button>
+      </div>
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Viajes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{viajes.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {viajesFromReports.length} desde reportes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Viajes del Mes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {viajes.filter(v => {
+                const ahora = new Date();
+                const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+                return v.fecha >= inicioMes;
+              }).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos Estimados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${viajes.reduce((total, v) => total + (v.valorTransporte || 0) + (v.valorMaterial || 0), 0).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {isFormOpen && (
@@ -261,19 +304,30 @@ const RegistroViajesTransporte = () => {
               </div>
             ) : (
               viajes.slice(0, 10).map((viaje, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={viaje.id || index} className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <div className="font-medium">{viaje.maquina}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{viaje.maquina}</div>
+                      {viaje.esDesdeReporte && (
+                        <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          <FileText className="h-3 w-3" />
+                          Desde reporte
+                        </div>
+                      )}
+                    </div>
                     <div className="text-sm text-gray-500">
                       {viaje.origen} → {viaje.destino}
                     </div>
                     <div className="text-xs text-gray-400">
                       {viaje.fecha.toLocaleDateString()} • {viaje.numeroViajes} viajes
+                      {viaje.esDesdeReporte && (
+                        <span className="ml-2">• Por: {viaje.conductor}</span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      ${(viaje.valorTransporte + viaje.valorMaterial).toLocaleString()}
+                      ${((viaje.valorTransporte || 0) + (viaje.valorMaterial || 0)).toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">
                       {viaje.tipoVenta}

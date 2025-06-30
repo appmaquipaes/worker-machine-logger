@@ -1,22 +1,22 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Settings, Fuel } from 'lucide-react';
+import { Plus, Settings, Fuel, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCombustibleMaquinaria } from '@/hooks/useCombustibleMaquinaria';
+import { useCombustibleMaquinariaIntegrado } from '@/hooks/useCombustibleMaquinariaIntegrado';
 
 const CombustibleMaquinaria = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { 
     consumos, 
+    consumosFromReports,
     registrarConsumo, 
     estadisticas,
     isLoading 
-  } = useCombustibleMaquinaria();
+  } = useCombustibleMaquinariaIntegrado();
   
   const [formData, setFormData] = useState({
     maquina: '',
@@ -61,15 +61,20 @@ const CombustibleMaquinaria = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Control de Combustible - Maquinaria</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Control de Combustible - Maquinaria</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Incluye consumos registrados directamente y desde reportes de trabajadores
+          </p>
+        </div>
         <Button onClick={() => setIsFormOpen(!isFormOpen)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Registrar Consumo
         </Button>
       </div>
 
-      {/* Estadísticas de consumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Estadísticas de consumo mejoradas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Consumo del Mes</CardTitle>
@@ -107,9 +112,20 @@ const CombustibleMaquinaria = () => {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Desde Reportes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{consumosFromReports.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Registros automáticos
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Formulario registro consumo */}
       {isFormOpen && (
         <Card>
           <CardHeader>
@@ -195,7 +211,6 @@ const CombustibleMaquinaria = () => {
         </Card>
       )}
 
-      {/* Consumos por máquina */}
       <Card>
         <CardHeader>
           <CardTitle>Consumo por Máquina (Último Mes)</CardTitle>
@@ -222,7 +237,7 @@ const CombustibleMaquinaria = () => {
         </CardContent>
       </Card>
 
-      {/* Historial reciente */}
+      {/* Historial reciente mejorado */}
       <Card>
         <CardHeader>
           <CardTitle>Registros Recientes</CardTitle>
@@ -230,11 +245,22 @@ const CombustibleMaquinaria = () => {
         <CardContent>
           <div className="space-y-3">
             {consumos.slice(0, 10).map((consumo, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={consumo.id || index} className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
-                  <div className="font-medium">{consumo.maquina}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium">{consumo.maquina}</div>
+                    {consumo.esDesdeReporte && (
+                      <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                        <FileText className="h-3 w-3" />
+                        Desde reporte
+                      </div>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-500">
                     {consumo.fecha.toLocaleDateString()} • {consumo.horasTrabajadas}h
+                    {consumo.kilometraje && (
+                      <span className="ml-2">• {consumo.kilometraje} km</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
