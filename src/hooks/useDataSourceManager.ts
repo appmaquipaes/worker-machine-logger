@@ -20,8 +20,8 @@ export const useDataSourceManager = () => {
     users: 'supabase',
     machines: 'supabase', 
     reports: 'localStorage', // Mantenemos reports en localStorage por ahora
-    clients: 'supabase',
-    fincas: 'supabase',
+    clients: 'supabase', // Ahora clientes usa Supabase
+    fincas: 'supabase', // Ahora fincas usa Supabase
     ventas: 'localStorage' // Mantenemos ventas en localStorage por ahora
   });
 
