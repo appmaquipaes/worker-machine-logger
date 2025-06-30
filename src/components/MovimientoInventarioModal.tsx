@@ -1,16 +1,16 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MovimientoInventarioModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  material?: { id: string; nombre_material: string };
-  onRegistrar?: (mov: MovimientoInventarioFormState) => void;
+  material: { id: string; nombre_material: string };
+  onRegistrar: (movimiento: MovimientoInventarioFormState) => void;
 }
 
 export interface MovimientoInventarioFormState {
@@ -20,7 +20,7 @@ export interface MovimientoInventarioFormState {
 }
 
 const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
-  isOpen,
+  open,
   onClose,
   material,
   onRegistrar,
@@ -32,40 +32,27 @@ const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
   const handleRegistrar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cantidad || cantidad <= 0) return;
-    
-    const movimiento = { tipo, cantidad, observacion };
-    
-    if (onRegistrar) {
-      onRegistrar(movimiento);
-    } else {
-      // Default logic for basic inventory movement
-      console.log("Registrando movimiento:", movimiento);
-    }
-    
+    onRegistrar({ tipo, cantidad, observacion });
     setTipo("entrada");
     setCantidad(0);
     setObservacion("");
-    onClose();
   };
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setTipo("entrada");
       setCantidad(0);
       setObservacion("");
     }
-  }, [isOpen]);
+  }, [open]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Registrar Movimiento de Inventario
-            {material && ` - ${material.nombre_material}`}
-          </DialogTitle>
+          <DialogTitle>Registrar Movimiento de Inventario</DialogTitle>
           <DialogDescription>
-            Selecciona el tipo de movimiento e ingresa la cantidad
+            Selecciona el tipo de movimiento e ingresa la cantidad para <b>{material.nombre_material}</b>
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleRegistrar} className="space-y-4">

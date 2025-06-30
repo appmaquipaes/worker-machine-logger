@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,8 +10,6 @@ interface DataSourceConfig {
   clients: DataSource;
   fincas: DataSource;
   ventas: DataSource;
-  inventario: DataSource; // Nuevo campo
-  materiales: DataSource; // Nuevo campo
 }
 
 export const useDataSourceManager = () => {
@@ -21,12 +18,10 @@ export const useDataSourceManager = () => {
   const [dataSourceConfig] = useState<DataSourceConfig>({
     users: 'supabase',
     machines: 'supabase', 
-    reports: 'supabase', // Cambiado a Supabase
-    clients: 'supabase',
-    fincas: 'supabase',
-    ventas: 'localStorage', // Mantenemos ventas en localStorage hasta migración
-    inventario: 'supabase', // Nuevo: inventario usa Supabase
-    materiales: 'supabase' // Nuevo: materiales usa Supabase
+    reports: 'localStorage', // Mantenemos reports en localStorage por ahora
+    clients: 'supabase', // Ahora clientes usa Supabase
+    fincas: 'supabase', // Ahora fincas usa Supabase
+    ventas: 'localStorage' // Mantenemos ventas en localStorage hasta migración
   });
 
   // Verificar conectividad a Supabase

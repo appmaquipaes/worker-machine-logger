@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Truck, Wrench, AlertTriangle, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -7,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Machine } from '@/context/MachineContext';
 import { useMachineSpecificReports } from '@/hooks/useMachineSpecificReports';
 import { ReportType } from '@/types/report';
-import { useInventoryMaterials } from '@/context/EnhancedInventoryMaterialsContext';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 import { esAcopio } from '@/utils/inventarioDetection';
 import { useMaterialesPorProveedor } from '@/hooks/useMaterialesPorProveedor';
 import { extraerInfoProveedor } from '@/utils/proveedorUtils';
@@ -37,14 +38,14 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
   const { obtenerMaterialesPorNombreProveedor, cargarDatos } = useMaterialesPorProveedor();
-  const { inventario } = useInventoryMaterials();
   const [inventarioActual, setInventarioActual] = useState<any[]>([]);
 
-  // Usar inventario del contexto en lugar de localStorage
+  // Cargar inventario fresco cuando el componente se monta o cuando cambia el material
   useEffect(() => {
+    const inventario = loadInventarioAcopio();
     setInventarioActual(inventario);
-    console.log('MaterialInputs - Inventario cargado desde contexto:', inventario);
-  }, [inventario, tipoMateria]);
+    console.log('MaterialInputs - Inventario cargado:', inventario);
+  }, [tipoMateria]);
 
   // Recargar datos de proveedores cuando cambia el origen
   useEffect(() => {
