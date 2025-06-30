@@ -1,17 +1,16 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMachine, Machine } from '@/context/MachineContext';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
-import { ArrowLeft, Settings, Wrench } from 'lucide-react';
+import { ArrowLeft, Settings, Wrench, RefreshCw, Loader2 } from 'lucide-react';
 import MachineForm from '@/components/MachineForm';
 import MachineTable from '@/components/MachineTable';
 
 const MachineManagement: React.FC = () => {
   const { user } = useAuth();
-  const { machines, deleteMachine, addMachine } = useMachine();
+  const { machines, deleteMachine, addMachine, isLoading, syncMachines } = useMachine();
   const navigate = useNavigate();
 
   // Redirigir si no hay un usuario o no es administrador
@@ -33,6 +32,15 @@ const MachineManagement: React.FC = () => {
 
   const handleDeleteMachine = (id: string) => {
     deleteMachine(id);
+  };
+
+  const handleSyncMachines = async () => {
+    try {
+      await syncMachines();
+      toast.success('Máquinas sincronizadas exitosamente');
+    } catch (error) {
+      toast.error('Error sincronizando máquinas');
+    }
   };
 
   if (!user || user.role !== 'Administrador') return null;
@@ -90,6 +98,28 @@ const MachineManagement: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Botón de sincronización */}
+        <div className="mb-8 flex justify-end">
+          <Button
+            onClick={handleSyncMachines}
+            variant="outline"
+            disabled={isLoading}
+            className="bg-white/70 backdrop-blur-sm hover:bg-white/90 border-blue-200 text-blue-700 hover:text-blue-800"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sincronizar Base de Datos
+              </>
+            )}
+          </Button>
         </div>
 
         <MachineForm onAddMachine={handleAddMachine} />

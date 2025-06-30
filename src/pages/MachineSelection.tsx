@@ -1,15 +1,29 @@
 
 import React from 'react';
 import { useMachineSelection } from '@/hooks/useMachineSelection';
+import { useMachine } from '@/context/MachineContext';
 import { groupMachinesByType, MACHINE_ORDER, getMachineIcon } from '@/utils/machineUtils';
 import MachineSelectionHeader from '@/components/machine-selection/MachineSelectionHeader';
 import MachineGroup from '@/components/machine-selection/MachineGroup';
 import EmptyMachineState from '@/components/machine-selection/EmptyMachineState';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 const MachineSelection: React.FC = () => {
   const { user, filteredMachines, handleSelectMachine } = useMachineSelection();
+  const { isLoading, syncMachines } = useMachine();
 
   if (!user) return null;
+
+  const handleSyncMachines = async () => {
+    try {
+      await syncMachines();
+      toast.success('Máquinas sincronizadas exitosamente');
+    } catch (error) {
+      toast.error('Error sincronizando máquinas');
+    }
+  };
 
   const groupedMachines = groupMachinesByType(filteredMachines);
 
@@ -44,6 +58,18 @@ const MachineSelection: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <p className="text-lg text-slate-600">Cargando máquinas...</p>
+          <p className="text-sm text-slate-500">Sincronizando datos</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20">
       {/* Enhanced Background Pattern */}
@@ -51,6 +77,18 @@ const MachineSelection: React.FC = () => {
       
       <div className="relative container mx-auto py-8 px-4 max-w-7xl">
         <MachineSelectionHeader />
+
+        {/* Botón de sincronización */}
+        <div className="mb-8 flex justify-end">
+          <Button
+            onClick={handleSyncMachines}
+            variant="outline"
+            className="bg-white/70 backdrop-blur-sm hover:bg-white/90 border-blue-200 text-blue-700 hover:text-blue-800"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Sincronizar Máquinas
+          </Button>
+        </div>
 
         {filteredMachines.length === 0 ? (
           <EmptyMachineState user={user} />
