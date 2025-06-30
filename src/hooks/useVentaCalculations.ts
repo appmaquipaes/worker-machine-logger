@@ -1,119 +1,77 @@
 
-import { Report } from '@/types/report';
-import { getPrecioVentaMaterial } from '@/models/Materiales';
-import { loadTarifas } from '@/models/Tarifas';
-import { loadProductosProveedores } from '@/models/Proveedores';
+import { Venta } from '@/models/Ventas';
 
 export const useVentaCalculations = () => {
-  
+  const calculateVentaTotal = (venta: Venta): number => {
+    if (!venta.detalles || venta.detalles.length === 0) {
+      console.log('⚠️ Venta sin detalles, total = 0');
+      return 0;
+    }
+
+    const total = venta.detalles.reduce((acc, detalle) => {
+      // Recalcular subtotal para asegurar consistencia  
+      const subtotal = detalle.cantidad_m3 * detalle.valor_unitario;
+      console.log(`Detalle: ${detalle.producto_servicio} - ${detalle.cantidad_m3} x ${detalle.valor_unitario} = ${subtotal}`);
+      return acc + subtotal;
+    }, 0);
+
+    console.log(`💰 Total calculado para venta ${venta.id}: ${total}`);
+    return total;
+  };
+
+  const recalculateAllVentaTotals = (ventas: Venta[]): Venta[] => {
+    console.log('🔄 Recalculando totales de todas las ventas...');
+    return ventas.map(venta => {
+      const nuevoTotal = calculateVentaTotal(venta);
+      
+      // Actualizar también los subtotales de los detalles
+      const detallesActualizados = venta.detalles.map(detalle => ({
+        ...detalle,
+        subtotal: detalle.cantidad_m3 * detalle.valor_unitario
+      }));
+
+      return {
+        ...venta,
+        detalles: detallesActualizados,
+        total_venta: nuevoTotal
+      };
+    });
+  };
+
+  const updateVentaWithCalculatedTotal = (venta: Venta): Venta => {
+    const updatedVenta = {
+      ...venta,
+      total_venta: calculateVentaTotal(venta)
+    };
+    
+    // Actualizar subtotales de detalles también
+    updatedVenta.detalles = venta.detalles.map(detalle => ({
+      ...detalle,
+      subtotal: detalle.cantidad_m3 * detalle.valor_unitario
+    }));
+
+    return updatedVenta;
+  };
+
   const extractClienteFromDestination = (destination: string): string => {
-    if (!destination) return '';
-    return destination.split(' - ')[0] || '';
+    if (!destination) return 'Cliente no especificado';
+    
+    const parts = destination.split(' - ');
+    return parts[0] || destination;
   };
 
   const extractFincaFromDestination = (destination: string): string => {
     if (!destination) return '';
-    return destination.split(' - ')[1] || '';
-  };
-
-  const determinarTipoVenta = (report: Report): 'Solo material' | 'Solo transporte' | 'Material + transporte' => {
-    // Si es recepción de escombrera, es "Solo transporte" (servicio de recepción)
-    if (report.reportType === 'Recepción Escombrera') {
-      return 'Solo transporte';
-    }
     
-    // IMPORTANTE: Cargadores NO generan ventas directas
-    // Solo son parte de operaciones que se completan con volquetas
-    if (report.machineName.toLowerCase().includes('cargador')) {
-      // Los cargadores no deberían llegar aquí en ventas automáticas
-      console.log('⚠️ Cargador detectado en venta automática - esto no debería pasar');
-      return 'Solo material';
-    }
-    
-    // Volquetas desde Acopio es "Material + transporte"
-    if (report.origin && report.origin.toLowerCase().includes('acopio')) {
-      return 'Material + transporte';
-    }
-    
-    // Volquetas desde otros orígenes es "Solo transporte"
-    return 'Solo transporte';
-  };
-
-  const extraerTipoMaterial = (report: Report): string => {
-    // Intentar extraer de la descripción
-    if (report.description) {
-      const materialPatterns = {
-        'Arena': /arena/i,
-        'Recebo': /recebo/i,
-        'Gravilla': /gravilla/i,
-        'Material': /material/i
-      };
-      
-      for (const [material, pattern] of Object.entries(materialPatterns)) {
-        if (pattern.test(report.description)) {
-          return material;
-        }
-      }
-    }
-    
-    // Si es desde acopio, asumir material genérico
-    if (report.origin?.toLowerCase().includes('acopio')) {
-      return 'Material';
-    }
-    
-    return 'Material'; // Por defecto
-  };
-
-  const calcularPrecioMaterial = (tipoMaterial: string, proveedorId?: string): number => {
-    console.log('🔍 Calculando precio material:', { tipoMaterial, proveedorId });
-    
-    // Si tenemos proveedor, buscar precio específico del proveedor
-    if (proveedorId) {
-      const productosProveedores = loadProductosProveedores();
-      const productoProveedor = productosProveedores.find(producto => 
-        producto.proveedor_id === proveedorId && 
-        producto.tipo_insumo === 'Material' &&
-        producto.nombre_producto.toLowerCase().includes(tipoMaterial.toLowerCase())
-      );
-      
-      if (productoProveedor && productoProveedor.precio_unitario > 0) {
-        console.log('✅ Precio específico de proveedor encontrado:', productoProveedor.precio_unitario);
-        return productoProveedor.precio_unitario;
-      } else {
-        console.log('⚠️ No se encontró precio específico del proveedor para:', tipoMaterial);
-      }
-    }
-    
-    // Fallback: usar precio genérico de materiales
-    const precioGenerico = getPrecioVentaMaterial(tipoMaterial);
-    console.log('📋 Usando precio genérico:', precioGenerico);
-    return precioGenerico;
-  };
-
-  const calcularPrecioFlete = (report: Report, cantidad: number): number => {
-    const tarifas = loadTarifas();
-    const tarifaFlete = tarifas.find(t => 
-      t.origen.toLowerCase() === (report.origin || '').toLowerCase() &&
-      t.destino.toLowerCase() === (report.destination || '').toLowerCase()
-    );
-
-    let precioFlete = 0;
-    if (tarifaFlete) {
-      precioFlete = tarifaFlete.valor_por_m3;
-    } else if (report.value) {
-      // Si no hay tarifa pero el reporte tiene valor, usar ese valor
-      precioFlete = cantidad > 0 ? report.value / cantidad : 0;
-    }
-
-    return precioFlete;
+    const parts = destination.split(' - ');
+    return parts.length > 1 ? parts[1] : '';
   };
 
   return {
+    calculateVentaTotal,
+    recalculateAllVentaTotals,
+    updateVentaWithCalculatedTotal,
     extractClienteFromDestination,
-    extractFincaFromDestination,
-    determinarTipoVenta,
-    extraerTipoMaterial,
-    calcularPrecioMaterial,
-    calcularPrecioFlete
+    extractFincaFromDestination
   };
 };

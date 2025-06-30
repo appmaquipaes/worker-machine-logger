@@ -2,8 +2,8 @@
 import React from 'react';
 import VentasPageContainerFixed from '@/components/ventas/VentasPageContainerFixed';
 
-const VentasPage = () => {
+const VentasPageFixed = () => {
   return <VentasPageContainerFixed />;
 };
 
-export default VentasPage;
+export default VentasPageFixed;
