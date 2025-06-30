@@ -36,6 +36,7 @@ import InventarioPage from '@/pages/InventarioPage';
 import TarifasClientePage from '@/pages/TarifasClientePage';
 import ServiciosTransportePage from '@/pages/ServiciosTransportePage';
 import ControlTransportePage from '@/pages/ControlTransportePage';
+import ControlCombustiblePage from '@/pages/ControlCombustiblePage';
 
 // Migration Component
 import MigrationAccess from '@/components/MigrationAccess';
@@ -91,6 +92,7 @@ function App() {
                     <Route path="/admin/ventas-material" element={<VentasMaterialPage />} />
                     <Route path="/admin/inventario" element={<InventarioPage />} />
                     <Route path="/admin/control-transporte" element={<ControlTransportePage />} />
+                    <Route path="/admin/control-combustible" element={<ControlCombustiblePage />} />
                     
                     <Route path="*" element={<NotFound />} />
                   </Routes>
