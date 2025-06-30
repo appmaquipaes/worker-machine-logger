@@ -54,12 +54,8 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
         if (autoSetDestination && fincasData.length === 0) {
           onFincaChange(selectedCliente);
         }
-        // Si hay fincas pero la finca seleccionada no está en la lista, limpiar
-        else if (fincasData.length > 0 && selectedFinca && !fincasData.find(f => f.nombre_finca === selectedFinca)) {
-          onFincaChange('');
-        }
-        // Si solo hay una finca, seleccionarla automáticamente
-        else if (fincasData.length === 1 && !selectedFinca) {
+        // Si solo hay una finca y autoSetDestination está activo, seleccionarla automáticamente
+        else if (autoSetDestination && fincasData.length === 1 && !selectedFinca) {
           onFincaChange(fincasData[0].nombre_finca);
           if (onCiudadChange) {
             onCiudadChange(fincasData[0].ciudad);
@@ -74,7 +70,7 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
       setFincas([]);
       onFincaChange('');
     }
-  }, [selectedCliente, onFincaChange, onCiudadChange, autoSetDestination, selectedFinca]);
+  }, [selectedCliente, onFincaChange, onCiudadChange, autoSetDestination]);
 
   const handleClienteChange = (clienteNombre: string) => {
     console.log('🔄 Cambiando cliente a:', clienteNombre);
@@ -123,7 +119,7 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
           <Select 
             onValueChange={handleFincaChange} 
             value={selectedFinca}
-            disabled={!selectedCliente || (fincas.length === 0 && !autoSetDestination)}
+            disabled={!selectedCliente}
           >
             <SelectTrigger>
               <SelectValue 

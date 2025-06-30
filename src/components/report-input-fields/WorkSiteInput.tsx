@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import ClienteFincaSelector from '@/components/ClienteFincaSelector';
@@ -16,10 +16,30 @@ const WorkSiteInput: React.FC<WorkSiteInputProps> = ({
   workSite,
   onClienteChangeForWorkSite
 }) => {
+  const [selectedFinca, setSelectedFinca] = useState<string>('');
+
   // Mostrar para Horas Trabajadas Y Horas Extras
   if (reportType !== 'Horas Trabajadas' && reportType !== 'Horas Extras') {
     return null;
   }
+
+  const handleClienteChange = (cliente: string) => {
+    console.log('🔄 Cliente seleccionado en WorkSiteInput:', cliente);
+    onClienteChangeForWorkSite(cliente);
+    setSelectedFinca(''); // Reset finca when cliente changes
+  };
+
+  const handleFincaChange = (finca: string) => {
+    console.log('🔄 Finca seleccionada en WorkSiteInput:', finca);
+    setSelectedFinca(finca);
+    
+    // Si hay finca seleccionada, usar cliente + finca como workSite
+    if (finca && workSite) {
+      const nuevoWorkSite = finca ? `${workSite} - ${finca}` : workSite;
+      console.log('🎯 Nuevo workSite:', nuevoWorkSite);
+      // No necesitamos llamar onClienteChangeForWorkSite aquí porque es solo para mostrar
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -31,9 +51,9 @@ const WorkSiteInput: React.FC<WorkSiteInputProps> = ({
       </div>
       <ClienteFincaSelector
         selectedCliente={workSite}
-        selectedFinca=""
-        onClienteChange={onClienteChangeForWorkSite}
-        onFincaChange={() => {}}
+        selectedFinca={selectedFinca}
+        onClienteChange={handleClienteChange}
+        onFincaChange={handleFincaChange}
       />
     </div>
   );
