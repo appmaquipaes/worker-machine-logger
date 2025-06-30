@@ -32,19 +32,29 @@ export const createVenta = (
   };
 };
 
-// Función para crear un nuevo detalle de venta
+// Función para crear un nuevo detalle de venta - CORREGIDA
 export const createDetalleVenta = (
   tipo: 'Material' | 'Flete' | 'Alquiler' | 'Servicio',
   producto_servicio: string,
   cantidad_m3: number,
   valor_unitario: number
 ): DetalleVenta => {
+  // CORRECCIÓN: Asegurar que la multiplicación sea correcta
+  const subtotal = cantidad_m3 * valor_unitario;
+  
+  console.log('🔢 Calculando subtotal:', {
+    cantidad: cantidad_m3,
+    valorUnitario: valor_unitario,
+    subtotal: subtotal,
+    verificacion: `${cantidad_m3} × ${valor_unitario} = ${subtotal}`
+  });
+
   return {
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     tipo,
     producto_servicio,
     cantidad_m3,
     valor_unitario,
-    subtotal: cantidad_m3 * valor_unitario
+    subtotal: subtotal
   };
 };

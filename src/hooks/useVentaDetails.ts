@@ -1,112 +1,101 @@
 
 import { Report } from '@/types/report';
 import { DetalleVenta, createDetalleVenta } from '@/models/Ventas';
-import { loadTarifasCliente } from '@/models/TarifasCliente';
-import { useTarifasCalculation } from '@/hooks/useTarifasCalculation';
-import { getValorPorHoraPorDefecto, getValorFleteDefecto, getValorServicioDefecto } from '@/utils/ventaPricing';
+import { getDefaultPricing } from '@/utils/ventaPricing';
 
 export const useVentaDetails = () => {
-  const { calcularTarifa } = useTarifasCalculation();
-
   const crearDetallesVenta = (report: Report, cliente: string, destino: string): DetalleVenta[] => {
+    console.log('🔧 Creando detalles de venta para:', {
+      reportType: report.reportType,
+      machineName: report.machineName,
+      hours: report.hours,
+      value: report.value,
+      trips: report.trips
+    });
+
     const detalles: DetalleVenta[] = [];
     
-    if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
-      const horas = report.hours || 0;
-      let valorPorHora = 0;
-      
-      // Si viene valor del reporte, usarlo para calcular valor por hora
-      if (report.value && report.value > 0) {
-        valorPorHora = report.value; // El valor del reporte ya es el valor por hora
-        console.log(`💰 Usando valor del reporte: ${valorPorHora} por hora`);
-      } else {
-        // Si no viene valor del reporte, usar valor por defecto según tipo de máquina
-        valorPorHora = getValorPorHoraPorDefecto(report.machineName);
-        console.log(`💡 Usando valor por defecto: ${valorPorHora} por hora`);
-      }
-      
-      const valorTotal = valorPorHora * horas;
-      
-      console.log(`💰 Creando detalle: ${horas} horas x ${valorPorHora} = ${valorTotal}`);
+    if (report.reportType === 'Horas Trabajadas' && report.hours && report.value) {
+      console.log('⏰ Procesando horas trabajadas:', {
+        horas: report.hours,
+        valorTotal: report.value,
+        valorPorHora: report.value / report.hours
+      });
+
+      // CORRECCIÓN: Usar las horas reportadas y el valor total del reporte
+      const valorPorHora = report.value / report.hours;
       
       const detalleHoras = createDetalleVenta(
         'Alquiler',
-        `${report.reportType} ${report.machineName} - ${horas} horas`,
-        horas,
-        valorPorHora
+        `Alquiler ${report.machineName} - Horas trabajadas`,
+        report.hours, // Cantidad = horas trabajadas
+        valorPorHora  // Valor unitario = valor total / horas
       );
+
+      console.log('📋 Detalle creado:', {
+        producto: detalleHoras.producto_servicio,
+        cantidad: detalleHoras.cantidad_m3,
+        valorUnitario: detalleHoras.valor_unitario,
+        subtotal: detalleHoras.subtotal,
+        calculoVerificacion: report.hours * valorPorHora
+      });
+
       detalles.push(detalleHoras);
-      
-    } else if (report.reportType === 'Viajes') {
-      // Para viajes con material
-      if (report.cantidadM3 && report.cantidadM3 > 0) {
-        const tarifas = loadTarifasCliente();
-        const tarifaCliente = tarifas.find(t => 
-          t.cliente === cliente && 
-          t.tipo_material === report.description
-        );
-        
-        let valorUnitarioMaterial = 0;
-        
-        if (tarifaCliente) {
-          valorUnitarioMaterial = tarifaCliente.valor_material_cliente_m3 || 0;
-        } else {
-          const tarifaCalculada = calcularTarifa(
-            report.description || 'Material',
-            report.origin || '',
-            destino,
-            report.cantidadM3
-          );
-          valorUnitarioMaterial = tarifaCalculada.precio_venta_total / report.cantidadM3;
-        }
-        
-        if (valorUnitarioMaterial > 0) {
-          const detalleMaterial = createDetalleVenta(
-            'Material',
-            `${report.description} - ${report.cantidadM3} m³`,
-            report.cantidadM3,
-            valorUnitarioMaterial
-          );
-          detalles.push(detalleMaterial);
-        }
-      }
-      
-      // Agregar flete
-      const viajes = report.trips || 1;
-      let valorFlete = report.value || 0;
-      
-      if (valorFlete === 0) {
-        valorFlete = getValorFleteDefecto(report.machineName, viajes);
-      }
-      
-      if (viajes > 0 && valorFlete > 0) {
-        const valorPorViaje = valorFlete / viajes;
-        const detalleFlete = createDetalleVenta(
-          'Flete',
-          `Transporte ${report.machineName} - ${viajes} viajes`,
-          viajes,
-          valorPorViaje
-        );
-        detalles.push(detalleFlete);
-      }
-    } else {
-      // Para otros tipos de reporte
-      let valorServicio = report.value || 0;
-      
-      if (valorServicio === 0) {
-        valorServicio = getValorServicioDefecto(report.reportType, report.machineName);
-      }
-      
-      if (valorServicio > 0) {
-        const detalleServicio = createDetalleVenta(
-          'Servicio',
-          `${report.reportType} ${report.machineName}`,
-          1,
-          valorServicio
-        );
-        detalles.push(detalleServicio);
-      }
     }
+    
+    else if (report.reportType === 'Viajes' && report.trips && report.value) {
+      console.log('🚛 Procesando viajes:', {
+        viajes: report.trips,
+        valorTotal: report.value,
+        valorPorViaje: report.value / report.trips
+      });
+
+      const valorPorViaje = report.value / report.trips;
+      
+      const detalleViajes = createDetalleVenta(
+        'Flete',
+        `${report.machineName} - Transporte ${report.origin || 'Origen'} a ${destino}`,
+        report.trips,
+        valorPorViaje
+      );
+
+      console.log('📋 Detalle de viajes creado:', {
+        producto: detalleViajes.producto_servicio,
+        cantidad: detalleViajes.cantidad_m3,
+        valorUnitario: detalleViajes.valor_unitario,
+        subtotal: detalleViajes.subtotal
+      });
+
+      detalles.push(detalleViajes);
+    }
+    
+    else if (report.reportType === 'Recepción Escombrera' && report.value) {
+      const detalleEscombrera = createDetalleVenta(
+        'Servicio',
+        `Recepción escombrera - ${report.machineName}`,
+        1,
+        report.value
+      );
+
+      detalles.push(detalleEscombrera);
+    }
+    
+    else {
+      console.log('⚠️ Tipo de reporte no reconocido o datos insuficientes');
+      // Crear detalle genérico con el valor del reporte
+      const detalleGenerico = createDetalleVenta(
+        'Servicio',
+        `${report.reportType} - ${report.machineName}`,
+        1,
+        report.value || 0
+      );
+      
+      detalles.push(detalleGenerico);
+    }
+
+    const totalCalculado = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
+    console.log('💰 Total de detalles calculado:', totalCalculado);
+    console.log('📊 Detalles creados:', detalles.length);
 
     return detalles;
   };
