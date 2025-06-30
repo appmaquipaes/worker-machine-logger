@@ -22,12 +22,14 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
       'Cliente': venta.cliente,
       'Material': venta.tipo_material,
       'Cantidad (m³)': venta.cantidad_m3,
-      'Costo Base': `$${venta.costo_base_m3.toLocaleString()}`,
-      'Flete': `$${venta.flete_aplicado_m3.toLocaleString()}`,
-      'Margen': `$${venta.margen_ganancia_m3.toLocaleString()}`,
-      'Precio Venta': `$${venta.precio_venta_m3.toLocaleString()}`,
-      'Total Venta': `$${venta.total_venta.toLocaleString()}`,
-      'Ganancia': `$${venta.ganancia_total.toLocaleString()}`,
+      'Costo Base': `$${venta.costo_base_m3?.toLocaleString() || '0'}`,
+      'Flete': `$${venta.flete_aplicado_m3?.toLocaleString() || '0'}`,
+      'Margen': `$${venta.margen_ganancia_m3?.toLocaleString() || '0'}`,
+      'Precio Venta': `$${venta.precio_venta_m3?.toLocaleString() || '0'}`,
+      'Total Venta': `$${(venta.total_venta || 0).toLocaleString()}`,
+      'Ganancia': `$${(venta.ganancia_total || 0).toLocaleString()}`,
+      'Forma de Pago': venta.forma_pago || 'No especificada',
+      'Tipo Registro': venta.tipo_registro || 'Manual'
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -43,9 +45,9 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
   const calcularEstadisticas = () => {
     if (ventas.length === 0) return null;
 
-    const totalVentas = ventas.reduce((sum, venta) => sum + venta.total_venta, 0);
-    const totalGanancias = ventas.reduce((sum, venta) => sum + venta.ganancia_total, 0);
-    const totalCantidad = ventas.reduce((sum, venta) => sum + venta.cantidad_m3, 0);
+    const totalVentas = ventas.reduce((sum, venta) => sum + (venta.total_venta || 0), 0);
+    const totalGanancias = ventas.reduce((sum, venta) => sum + (venta.ganancia_total || 0), 0);
+    const totalCantidad = ventas.reduce((sum, venta) => sum + (venta.cantidad_m3 || 0), 0);
     const clientesUnicos = new Set(ventas.map(venta => venta.cliente)).size;
     const materialesUnicos = new Set(ventas.map(venta => venta.tipo_material)).size;
 
@@ -55,7 +57,7 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
       totalCantidad,
       clientesUnicos,
       materialesUnicos,
-      promedioVenta: totalVentas / ventas.length
+      promedioVenta: ventas.length > 0 ? totalVentas / ventas.length : 0
     };
   };
 

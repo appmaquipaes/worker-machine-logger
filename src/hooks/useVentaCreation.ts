@@ -50,7 +50,7 @@ export const useVentaCreation = () => {
         actividadGeneradora
       });
 
-      // Crear venta base
+      // Crear venta base con forma de pago por defecto para ventas automáticas
       const ventaBase = createVenta(
         report.reportDate,
         cliente,
@@ -58,7 +58,7 @@ export const useVentaCreation = () => {
         tipoVenta,
         report.origin || 'Origen no especificado',
         destino,
-        'Crédito', // Forma de pago por defecto
+        'Crédito', // Forma de pago por defecto para ventas automáticas
         `Venta automática generada desde reporte ${report.reportType} - ${report.machineName}`,
         actividadGeneradora
       );
@@ -69,24 +69,25 @@ export const useVentaCreation = () => {
       if (report.trips) ventaBase.viajes_realizados = report.trips;
       if (report.cantidadM3) ventaBase.cantidad_material_m3 = report.cantidadM3;
 
-      // Crear detalles de venta
+      // Crear detalles de venta MEJORADOS
       const detalles: DetalleVenta[] = [];
       
       if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
-        // Para horas trabajadas
+        // Para horas trabajadas - CORREGIDO
         const horas = report.hours || 0;
-        const valorHora = report.value || 0;
+        const valorTotal = report.value || 0;
+        const valorPorHora = horas > 0 ? valorTotal / horas : valorTotal;
         
         const detalleHoras = createDetalleVenta(
           'Alquiler',
           `${report.reportType} ${report.machineName} - ${horas} horas`,
           horas,
-          valorHora,
+          valorPorHora
         );
         detalles.push(detalleHoras);
         
       } else if (report.reportType === 'Viajes') {
-        // Para viajes con material
+        // Para viajes con material - CORREGIDO
         if (report.cantidadM3 && report.cantidadM3 > 0) {
           // Buscar tarifa del cliente
           const tarifas = loadTarifasCliente();
@@ -95,11 +96,11 @@ export const useVentaCreation = () => {
             t.tipo_material === report.description
           );
           
-          let valorUnitario = 0;
+          let valorUnitarioMaterial = 0;
           
           if (tarifaCliente) {
-            valorUnitario = tarifaCliente.valor_material_cliente_m3 || 0;
-            console.log('💰 Tarifa encontrada:', valorUnitario);
+            valorUnitarioMaterial = tarifaCliente.valor_material_cliente_m3 || 0;
+            console.log('💰 Tarifa encontrada:', valorUnitarioMaterial);
           } else {
             // Calcular tarifa automáticamente
             const tarifaCalculada = calcularTarifa(
@@ -108,53 +109,81 @@ export const useVentaCreation = () => {
               destino,
               report.cantidadM3
             );
-            valorUnitario = tarifaCalculada.precio_venta_total / report.cantidadM3;
-            console.log('🧮 Tarifa calculada:', valorUnitario);
+            valorUnitarioMaterial = tarifaCalculada.precio_venta_total / report.cantidadM3;
+            console.log('🧮 Tarifa calculada:', valorUnitarioMaterial);
           }
           
-          const detalleMaterial = createDetalleVenta(
-            'Material',
-            `${report.description} - ${report.cantidadM3} m³`,
-            report.cantidadM3,
-            valorUnitario
-          );
-          detalles.push(detalleMaterial);
+          if (valorUnitarioMaterial > 0) {
+            const detalleMaterial = createDetalleVenta(
+              'Material',
+              `${report.description} - ${report.cantidadM3} m³`,
+              report.cantidadM3,
+              valorUnitarioMaterial
+            );
+            detalles.push(detalleMaterial);
+          }
         }
         
-        // Agregar flete si aplica
+        // Agregar flete si aplica - CORREGIDO
         const viajes = report.trips || 1;
-        if (viajes > 0) {
+        const valorFlete = report.value || 0;
+        if (viajes > 0 && valorFlete > 0) {
+          const valorPorViaje = valorFlete / viajes;
           const detalleFlete = createDetalleVenta(
             'Flete',
             `Transporte ${report.machineName} - ${viajes} viajes`,
             viajes,
-            report.value || 0
+            valorPorViaje
           );
           detalles.push(detalleFlete);
         }
       } else if (report.reportType === 'Mantenimiento') {
-        const detalleMantenimiento = createDetalleVenta(
-          'Servicio',
-          `Mantenimiento ${report.machineName}`,
-          1,
-          report.value || 0
-        );
-        detalles.push(detalleMantenimiento);
+        const valorMantenimiento = report.value || 0;
+        if (valorMantenimiento > 0) {
+          const detalleMantenimiento = createDetalleVenta(
+            'Servicio',
+            `Mantenimiento ${report.machineName}`,
+            1,
+            valorMantenimiento
+          );
+          detalles.push(detalleMantenimiento);
+        }
       } else if (report.reportType === 'Combustible') {
-        const detalleCombustible = createDetalleVenta(
-          'Servicio',
-          `Combustible ${report.machineName} - ${report.kilometraje || 0} km`,
-          report.kilometraje || 1,
-          report.value || 0
-        );
-        detalles.push(detalleCombustible);
+        const valorCombustible = report.value || 0;
+        const kilometraje = report.kilometraje || 1;
+        if (valorCombustible > 0) {
+          const detalleCombustible = createDetalleVenta(
+            'Servicio',
+            `Combustible ${report.machineName} - ${kilometraje} km`,
+            kilometraje,
+            valorCombustible / kilometraje
+          );
+          detalles.push(detalleCombustible);
+        }
       }
 
-      // Asignar detalles y calcular total
+      // ASEGURAR que siempre haya al menos un detalle si hay valor en el reporte
+      if (detalles.length === 0 && report.value && report.value > 0) {
+        console.log('🔧 Creando detalle genérico para asegurar que el total no sea cero');
+        const detalleGenerico = createDetalleVenta(
+          'Servicio',
+          `${report.reportType} - ${report.machineName}`,
+          1,
+          report.value
+        );
+        detalles.push(detalleGenerico);
+      }
+
+      // Asignar detalles y calcular total CORRECTAMENTE
       ventaBase.detalles = detalles;
       ventaBase.total_venta = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
       
-      console.log('✅ Venta creada:', ventaBase);
+      console.log('✅ Venta creada con detalles:', {
+        totalDetalles: detalles.length,
+        totalVenta: ventaBase.total_venta,
+        formaPago: ventaBase.forma_pago
+      });
+      
       return ventaBase;
       
     } catch (error) {
