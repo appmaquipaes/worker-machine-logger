@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Navbar } from '@/components/Navbar';
+import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,8 @@ import { Package, Plus, Edit2, Trash2, History, TrendingUp, AlertTriangle } from
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { DesgloseMaterialModal } from '@/components/DesgloseMaterialModal';
-import { MovimientoInventarioModal } from '@/components/MovimientoInventarioModal';
+import DesgloseMaterialModal from '@/components/DesgloseMaterialModal';
+import MovimientoInventarioModal from '@/components/MovimientoInventarioModal';
 import { useInventoryMaterials } from '@/context/EnhancedInventoryMaterialsContext';
 import { useInventoryOperationsEnhanced } from '@/hooks/useInventoryOperationsEnhanced';
 import { InventarioAcopio } from '@/models/InventarioAcopio';

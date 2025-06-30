@@ -14,7 +14,11 @@ const DataSourceStatus: React.FC = () => {
     { name: 'Reportes', key: 'reports' as const, description: 'Informes de trabajo' },
     { name: 'Clientes', key: 'clients' as const, description: 'Base de datos de clientes' },
     { name: 'Fincas', key: 'fincas' as const, description: 'Propiedades y ubicaciones' },
-    { name: 'Ventas', key: 'ventas' as const, description: 'Transacciones de venta' },
+    { name: 'Ventas', key: 'ventas' as const, description: 'Transacciones de venta' }
+  ];
+
+  // Modules that use localStorage primarily (for now)
+  const localStorageModules = [
     { name: 'Inventario', key: 'inventario' as const, description: 'Stock y materiales' },
     { name: 'Materiales', key: 'materiales' as const, description: 'Catálogo de productos' }
   ];
@@ -102,12 +106,33 @@ const DataSourceStatus: React.FC = () => {
               </div>
             );
           })}
+          
+          {localStorageModules.map((module) => {
+            // These modules always use localStorage for now
+            const effectiveSource = 'localStorage';
+            
+            return (
+              <div key={module.key} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm">{module.name}</h3>
+                  {getStatusIcon(effectiveSource)}
+                </div>
+                <p className="text-xs text-gray-600">{module.description}</p>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${getStatusColor(effectiveSource)}`}
+                >
+                  Local
+                </Badge>
+              </div>
+            );
+          })}
         </div>
 
         {!supabaseConnected && (
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div>
                 <h4 className="font-medium text-yellow-800">Modo Fallback Activo</h4>
                 <p className="text-sm text-yellow-700 mt-1">

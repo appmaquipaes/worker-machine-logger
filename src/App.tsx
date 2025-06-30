@@ -6,9 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { ThemeProvider } from "next-themes"
 import { AuthProvider } from "./context/AuthContext"
 import { DataSourceProvider } from "./context/DataSourceContext"
-import { EnhancedMachineProvider } from "./context/MachineContext"
+import { MachineProvider } from "./context/MachineContext"
 import { EnhancedReportProvider } from "./context/EnhancedReportContext"
-import { EnhancedClientFincaProvider } from "./context/EnhancedClientFincaContext"
+import { ClientFincaProvider } from "./context/EnhancedClientFincaContext"
 import { EnhancedVentasProvider } from "./context/EnhancedVentasContext"
 import { InventoryMaterialsProvider } from "./context/EnhancedInventoryMaterialsContext"
 import Index from "./pages/Index"
@@ -49,9 +49,9 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <DataSourceProvider>
-                <EnhancedMachineProvider>
+                <MachineProvider>
                   <EnhancedReportProvider>
-                    <EnhancedClientFincaProvider>
+                    <ClientFincaProvider>
                       <EnhancedVentasProvider>
                         <InventoryMaterialsProvider>
                           <div className="min-h-screen bg-background">
@@ -87,9 +87,9 @@ function App() {
                           <Toaster />
                         </InventoryMaterialsProvider>
                       </EnhancedVentasProvider>
-                    </EnhancedClientFincaProvider>
+                    </ClientFincaProvider>
                   </EnhancedReportProvider>
-                </EnhancedMachineProvider>
+                </MachineProvider>
               </DataSourceProvider>
             </AuthProvider>
           </BrowserRouter>

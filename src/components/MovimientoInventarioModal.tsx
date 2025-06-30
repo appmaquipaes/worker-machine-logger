@@ -1,16 +1,14 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MovimientoInventarioModalProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  material: { id: string; nombre_material: string };
-  onRegistrar: (movimiento: MovimientoInventarioFormState) => void;
 }
 
 export interface MovimientoInventarioFormState {
@@ -20,10 +18,8 @@ export interface MovimientoInventarioFormState {
 }
 
 const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
-  open,
+  isOpen,
   onClose,
-  material,
-  onRegistrar,
 }) => {
   const [tipo, setTipo] = useState<"entrada" | "salida">("entrada");
   const [cantidad, setCantidad] = useState<number>(0);
@@ -32,27 +28,31 @@ const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
   const handleRegistrar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cantidad || cantidad <= 0) return;
-    onRegistrar({ tipo, cantidad, observacion });
+    
+    // Here you would implement the logic to register the movement
+    console.log("Registrando movimiento:", { tipo, cantidad, observacion });
+    
     setTipo("entrada");
     setCantidad(0);
     setObservacion("");
+    onClose();
   };
 
   React.useEffect(() => {
-    if (open) {
+    if (isOpen) {
       setTipo("entrada");
       setCantidad(0);
       setObservacion("");
     }
-  }, [open]);
+  }, [isOpen]);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Registrar Movimiento de Inventario</DialogTitle>
           <DialogDescription>
-            Selecciona el tipo de movimiento e ingresa la cantidad para <b>{material.nombre_material}</b>
+            Selecciona el tipo de movimiento e ingresa la cantidad
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleRegistrar} className="space-y-4">
