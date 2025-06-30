@@ -1,5 +1,5 @@
 
-import { Venta } from '@/models/Ventas';
+import { Venta, determinarTipoVentaPorActividad } from '@/models/Ventas';
 
 export const useVentaCalculations = () => {
   const calculateVentaTotal = (venta: Venta): number => {
@@ -67,11 +67,17 @@ export const useVentaCalculations = () => {
     return parts.length > 1 ? parts[1] : '';
   };
 
+  // Función que faltaba - usando la del modelo
+  const determinarTipoVenta = (actividad: string, reportType: string, maquina: string): string => {
+    return determinarTipoVentaPorActividad(actividad, reportType, maquina);
+  };
+
   return {
     calculateVentaTotal,
     recalculateAllVentaTotals,
     updateVentaWithCalculatedTotal,
     extractClienteFromDestination,
-    extractFincaFromDestination
+    extractFincaFromDestination,
+    determinarTipoVenta
   };
 };
