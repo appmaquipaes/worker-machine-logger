@@ -47,36 +47,46 @@ export const useVentaCreation = () => {
         cliente,
         destino,
         tipoVenta,
-        actividadGeneradora
+        actividadGeneradora,
+        reportValue: report.value,
+        reportHours: report.hours
       });
 
-      // Crear venta base con forma de pago por defecto para ventas automáticas
+      // Crear venta base
       const ventaBase = createVenta(
         report.reportDate,
         cliente,
-        'Villavicencio', // Ciudad por defecto
+        'Villavicencio',
         tipoVenta,
         report.origin || 'Origen no especificado',
         destino,
-        'Crédito', // Forma de pago por defecto para ventas automáticas
+        'Crédito',
         `Venta automática generada desde reporte ${report.reportType} - ${report.machineName}`,
         actividadGeneradora
       );
 
-      // Agregar campos adicionales para enriquecer el reporte
+      // Agregar campos adicionales
       ventaBase.maquina_utilizada = report.machineName;
       if (report.hours) ventaBase.horas_trabajadas = report.hours;
       if (report.trips) ventaBase.viajes_realizados = report.trips;
       if (report.cantidadM3) ventaBase.cantidad_material_m3 = report.cantidadM3;
 
-      // Crear detalles de venta MEJORADOS
+      // Crear detalles de venta - CORREGIDO
       const detalles: DetalleVenta[] = [];
       
       if (report.reportType === 'Horas Trabajadas' || report.reportType === 'Horas Extras') {
-        // Para horas trabajadas - CORREGIDO
         const horas = report.hours || 0;
-        const valorTotal = report.value || 0;
+        let valorTotal = report.value || 0;
+        
+        // Si no viene valor del reporte, usar valor por defecto según tipo de máquina
+        if (valorTotal === 0) {
+          valorTotal = getValorPorDefecto(report.machineName, horas);
+          console.log(`💡 Usando valor por defecto: ${valorTotal} para ${horas} horas`);
+        }
+        
         const valorPorHora = horas > 0 ? valorTotal / horas : valorTotal;
+        
+        console.log(`💰 Creando detalle: ${horas} horas x ${valorPorHora} = ${valorTotal}`);
         
         const detalleHoras = createDetalleVenta(
           'Alquiler',
@@ -87,9 +97,8 @@ export const useVentaCreation = () => {
         detalles.push(detalleHoras);
         
       } else if (report.reportType === 'Viajes') {
-        // Para viajes con material - CORREGIDO
+        // Para viajes con material
         if (report.cantidadM3 && report.cantidadM3 > 0) {
-          // Buscar tarifa del cliente
           const tarifas = loadTarifasCliente();
           const tarifaCliente = tarifas.find(t => 
             t.cliente === cliente && 
@@ -100,9 +109,7 @@ export const useVentaCreation = () => {
           
           if (tarifaCliente) {
             valorUnitarioMaterial = tarifaCliente.valor_material_cliente_m3 || 0;
-            console.log('💰 Tarifa encontrada:', valorUnitarioMaterial);
           } else {
-            // Calcular tarifa automáticamente
             const tarifaCalculada = calcularTarifa(
               report.description || 'Material',
               report.origin || '',
@@ -110,7 +117,6 @@ export const useVentaCreation = () => {
               report.cantidadM3
             );
             valorUnitarioMaterial = tarifaCalculada.precio_venta_total / report.cantidadM3;
-            console.log('🧮 Tarifa calculada:', valorUnitarioMaterial);
           }
           
           if (valorUnitarioMaterial > 0) {
@@ -124,9 +130,14 @@ export const useVentaCreation = () => {
           }
         }
         
-        // Agregar flete si aplica - CORREGIDO
+        // Agregar flete
         const viajes = report.trips || 1;
-        const valorFlete = report.value || 0;
+        let valorFlete = report.value || 0;
+        
+        if (valorFlete === 0) {
+          valorFlete = getValorFleteDefecto(report.machineName, viajes);
+        }
+        
         if (viajes > 0 && valorFlete > 0) {
           const valorPorViaje = valorFlete / viajes;
           const detalleFlete = createDetalleVenta(
@@ -137,51 +148,38 @@ export const useVentaCreation = () => {
           );
           detalles.push(detalleFlete);
         }
-      } else if (report.reportType === 'Mantenimiento') {
-        const valorMantenimiento = report.value || 0;
-        if (valorMantenimiento > 0) {
-          const detalleMantenimiento = createDetalleVenta(
+      } else {
+        // Para otros tipos de reporte
+        let valorServicio = report.value || 0;
+        
+        if (valorServicio === 0) {
+          valorServicio = getValorServicioDefecto(report.reportType, report.machineName);
+        }
+        
+        if (valorServicio > 0) {
+          const detalleServicio = createDetalleVenta(
             'Servicio',
-            `Mantenimiento ${report.machineName}`,
+            `${report.reportType} ${report.machineName}`,
             1,
-            valorMantenimiento
+            valorServicio
           );
-          detalles.push(detalleMantenimiento);
-        }
-      } else if (report.reportType === 'Combustible') {
-        const valorCombustible = report.value || 0;
-        const kilometraje = report.kilometraje || 1;
-        if (valorCombustible > 0) {
-          const detalleCombustible = createDetalleVenta(
-            'Servicio',
-            `Combustible ${report.machineName} - ${kilometraje} km`,
-            kilometraje,
-            valorCombustible / kilometraje
-          );
-          detalles.push(detalleCombustible);
+          detalles.push(detalleServicio);
         }
       }
 
-      // ASEGURAR que siempre haya al menos un detalle si hay valor en el reporte
-      if (detalles.length === 0 && report.value && report.value > 0) {
-        console.log('🔧 Creando detalle genérico para asegurar que el total no sea cero');
-        const detalleGenerico = createDetalleVenta(
-          'Servicio',
-          `${report.reportType} - ${report.machineName}`,
-          1,
-          report.value
-        );
-        detalles.push(detalleGenerico);
-      }
-
-      // Asignar detalles y calcular total CORRECTAMENTE
+      // Asignar detalles y calcular total
       ventaBase.detalles = detalles;
       ventaBase.total_venta = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
       
-      console.log('✅ Venta creada con detalles:', {
+      console.log('✅ Venta creada:', {
         totalDetalles: detalles.length,
         totalVenta: ventaBase.total_venta,
-        formaPago: ventaBase.forma_pago
+        detalles: detalles.map(d => ({
+          producto: d.producto_servicio,
+          cantidad: d.cantidad_m3,
+          valorUnitario: d.valor_unitario,
+          subtotal: d.subtotal
+        }))
       });
       
       return ventaBase;
@@ -189,6 +187,59 @@ export const useVentaCreation = () => {
     } catch (error) {
       console.error('❌ Error creando venta automática:', error);
       return null;
+    }
+  };
+
+  // Función para obtener valor por defecto según tipo de máquina
+  const getValorPorDefecto = (maquina: string, horas: number): number => {
+    const maquinaLower = maquina.toLowerCase();
+    
+    // Valores por hora según tipo de máquina
+    let valorPorHora = 0;
+    
+    if (maquinaLower.includes('315') || maquinaLower.includes('excavat')) {
+      valorPorHora = 80000; // Retroexcavadoras
+    } else if (maquinaLower.includes('vibro') || maquinaLower.includes('compact')) {
+      valorPorHora = 60000; // Compactadores
+    } else if (maquinaLower.includes('bulldozer')) {
+      valorPorHora = 100000; // Bulldozers
+    } else if (maquinaLower.includes('cargador')) {
+      valorPorHora = 70000; // Cargadores
+    } else {
+      valorPorHora = 50000; // Valor genérico
+    }
+    
+    return valorPorHora * horas;
+  };
+
+  // Función para obtener valor de flete por defecto
+  const getValorFleteDefecto = (maquina: string, viajes: number): number => {
+    const maquinaLower = maquina.toLowerCase();
+    
+    let valorPorViaje = 0;
+    
+    if (maquinaLower.includes('volqueta')) {
+      valorPorViaje = 50000;
+    } else if (maquinaLower.includes('camión')) {
+      valorPorViaje = 60000;
+    } else {
+      valorPorViaje = 40000;
+    }
+    
+    return valorPorViaje * viajes;
+  };
+
+  // Función para obtener valor de servicio por defecto
+  const getValorServicioDefecto = (tipoReporte: string, maquina: string): number => {
+    switch (tipoReporte) {
+      case 'Mantenimiento':
+        return 200000;
+      case 'Combustible':
+        return 150000;
+      case 'Recepción Escombrera':
+        return 100000;
+      default:
+        return 50000;
     }
   };
 
