@@ -17,18 +17,20 @@ export const useVentaDetails = () => {
     if (report.reportType === 'Horas Trabajadas' && report.hours && report.value) {
       console.log('⏰ Procesando horas trabajadas:', {
         horas: report.hours,
-        valorTotal: report.value,
-        valorPorHora: report.value / report.hours
+        valorReportado: report.value,
+        tipoCalculo: 'Valor total para todas las horas'
       });
 
-      // CORRECCIÓN: Usar las horas reportadas y el valor total del reporte
-      const valorPorHora = report.value / report.hours;
+      // CORRECCIÓN: Usar el valor del reporte como valor por hora, no como total
+      // Si el reporte dice "8 horas a $160,000", esto significa $160,000 por hora
+      const valorPorHora = report.value; // El valor del reporte ES el valor por hora
+      const totalCalculado = report.hours * valorPorHora;
       
       const detalleHoras = createDetalleVenta(
         'Alquiler',
         `Alquiler ${report.machineName} - Horas trabajadas`,
         report.hours, // Cantidad = horas trabajadas
-        valorPorHora  // Valor unitario = valor total / horas
+        valorPorHora  // Valor unitario = valor por hora
       );
 
       console.log('📋 Detalle creado:', {
@@ -36,8 +38,17 @@ export const useVentaDetails = () => {
         cantidad: detalleHoras.cantidad_m3,
         valorUnitario: detalleHoras.valor_unitario,
         subtotal: detalleHoras.subtotal,
-        calculoVerificacion: report.hours * valorPorHora
+        calculoVerificacion: `${report.hours} × ${valorPorHora} = ${totalCalculado}`,
+        subtotalEsperado: totalCalculado
       });
+
+      // Verificar que el subtotal calculado sea correcto
+      if (detalleHoras.subtotal !== totalCalculado) {
+        console.warn('⚠️ Discrepancia en cálculo de subtotal:', {
+          subtotalCalculado: detalleHoras.subtotal,
+          subtotalEsperado: totalCalculado
+        });
+      }
 
       detalles.push(detalleHoras);
     }
@@ -95,6 +106,7 @@ export const useVentaDetails = () => {
     const totalCalculado = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
     console.log('💰 Total de detalles calculado:', totalCalculado);
     console.log('📊 Detalles creados:', detalles.length);
+    console.log('🔍 Detalles completos:', detalles);
 
     return detalles;
   };

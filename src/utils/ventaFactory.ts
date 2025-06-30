@@ -39,22 +39,32 @@ export const createDetalleVenta = (
   cantidad_m3: number,
   valor_unitario: number
 ): DetalleVenta => {
-  // CORRECCIÓN: Asegurar que la multiplicación sea correcta
-  const subtotal = cantidad_m3 * valor_unitario;
+  // Asegurar que los valores sean números válidos
+  const cantidadNumerica = Number(cantidad_m3) || 0;
+  const valorUnitarioNumerico = Number(valor_unitario) || 0;
   
-  console.log('🔢 Calculando subtotal:', {
-    cantidad: cantidad_m3,
-    valorUnitario: valor_unitario,
+  // CORRECCIÓN: Asegurar que la multiplicación sea correcta y precisa
+  const subtotal = Math.round((cantidadNumerica * valorUnitarioNumerico) * 100) / 100;
+  
+  console.log('🔢 Calculando subtotal en createDetalleVenta:', {
+    tipo,
+    producto: producto_servicio,
+    cantidad: cantidadNumerica,
+    valorUnitario: valorUnitarioNumerico,
     subtotal: subtotal,
-    verificacion: `${cantidad_m3} × ${valor_unitario} = ${subtotal}`
+    verificacion: `${cantidadNumerica} × ${valorUnitarioNumerico} = ${subtotal}`,
+    tiposOriginales: {
+      cantidadTipo: typeof cantidad_m3,
+      valorTipo: typeof valor_unitario
+    }
   });
 
   return {
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     tipo,
     producto_servicio,
-    cantidad_m3,
-    valor_unitario,
+    cantidad_m3: cantidadNumerica,
+    valor_unitario: valorUnitarioNumerico,
     subtotal: subtotal
   };
 };
