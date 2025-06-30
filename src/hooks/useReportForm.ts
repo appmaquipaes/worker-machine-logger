@@ -1,7 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { ReportType } from '@/types/report';
 import { useMachine } from '@/context/MachineContext';
+import { useAuth } from '@/context/AuthContext';
 import { useReportFormSubmission } from './useReportFormSubmission';
+import { loadProveedores } from '@/models/Proveedores';
+import { loadMateriales } from '@/models/Materiales';
+import { loadInventarioAcopio } from '@/models/InventarioAcopio';
 import { toast } from "sonner";
 
 export const useReportForm = () => {
@@ -20,10 +25,26 @@ export const useReportForm = () => {
   const [proveedor, setProveedor] = useState('');
   const [kilometraje, setKilometraje] = useState<number | undefined>();
   const [tipoMateria, setTipoMateria] = useState('');
+  const [selectedMaquinaria, setSelectedMaquinaria] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastSubmitSuccess, setLastSubmitSuccess] = useState(false);
+  const [proveedores, setProveedores] = useState<any[]>([]);
+  const [tiposMaterial, setTiposMaterial] = useState<string[]>([]);
+  const [inventarioAcopio, setInventarioAcopio] = useState<any[]>([]);
 
   const { selectedMachine } = useMachine();
+  const { user } = useAuth();
   const { submitReport, isSubmitting } = useReportFormSubmission();
+
+  useEffect(() => {
+    const loadedProveedores = loadProveedores();
+    const loadedMateriales = loadMateriales();
+    const loadedInventario = loadInventarioAcopio();
+
+    setProveedores(loadedProveedores);
+    setTiposMaterial(loadedMateriales.map(m => m.nombre_material));
+    setInventarioAcopio(loadedInventario);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +122,11 @@ export const useReportForm = () => {
 
     if (success) {
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      setLastSubmitSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setLastSubmitSuccess(false);
+      }, 3000);
       
       // Reset form
       resetForm();
@@ -122,6 +147,23 @@ export const useReportForm = () => {
     setProveedor('');
     setKilometraje(undefined);
     setTipoMateria('');
+    setSelectedMaquinaria('');
+  };
+
+  // Handler functions for form interactions
+  const handleClienteChangeForWorkSite = (cliente: string) => {
+    console.log('🔄 Cliente seleccionado para workSite:', cliente);
+    setWorkSite(cliente);
+  };
+
+  const handleClienteChangeForDestination = (cliente: string) => {
+    console.log('🔄 Cliente seleccionado para destino:', cliente);
+    setSelectedCliente(cliente);
+  };
+
+  const handleFincaChangeForDestination = (finca: string) => {
+    console.log('🔄 Finca seleccionada para destino:', finca);
+    setSelectedFinca(finca);
   };
 
   const handleReportTypeChange = (value: ReportType) => {
@@ -216,8 +258,16 @@ export const useReportForm = () => {
     setKilometraje,
     tipoMateria,
     setTipoMateria,
+    selectedMaquinaria,
+    setSelectedMaquinaria,
     showSuccess,
+    lastSubmitSuccess,
     isSubmitting,
+    proveedores,
+    tiposMaterial,
+    inventarioAcopio,
+    user,
+    selectedMachine,
     
     // Form handlers
     handleSubmit,
@@ -237,5 +287,8 @@ export const useReportForm = () => {
     handleProveedorChange,
     handleKilometrajeChange,
     handleTipoMateriaChange,
+    handleClienteChangeForWorkSite,
+    handleClienteChangeForDestination,
+    handleFincaChangeForDestination,
   };
 };
