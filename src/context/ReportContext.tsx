@@ -50,15 +50,18 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     destination?: string,
     cantidadM3?: number,
     proveedor?: string,
-    kilometraje?: number
+    kilometraje?: number,
+    detalleCalculo?: string,
+    tarifaEncontrada?: boolean
   ) => {
     console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
     console.log('👤 Usuario actual:', user?.name, '(ID:', user?.id, ')');
     console.log('🚛 Máquina:', machineName, '(ID:', machineId, ')');
-    console.log('📋 Tipo:', reportType, 'Material:', description, 'Cantidad:', cantidadM3);
-    console.log('📍 Origen:', origin, 'Destino:', destination);
+    console.log('📋 Tipo:', reportType, 'Descripción:', description);
+    console.log('💰 Valor calculado:', value, 'Detalle:', detalleCalculo, 'Tarifa encontrada:', tarifaEncontrada);
+    console.log('📍 Origen:', origin, 'Destino:', destination, 'Sitio de trabajo:', workSite);
     console.log('⏰ Fecha del reporte:', reportDate);
-    console.log('🔧 Datos adicionales:', { trips, hours, value, workSite, proveedor, kilometraje });
+    console.log('🔧 Datos adicionales:', { trips, hours, cantidadM3, proveedor, kilometraje });
 
     // Extraer información del proveedor si aplica
     const { proveedorId, proveedorNombre } = extraerInfoProveedor(origin || '');
@@ -129,6 +132,17 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
       newReport.proveedorId = proveedorId;
       newReport.proveedorNombre = proveedorNombre;
       console.log('📋 Información de proveedor agregada al reporte');
+    }
+
+    // Agregar información de cálculo si está disponible
+    if (detalleCalculo) {
+      newReport.detalleCalculo = detalleCalculo;
+      console.log('📊 Detalle de cálculo agregado:', detalleCalculo);
+    }
+    
+    if (tarifaEncontrada !== undefined) {
+      newReport.tarifaEncontrada = tarifaEncontrada;
+      console.log('🎯 Información de tarifa agregada:', tarifaEncontrada);
     }
     
     console.log('✅ Reporte creado completamente:', newReport);
