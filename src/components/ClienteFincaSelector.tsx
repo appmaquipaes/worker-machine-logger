@@ -26,15 +26,28 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
   const [fincas, setFincas] = useState<Finca[]>([]);
 
   useEffect(() => {
-    const clientesData = loadClientes().map(c => c.nombre_cliente);
+    const clientesData = loadClientes()
+      .filter(c => c.activo !== false) // Incluir clientes que no tienen activo definido
+      .map(c => c.nombre_cliente);
+    console.log('👥 Clientes disponibles en selector:', clientesData);
     setClientes(clientesData);
   }, []);
 
   useEffect(() => {
     if (selectedCliente) {
-      const cliente = getClienteByName(selectedCliente);
+      console.log('🔍 Buscando cliente en ClienteFincaSelector:', selectedCliente);
+      const clientesCompletos = loadClientes();
+      console.log('📋 Todos los clientes:', clientesCompletos);
+      
+      const cliente = clientesCompletos.find(c => 
+        c.nombre_cliente === selectedCliente && c.activo !== false
+      );
+      
+      console.log('🎯 Cliente encontrado:', cliente);
+      
       if (cliente) {
         const fincasData = getFincasByCliente(cliente.id);
+        console.log('🏢 Fincas encontradas:', fincasData);
         setFincas(fincasData);
         
         // Si autoSetDestination está activo y no hay fincas, usar el nombre del cliente como destino
@@ -53,6 +66,7 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
           }
         }
       } else {
+        console.log('❌ Cliente no encontrado');
         setFincas([]);
         onFincaChange('');
       }
@@ -63,11 +77,13 @@ const ClienteFincaSelector: React.FC<ClienteFincaSelectorProps> = ({
   }, [selectedCliente, onFincaChange, onCiudadChange, autoSetDestination, selectedFinca]);
 
   const handleClienteChange = (clienteNombre: string) => {
+    console.log('🔄 Cambiando cliente a:', clienteNombre);
     onClienteChange(clienteNombre);
     onFincaChange(''); // Reset finca selection
   };
 
   const handleFincaChange = (fincaNombre: string) => {
+    console.log('🔄 Cambiando finca a:', fincaNombre);
     onFincaChange(fincaNombre);
     
     // Update ciudad if callback is provided

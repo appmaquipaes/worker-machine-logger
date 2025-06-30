@@ -129,7 +129,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
     if (nuevoCliente && tipoServicio === 'transporte') {
       // Buscar el cliente por nombre para obtener su ID  
       const clienteData = clientes.find(c => 
-        c.nombre_cliente === nuevoCliente && c.activo
+        c.nombre_cliente === nuevoCliente && c.activo !== false
       );
       
       console.log('📋 Cliente encontrado:', clienteData);
@@ -159,7 +159,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
         setDestino(nuevaFinca);
       } else if (cliente) {
         const clienteData = clientes.find(c => 
-          c.nombre_cliente === cliente && c.activo
+          c.nombre_cliente === cliente && c.activo !== false
         );
         if (clienteData) {
           const fincasDelCliente = getFincasByCliente(clienteData.id);
@@ -265,7 +265,7 @@ const TarifaClienteForm: React.FC<TarifaClienteFormProps> = ({
 
   // Determinar si el cliente tiene fincas - CORREGIDO
   const clienteData = cliente ? clientes.find(c => 
-    c.nombre_cliente === cliente && c.activo
+    c.nombre_cliente === cliente && c.activo !== false
   ) : null;
   
   const fincasDisponibles = clienteData ? getFincasByCliente(clienteData.id) : [];
