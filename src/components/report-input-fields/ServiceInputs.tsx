@@ -197,6 +197,7 @@ const ServiceInputs: React.FC<ServiceInputsProps> = ({
   if (reportType === 'Viajes') {
     return (
       <MaterialInputs
+        reportType={reportType}
         origin={origin}
         tipoMateria={tipoMateria}
         setTipoMateria={setTipoMateria}
