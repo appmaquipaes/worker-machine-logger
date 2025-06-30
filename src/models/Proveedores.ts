@@ -132,11 +132,18 @@ export const loadProveedores = (): Proveedor[] => {
   }
 };
 
-// Función para guardar productos de proveedores en localStorage
+// Función CORREGIDA para guardar productos de proveedores en localStorage
 export const saveProductosProveedores = (productos: ProductoProveedor[]): void => {
   try {
     console.log('💾 Guardando productos de proveedores:', productos.length);
-    localStorage.setItem('productos_proveedores', JSON.stringify(productos));
+    
+    // Serializar correctamente las fechas
+    const productosToStore = productos.map(producto => ({
+      ...producto,
+      fecha_registro: producto.fecha_registro.toISOString()
+    }));
+    
+    localStorage.setItem('productos_proveedores', JSON.stringify(productosToStore));
     console.log('✅ Productos de proveedores guardados exitosamente');
   } catch (error) {
     console.error('❌ Error guardando productos de proveedores:', error);
@@ -144,7 +151,7 @@ export const saveProductosProveedores = (productos: ProductoProveedor[]): void =
   }
 };
 
-// Función para cargar productos de proveedores desde localStorage
+// Función CORREGIDA para cargar productos de proveedores desde localStorage
 export const loadProductosProveedores = (): ProductoProveedor[] => {
   try {
     console.log('📂 Cargando productos de proveedores...');
@@ -157,7 +164,10 @@ export const loadProductosProveedores = (): ProductoProveedor[] => {
     
     const productos = JSON.parse(storedProductos).map((producto: any) => ({
       ...producto,
-      fecha_registro: new Date(producto.fecha_registro)
+      fecha_registro: producto.fecha_registro ? new Date(producto.fecha_registro) : new Date(),
+      // Asegurar compatibilidad con diferentes formatos de datos
+      tipo_material: producto.tipo_material || producto.nombre_producto || 'Material sin especificar',
+      precio_por_m3: producto.precio_por_m3 || producto.precio_unitario || 0
     }));
     
     console.log('✅ Productos de proveedores cargados:', productos.length);

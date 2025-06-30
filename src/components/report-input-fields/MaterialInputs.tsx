@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Truck, Wrench, AlertTriangle, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
   selectedMachine
 }) => {
   const { isMaterialTransportVehicle, isCargador } = useMachineSpecificReports();
-  const { obtenerMaterialesPorNombreProveedor } = useMaterialesPorProveedor();
+  const { obtenerMaterialesPorNombreProveedor, cargarDatos } = useMaterialesPorProveedor();
   const [inventarioActual, setInventarioActual] = useState<any[]>([]);
 
   // Cargar inventario fresco cuando el componente se monta o cuando cambia el material
@@ -45,6 +46,14 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
     setInventarioActual(inventario);
     console.log('MaterialInputs - Inventario cargado:', inventario);
   }, [tipoMateria]);
+
+  // Recargar datos de proveedores cuando cambia el origen
+  useEffect(() => {
+    if (origin && !esAcopio(origin)) {
+      console.log('🔄 Recargando datos de proveedores por cambio de origen:', origin);
+      cargarDatos();
+    }
+  }, [origin, cargarDatos]);
 
   // Verificar si es Camabaja (transporta maquinaria, no material)
   const isCamabaja = selectedMachine?.type === 'Camabaja';
@@ -143,7 +152,11 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
               {inventarioActual.filter(item => item.cantidad_disponible > 0).map((item) => (
-                <SelectItem key={item.id} value={item.tipo_material} className="hover:bg-gray-100">
+                <SelectItem 
+                  key={`inventario-${item.id}-${item.tipo_material}`} 
+                  value={item.tipo_material} 
+                  className="hover:bg-gray-100"
+                >
                   {item.tipo_material} 
                   <span className="ml-2 font-medium text-green-600">
                     ({item.cantidad_disponible.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m³ disponibles)
@@ -185,10 +198,14 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
                 </SelectTrigger>
                 <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
                   {materialesProveedor.map((material) => (
-                    <SelectItem key={material.id} value={material.tipo_material} className="hover:bg-gray-100">
-                      {material.tipo_material}
+                    <SelectItem 
+                      key={`proveedor-${material.id}-${material.tipo_material || material.nombre_producto}`} 
+                      value={material.tipo_material || material.nombre_producto} 
+                      className="hover:bg-gray-100"
+                    >
+                      {material.tipo_material || material.nombre_producto}
                       <span className="ml-2 text-sm text-gray-600">
-                        (${material.precio_por_m3?.toLocaleString('es-CO')}/m³)
+                        (${(material.precio_por_m3 || material.precio_unitario || 0).toLocaleString('es-CO')}/m³)
                       </span>
                     </SelectItem>
                   ))}
@@ -210,8 +227,12 @@ const MaterialInputs: React.FC<MaterialInputsProps> = ({
                   <SelectValue placeholder="Selecciona el tipo de material" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-2 border-gray-300 shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {tiposMaterial.map((tipo) => (
-                    <SelectItem key={tipo} value={tipo} className="hover:bg-gray-100">
+                  {tiposMaterial.map((tipo, index) => (
+                    <SelectItem 
+                      key={`material-general-${index}-${tipo}`} 
+                      value={tipo} 
+                      className="hover:bg-gray-100"
+                    >
                       {tipo}
                     </SelectItem>
                   ))}
