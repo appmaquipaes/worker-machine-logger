@@ -61,12 +61,14 @@ function App() {
                               <Route path="/register" element={<Register />} />
                               <Route path="/forgot-password" element={<ForgotPassword />} />
                               <Route path="/dashboard" element={<Dashboard />} />
+                              <Route path="/machines" element={<MachineSelection />} />
                               <Route path="/machine-selection" element={<MachineSelection />} />
                               <Route path="/report-form" element={<ReportForm />} />
                               <Route path="/reports" element={<Reports />} />
                               <Route path="/machine-management" element={<MachineManagement />} />
                               <Route path="/user-management" element={<UserManagement />} />
                               <Route path="/admin-panel" element={<AdminPanel />} />
+                              <Route path="/admin" element={<AdminPanel />} />
                               <Route path="/clientes" element={<ClientesPage />} />
                               <Route path="/inventario" element={<InventarioPage />} />
                               <Route path="/compras" element={<ComprasPage />} />
