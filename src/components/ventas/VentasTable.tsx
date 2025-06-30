@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Zap, User, Calendar, MapPin, CreditCard, Activity, Clock, Truck, Package } from 'lucide-react';
+import { Eye, Zap, User, Calendar, MapPin, Activity, Clock, Truck, Package } from 'lucide-react';
 import { Venta } from '@/models/Ventas';
 
 interface VentasTableProps {
@@ -28,20 +28,10 @@ const VentasTable: React.FC<VentasTableProps> = ({ ventasFiltradas }) => {
       'Alquiler por horas': 'bg-orange-100 text-orange-800 border border-orange-200',
       'Horas extras': 'bg-red-100 text-red-800 border border-red-200',
       'Mantenimiento': 'bg-gray-100 text-gray-800 border border-gray-200',
-      'Combustible': 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+      'Combustible': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      'Escombrera': 'bg-pink-100 text-pink-800 border border-pink-200'
     };
     return styles[tipo as keyof typeof styles] || 'bg-gray-100 text-gray-800 border border-gray-200';
-  };
-
-  const getFormaPagoStyle = (forma: string) => {
-    const styles = {
-      'Efectivo': 'bg-green-100 text-green-800',
-      'Transferencia': 'bg-blue-100 text-blue-800',
-      'Cheque': 'bg-yellow-100 text-yellow-800',
-      'Crédito': 'bg-orange-100 text-orange-800',
-      'Mixto': 'bg-purple-100 text-purple-800'
-    };
-    return styles[forma as keyof typeof styles] || 'bg-gray-100 text-gray-800';
   };
 
   const formatCurrency = (value: number) => {
@@ -101,7 +91,6 @@ DETALLES DE FACTURACIÓN:
 ${detallesTexto}
 
 TOTAL: ${formatCurrency(venta.total_venta)}
-Forma de Pago: ${venta.forma_pago}
 
 ${venta.observaciones ? `Observaciones: ${venta.observaciones}` : ''}
     `;
@@ -158,7 +147,6 @@ ${venta.observaciones ? `Observaciones: ${venta.observaciones}` : ''}
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Tipo de Venta</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Actividad</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Origen</TableHead>
-                  <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Forma de Pago</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Total</TableHead>
                   <TableHead className="text-base font-bold text-slate-700 py-4 px-6">Acciones</TableHead>
                 </TableRow>
@@ -217,12 +205,6 @@ ${venta.observaciones ? `Observaciones: ${venta.observaciones}` : ''}
                     
                     <TableCell className="py-5 px-6">
                       <span className="text-base text-slate-700">{venta.origen_material}</span>
-                    </TableCell>
-                    
-                    <TableCell className="py-5 px-6">
-                      <span className={`px-3 py-2 rounded-lg text-sm font-semibold ${getFormaPagoStyle(venta.forma_pago)}`}>
-                        {venta.forma_pago}
-                      </span>
                     </TableCell>
                     
                     <TableCell className="py-5 px-6">

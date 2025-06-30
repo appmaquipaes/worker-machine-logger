@@ -20,16 +20,14 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
     const exportData = ventas.map(venta => ({
       'Fecha': new Date(venta.fecha).toLocaleDateString(),
       'Cliente': venta.cliente,
-      'Material': venta.tipo_material,
-      'Cantidad (m³)': venta.cantidad_m3,
-      'Costo Base': `$${venta.costo_base_m3?.toLocaleString() || '0'}`,
-      'Flete': `$${venta.flete_aplicado_m3?.toLocaleString() || '0'}`,
-      'Margen': `$${venta.margen_ganancia_m3?.toLocaleString() || '0'}`,
-      'Precio Venta': `$${venta.precio_venta_m3?.toLocaleString() || '0'}`,
+      'Material': venta.tipo_material || 'N/A',
+      'Cantidad (m³)': venta.cantidad_m3 || venta.cantidad_material_m3 || 0,
+      'Horas Trabajadas': venta.horas_trabajadas || 0,
+      'Viajes Realizados': venta.viajes_realizados || 0,
+      'Máquina Utilizada': venta.maquina_utilizada || 'No especificada',
       'Total Venta': `$${(venta.total_venta || 0).toLocaleString()}`,
-      'Ganancia': `$${(venta.ganancia_total || 0).toLocaleString()}`,
-      'Forma de Pago': venta.forma_pago || 'No especificada',
-      'Tipo Registro': venta.tipo_registro || 'Manual'
+      'Tipo Registro': venta.tipo_registro || 'Manual',
+      'Actividad': venta.actividad_generadora || 'No especificada'
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -45,18 +43,43 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
   const calcularEstadisticas = () => {
     if (ventas.length === 0) return null;
 
-    const totalVentas = ventas.reduce((sum, venta) => sum + (venta.total_venta || 0), 0);
-    const totalGanancias = ventas.reduce((sum, venta) => sum + (venta.ganancia_total || 0), 0);
-    const totalCantidad = ventas.reduce((sum, venta) => sum + (venta.cantidad_m3 || 0), 0);
+    // Mejorar el cálculo del total de ventas considerando diferentes estructuras de datos
+    const totalVentas = ventas.reduce((sum, venta) => {
+      const total = venta.total_venta || 0;
+      return sum + total;
+    }, 0);
+    
+    const totalGanancias = ventas.reduce((sum, venta) => {
+      const ganancia = venta.ganancia_total || 0;
+      return sum + ganancia;
+    }, 0);
+    
+    const totalCantidad = ventas.reduce((sum, venta) => {
+      const cantidad = venta.cantidad_m3 || venta.cantidad_material_m3 || 0;
+      return sum + cantidad;
+    }, 0);
+    
+    const totalHoras = ventas.reduce((sum, venta) => {
+      const horas = venta.horas_trabajadas || 0;
+      return sum + horas;
+    }, 0);
+    
+    const totalViajes = ventas.reduce((sum, venta) => {
+      const viajes = venta.viajes_realizados || 0;
+      return sum + viajes;
+    }, 0);
+    
     const clientesUnicos = new Set(ventas.map(venta => venta.cliente)).size;
-    const materialesUnicos = new Set(ventas.map(venta => venta.tipo_material)).size;
+    const maquinasUnicas = new Set(ventas.map(venta => venta.maquina_utilizada).filter(Boolean)).size;
 
     return {
       totalVentas,
       totalGanancias,
       totalCantidad,
+      totalHoras,
+      totalViajes,
       clientesUnicos,
-      materialesUnicos,
+      maquinasUnicas,
       promedioVenta: ventas.length > 0 ? totalVentas / ventas.length : 0
     };
   };
@@ -94,8 +117,8 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
             <div className="flex items-center gap-2">
               <TrendingUp className="text-blue-600" size={20} />
               <div>
-                <div className="text-2xl font-bold text-blue-600">${stats.totalGanancias.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Total Ganancias</div>
+                <div className="text-2xl font-bold text-blue-600">{stats.totalHoras.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">Total Horas</div>
               </div>
             </div>
           </CardContent>
@@ -106,8 +129,8 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
             <div className="flex items-center gap-2">
               <Package className="text-purple-600" size={20} />
               <div>
-                <div className="text-2xl font-bold text-purple-600">{stats.totalCantidad.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">m³ Vendidos</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.totalViajes.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">Total Viajes</div>
               </div>
             </div>
           </CardContent>
@@ -136,8 +159,8 @@ const VentasReportCard: React.FC<VentasReportCardProps> = ({ ventas }) => {
               <div className="text-sm text-muted-foreground">Clientes Únicos</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-semibold">{stats.materialesUnicos}</div>
-              <div className="text-sm text-muted-foreground">Materiales Diferentes</div>
+              <div className="text-lg font-semibold">{stats.maquinasUnicas}</div>
+              <div className="text-sm text-muted-foreground">Máquinas Utilizadas</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-semibold">${stats.promedioVenta.toLocaleString()}</div>
