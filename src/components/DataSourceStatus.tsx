@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Wifi, WifiOff, Database, HardDrive } from 'lucide-react';
+import { CheckCircle, AlertCircle, Wifi, WifiOff, Database, HardDrive, AlertTriangle } from 'lucide-react';
 import { useDataSource } from '@/context/DataSourceContext';
 
 const DataSourceStatus: React.FC = () => {

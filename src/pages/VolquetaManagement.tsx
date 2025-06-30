@@ -534,7 +534,7 @@ const VolquetaManagement: React.FC = () => {
       {/* Modal de movimiento inventario */}
       {materialMovimiento && (
         <MovimientoInventarioModal
-          open={movimientoModalOpen}
+          isOpen={movimientoModalOpen}
           onClose={() => setMovimientoModalOpen(false)}
           material={materialMovimiento}
           onRegistrar={handleRegistrarMovimiento}

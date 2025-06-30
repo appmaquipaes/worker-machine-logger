@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface MovimientoInventarioModalProps {
   isOpen: boolean;
   onClose: () => void;
+  material?: { id: string; nombre_material: string };
+  onRegistrar?: (mov: MovimientoInventarioFormState) => void;
 }
 
 export interface MovimientoInventarioFormState {
@@ -20,6 +22,8 @@ export interface MovimientoInventarioFormState {
 const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
   isOpen,
   onClose,
+  material,
+  onRegistrar,
 }) => {
   const [tipo, setTipo] = useState<"entrada" | "salida">("entrada");
   const [cantidad, setCantidad] = useState<number>(0);
@@ -29,8 +33,14 @@ const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
     e.preventDefault();
     if (!cantidad || cantidad <= 0) return;
     
-    // Here you would implement the logic to register the movement
-    console.log("Registrando movimiento:", { tipo, cantidad, observacion });
+    const movimiento = { tipo, cantidad, observacion };
+    
+    if (onRegistrar) {
+      onRegistrar(movimiento);
+    } else {
+      // Default logic for basic inventory movement
+      console.log("Registrando movimiento:", movimiento);
+    }
     
     setTipo("entrada");
     setCantidad(0);
@@ -50,7 +60,10 @@ const MovimientoInventarioModal: React.FC<MovimientoInventarioModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar Movimiento de Inventario</DialogTitle>
+          <DialogTitle>
+            Registrar Movimiento de Inventario
+            {material && ` - ${material.nombre_material}`}
+          </DialogTitle>
           <DialogDescription>
             Selecciona el tipo de movimiento e ingresa la cantidad
           </DialogDescription>
