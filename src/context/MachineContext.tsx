@@ -1,7 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useMachineMigration } from '@/hooks/useMachineMigration';
 import { useEnhancedMachineManager } from '@/hooks/useEnhancedMachineManager';
-import { supabase } from '@/integrations/supabase/client';
 
 export type Machine = {
   id: string;
@@ -38,6 +38,8 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+  
   const { migrationComplete } = useMachineMigration();
   const { 
     machines: enhancedMachines, 
@@ -57,12 +59,13 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(enhancedLoading);
   }, [enhancedLoading]);
 
-  // Cargar máquinas cuando la migración esté completa
+  // Cargar máquinas solo una vez cuando la migración esté completa
   useEffect(() => {
-    if (migrationComplete) {
+    if (migrationComplete && !initialized) {
+      setInitialized(true);
       enhancedLoad();
     }
-  }, [migrationComplete, enhancedLoad]);
+  }, [migrationComplete, initialized, enhancedLoad]);
 
   // Recuperar máquina seleccionada del localStorage
   useEffect(() => {
@@ -116,28 +119,6 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const syncMachines = async () => {
     console.log('🔄 Sincronizando máquinas manualmente...');
     await enhancedLoad();
-  };
-
-  // Mantener función para crear máquinas iniciales por compatibilidad
-  const createInitialMachines = async () => {
-    const initialMachines: Machine[] = [
-      { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'Disponible' },
-      { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
-      { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'Disponible' },
-      { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'Disponible' },
-      { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'Disponible' },
-      { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'Disponible' },
-      { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
-      { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'Disponible' },
-      { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'Disponible' },
-      { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'Disponible' },
-      { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'Disponible' },
-      { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'Disponible' },
-    ];
-
-    for (const machine of initialMachines) {
-      await addMachine(machine);
-    }
   };
 
   const value = {

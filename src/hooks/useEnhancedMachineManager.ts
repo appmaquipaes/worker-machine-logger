@@ -12,14 +12,36 @@ interface LocalMachine {
   status: string;
 }
 
+// Cache global para evitar múltiples cargas
+let machinesCache: Machine[] = [];
+let isLoading = false;
+let loadPromise: Promise<Machine[]> | null = null;
+
 export const useEnhancedMachineManager = () => {
-  const [machines, setMachines] = useState<Machine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [machines, setMachines] = useState<Machine[]>(machinesCache);
+  const [loading, setLoading] = useState(false);
   const { readData, writeData } = useUnifiedDataManager();
 
-  // Cargar máquinas usando el sistema unificado
-  const loadMachines = async () => {
-    setIsLoading(true);
+  // Cargar máquinas usando el sistema unificado con cache
+  const loadMachines = async (): Promise<Machine[]> => {
+    // Si ya hay una carga en progreso, esperar a que termine
+    if (loadPromise) {
+      return loadPromise;
+    }
+
+    // Si ya tenemos datos en cache, devolverlos
+    if (machinesCache.length > 0) {
+      setMachines(machinesCache);
+      return machinesCache;
+    }
+
+    // Si ya se está cargando, no hacer nada
+    if (isLoading) {
+      return machinesCache;
+    }
+
+    isLoading = true;
+    setLoading(true);
     
     const supabaseQuery = async () => {
       return await supabase
@@ -28,29 +50,46 @@ export const useEnhancedMachineManager = () => {
         .eq('status', 'active');
     };
 
-    try {
-      const supabaseMachines = await readData<any>(
-        'machines',
-        supabaseQuery,
-        'machines'
-      );
+    loadPromise = (async () => {
+      try {
+        const supabaseMachines = await readData<any>(
+          'machines',
+          supabaseQuery,
+          'machines'
+        );
 
-      const formattedMachines: Machine[] = supabaseMachines.map(machine => ({
-        id: machine.id,
-        name: machine.name,
-        type: machine.type as Machine['type'],
-        plate: machine.license_plate || undefined,
-        status: machine.status === 'active' ? 'Disponible' : 'Mantenimiento'
-      }));
+        const formattedMachines: Machine[] = supabaseMachines.map(machine => ({
+          id: machine.id,
+          name: machine.name,
+          type: machine.type as Machine['type'],
+          plate: machine.license_plate || undefined,
+          status: machine.status === 'active' ? 'Disponible' : 'Mantenimiento'
+        }));
 
-      setMachines(formattedMachines);
-      console.log(`✅ Máquinas cargadas: ${formattedMachines.length}`);
-      
-    } catch (error) {
-      console.error('❌ Error cargando máquinas:', error);
-    } finally {
-      setIsLoading(false);
-    }
+        // Actualizar cache global
+        machinesCache = formattedMachines;
+        setMachines(formattedMachines);
+        console.log(`✅ Máquinas cargadas: ${formattedMachines.length}`);
+        
+        return formattedMachines;
+      } catch (error) {
+        console.error('❌ Error cargando máquinas:', error);
+        return [];
+      } finally {
+        isLoading = false;
+        setLoading(false);
+        loadPromise = null;
+      }
+    })();
+
+    return loadPromise;
+  };
+
+  // Limpiar cache cuando sea necesario
+  const clearCache = () => {
+    machinesCache = [];
+    loadPromise = null;
+    isLoading = false;
   };
 
   // Agregar máquina usando el sistema unificado
@@ -70,6 +109,7 @@ export const useEnhancedMachineManager = () => {
       const machineWithId = { ...machine, id: Date.now().toString() };
       const updatedMachines = [...machines, machineWithId];
       setMachines(updatedMachines);
+      machinesCache = updatedMachines;
       localStorage.setItem('machines', JSON.stringify(updatedMachines));
     };
 
@@ -83,7 +123,8 @@ export const useEnhancedMachineManager = () => {
     );
 
     if (success) {
-      await loadMachines(); // Recargar para obtener el ID correcto de Supabase
+      clearCache(); // Limpiar cache para forzar recarga
+      await loadMachines();
     }
 
     return success;
@@ -108,10 +149,11 @@ export const useEnhancedMachineManager = () => {
         machine.id === id ? { ...machine, ...updatedMachine } : machine
       );
       setMachines(updatedMachines);
+      machinesCache = updatedMachines;
       localStorage.setItem('machines', JSON.stringify(updatedMachines));
     };
 
-    return await writeData(
+    const success = await writeData(
       'machines',
       { id, ...updatedMachine },
       'update',
@@ -119,6 +161,8 @@ export const useEnhancedMachineManager = () => {
       'machines',
       localStorageUpdater
     );
+
+    return success;
   };
 
   // Eliminar máquina usando el sistema unificado
@@ -133,10 +177,11 @@ export const useEnhancedMachineManager = () => {
     const localStorageUpdater = () => {
       const updatedMachines = machines.filter(machine => machine.id !== id);
       setMachines(updatedMachines);
+      machinesCache = updatedMachines;
       localStorage.setItem('machines', JSON.stringify(updatedMachines));
     };
 
-    return await writeData(
+    const success = await writeData(
       'machines',
       { id },
       'delete',
@@ -144,14 +189,17 @@ export const useEnhancedMachineManager = () => {
       'machines',
       localStorageUpdater
     );
+
+    return success;
   };
 
   return {
     machines,
-    isLoading,
+    isLoading: loading,
     loadMachines,
     addMachine,
     updateMachine,
-    deleteMachine
+    deleteMachine,
+    clearCache
   };
 };
