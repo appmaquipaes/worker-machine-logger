@@ -36,7 +36,7 @@ export const useVentaCreation = () => {
       // Determinar actividad generadora
       const actividadGeneradora = getActividadGeneradora(report);
       
-      // Determinar tipo de venta usando la nueva función
+      // Determinar tipo de venta usando la función actualizada
       const tipoVenta = determinarTipoVentaPorActividad(
         actividadGeneradora,
         report.reportType,

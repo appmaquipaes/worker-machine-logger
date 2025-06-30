@@ -4,7 +4,7 @@ export type Venta = {
   fecha: Date;
   cliente: string;
   ciudad_entrega: string;
-  tipo_venta: 'Solo material' | 'Solo transporte' | 'Material + transporte' | 'Alquiler por horas' | 'Horas extras' | 'Mantenimiento' | 'Combustible';
+  tipo_venta: 'Solo material' | 'Solo transporte' | 'Material + transporte' | 'Alquiler por horas' | 'Escombrera' | 'Otros';
   origen_material: string;
   destino_material: string;
   forma_pago: string;
@@ -30,15 +30,14 @@ export type DetalleVenta = {
   subtotal: number;
 };
 
-// Tipos de venta disponibles - actualizado para incluir servicios de maquinaria
+// Tipos de venta disponibles - actualizado según especificaciones
 export const tiposVenta = [
   'Solo material',
   'Solo transporte', 
   'Material + transporte',
   'Alquiler por horas',
-  'Horas extras',
-  'Mantenimiento',
-  'Combustible'
+  'Escombrera',
+  'Otros'
 ];
 
 // Formas de pago disponibles - actualizado con opciones más específicas
@@ -120,57 +119,94 @@ export const updateVentaTotal = (venta: Venta): Venta => {
   };
 };
 
-// Función para determinar el tipo de venta basado en la actividad
+// Función para determinar el tipo de venta basado en la actividad - ACTUALIZADA
 export const determinarTipoVentaPorActividad = (
   actividad: string,
   reportType: string,
   maquina: string
 ): string => {
-  // Para reportes de horas
-  if (reportType === 'Horas Trabajadas') {
-    return 'Alquiler por horas';
-  }
+  const maquinaLower = maquina.toLowerCase();
+  const tipoMaquina = getTipoMaquinaFromName(maquina);
   
-  if (reportType === 'Horas Extras') {
-    return 'Horas extras';
-  }
-  
-  if (reportType === 'Mantenimiento') {
-    return 'Mantenimiento';
-  }
-  
-  if (reportType === 'Combustible') {
-    return 'Combustible';
-  }
-  
-  // Para reportes de viajes
-  if (reportType === 'Viajes') {
-    const maquinaLower = maquina.toLowerCase();
+  // Mapeo específico por tipo de máquina según las especificaciones
+  switch (tipoMaquina) {
+    case 'Retroexcavadora de Oruga':
+    case 'Retroexcavadora de Llanta':
+    case 'Vibrocompactador':
+    case 'Paladraga':
+    case 'Bulldozer':
+    case 'Motoniveladora':
+      return 'Alquiler por horas';
     
-    // Cargador: depende de la actividad específica
-    if (maquinaLower.includes('cargador')) {
-      if (actividad.includes('Carga y transporte')) {
-        return 'Material + transporte';
-      } else if (actividad.includes('transporte')) {
+    case 'Cargador':
+      return 'Solo material';
+    
+    case 'Camabaja':
+      return 'Solo transporte';
+    
+    case 'Escombrera':
+      return 'Escombrera';
+    
+    case 'Volqueta':
+    case 'Camión':
+      // Para volquetas y camiones, determinar según el contexto
+      if (reportType === 'Viajes') {
         return 'Solo transporte';
-      } else if (actividad.includes('carga')) {
-        return 'Solo material';
       }
-      return 'Material + transporte'; // Por defecto para cargadores
-    }
-    
-    // Volquetas y camiones: principalmente transporte
-    if (maquinaLower.includes('volqueta') || maquinaLower.includes('camión')) {
       return 'Solo transporte';
-    }
     
-    // Camabaja: solo transporte
-    if (maquinaLower.includes('camabaja')) {
+    case 'Semirremolque':
+    case 'Tractomula':
       return 'Solo transporte';
-    }
+    
+    default:
+      return 'Otros';
+  }
+};
+
+// Función auxiliar para determinar el tipo de máquina desde el nombre
+const getTipoMaquinaFromName = (nombreMaquina: string): string => {
+  const nombre = nombreMaquina.toLowerCase();
+  
+  // Mapeo basado en palabras clave en el nombre
+  if (nombre.includes('cat') || nombre.includes('komatsu') || nombre.includes('excavator')) {
+    return 'Retroexcavadora de Oruga';
+  }
+  if (nombre.includes('cargador')) {
+    return 'Cargador';
+  }
+  if (nombre.includes('vibro')) {
+    return 'Vibrocompactador';
+  }
+  if (nombre.includes('bulldozer') || nombre.includes('d6')) {
+    return 'Bulldozer';
+  }
+  if (nombre.includes('motoniveladora')) {
+    return 'Motoniveladora';
+  }
+  if (nombre.includes('paladraga')) {
+    return 'Paladraga';
+  }
+  if (nombre.includes('camabaja')) {
+    return 'Camabaja';
+  }
+  if (nombre.includes('volqueta') || nombre.includes('mack')) {
+    return 'Volqueta';
+  }
+  if (nombre.includes('camión')) {
+    return 'Camión';
+  }
+  if (nombre.includes('escombrera')) {
+    return 'Escombrera';
+  }
+  if (nombre.includes('semirremolque')) {
+    return 'Semirremolque';
+  }
+  if (nombre.includes('tractomula')) {
+    return 'Tractomula';
   }
   
-  return 'Material + transporte'; // Por defecto
+  return 'Otros';
 };
 
 // Función para guardar ventas en localStorage
