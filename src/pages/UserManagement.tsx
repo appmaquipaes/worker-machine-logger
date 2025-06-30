@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMachine } from '@/context/MachineContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useEnhancedUserManager } from '@/hooks/useEnhancedUserManager';
 import { toast } from "sonner";
 import UserManagementHeader from '@/components/user-management/UserManagementHeader';
 import UserStatsCards from '@/components/user-management/UserStatsCards';
@@ -23,10 +24,19 @@ type User = {
 };
 
 const UserManagement: React.FC = () => {
-  const { user, updateUserMachines } = useAuth();
+  const { user } = useAuth();
   const { machines } = useMachine();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]);
+  const {
+    users,
+    isLoading,
+    loadUsers,
+    updateUserMachines,
+    updateUserCommission,
+    updateUserTripCommission,
+    deleteUser
+  } = useEnhancedUserManager();
+  
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedMachines, setSelectedMachines] = useState<string[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -50,40 +60,6 @@ const UserManagement: React.FC = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('*');
-        
-        if (error) {
-          console.error('Error loading users from Supabase:', error);
-          // Fallback to localStorage
-          const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-          const usersWithoutPassword = storedUsers.map(
-            ({ password, ...userWithoutPassword }: any) => ({
-              ...userWithoutPassword,
-              assignedMachines: userWithoutPassword.assignedMachines || []
-            })
-          );
-          setUsers(usersWithoutPassword);
-        } else {
-          const mappedUsers = profiles?.map(profile => ({
-            id: profile.id,
-            name: profile.name,
-            email: profile.email,
-            role: profile.role,
-            assignedMachines: profile.assigned_machines || [],
-            comisionPorHora: profile.comision_por_hora,
-            comisionPorViaje: profile.comision_por_viaje
-          })) || [];
-          setUsers(mappedUsers);
-        }
-      } catch (error) {
-        console.error('Error loading users:', error);
-      }
-    };
-    
     loadUsers();
   }, []);
 
@@ -94,22 +70,12 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      // Try to delete from Supabase first
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error deleting from Supabase:', error);
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      const success = await deleteUser(id);
+      if (success) {
+        toast.success('Usuario eliminado correctamente');
+      } else {
+        toast.error('Error al eliminar usuario');
       }
-      
-      setUsers(prev => prev.filter(u => u.id !== id));
-      toast.success('Usuario eliminado correctamente');
     } catch (error) {
       console.error('Error removing user:', error);
       toast.error('Error al eliminar usuario');
@@ -135,13 +101,11 @@ const UserManagement: React.FC = () => {
     
     const success = await updateUserMachines(editingUser.id, selectedMachines);
     if (success) {
-      setUsers(prev => prev.map(u => 
-        u.id === editingUser.id 
-          ? { ...u, assignedMachines: selectedMachines }
-          : u
-      ));
       setIsEditDialogOpen(false);
       setEditingUser(null);
+      toast.success('Máquinas asignadas actualizadas');
+    } else {
+      toast.error('Error al actualizar máquinas asignadas');
     }
   };
 
@@ -157,57 +121,29 @@ const UserManagement: React.FC = () => {
 
   const handleSaveCommission = async (userId: string, commission: number) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ comision_por_hora: commission })
-        .eq('id', userId);
-      
-      if (error) {
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.map((u: any) => 
-          u.id === userId 
-            ? { ...u, comisionPorHora: commission }
-            : u
-        );
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      const success = await updateUserCommission(userId, commission);
+      if (success) {
+        toast.success('Comisión por hora actualizada');
+      } else {
+        toast.error('Error al actualizar comisión');
       }
-      
-      setUsers(prev => prev.map(u => 
-        u.id === userId 
-          ? { ...u, comisionPorHora: commission }
-          : u
-      ));
     } catch (error) {
       console.error('Error saving commission:', error);
+      toast.error('Error al actualizar comisión');
     }
   };
 
   const handleSaveTripCommission = async (userId: string, commission: number) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ comision_por_viaje: commission })
-        .eq('id', userId);
-      
-      if (error) {
-        // Fallback to localStorage
-        const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const updatedUsers = currentUsers.map((u: any) => 
-          u.id === userId 
-            ? { ...u, comisionPorViaje: commission }
-            : u
-        );
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+      const success = await updateUserTripCommission(userId, commission);
+      if (success) {
+        toast.success('Comisión por viaje actualizada');
+      } else {
+        toast.error('Error al actualizar comisión por viaje');
       }
-      
-      setUsers(prev => prev.map(u => 
-        u.id === userId 
-          ? { ...u, comisionPorViaje: commission }
-          : u
-      ));
     } catch (error) {
       console.error('Error saving trip commission:', error);
+      toast.error('Error al actualizar comisión por viaje');
     }
   };
 
