@@ -14,17 +14,16 @@ export const useVentaDetails = () => {
 
     const detalles: DetalleVenta[] = [];
     
-    if (report.reportType === 'Horas Trabajadas' && report.hours && report.value) {
-      console.log('⏰ Procesando horas trabajadas:', {
+    // HORAS TRABAJADAS - Condición corregida para reconocer el tipo de reporte
+    if (report.reportType === 'Horas Trabajadas' && report.hours && report.value && report.value > 0) {
+      console.log('⏰ Procesando horas trabajadas con valor:', {
         horas: report.hours,
-        valorReportado: report.value,
-        tipoCalculo: 'Valor total para todas las horas'
+        valorTotal: report.value,
+        valorPorHora: report.value / report.hours
       });
 
-      // CORRECCIÓN: Usar el valor del reporte como valor por hora, no como total
-      // Si el reporte dice "8 horas a $160,000", esto significa $160,000 por hora
-      const valorPorHora = report.value; // El valor del reporte ES el valor por hora
-      const totalCalculado = report.hours * valorPorHora;
+      // El valor del reporte es el TOTAL, no el valor por hora
+      const valorPorHora = report.value / report.hours;
       
       const detalleHoras = createDetalleVenta(
         'Alquiler',
@@ -33,27 +32,46 @@ export const useVentaDetails = () => {
         valorPorHora  // Valor unitario = valor por hora
       );
 
-      console.log('📋 Detalle creado:', {
+      console.log('📋 Detalle de horas trabajadas creado:', {
         producto: detalleHoras.producto_servicio,
         cantidad: detalleHoras.cantidad_m3,
         valorUnitario: detalleHoras.valor_unitario,
         subtotal: detalleHoras.subtotal,
-        calculoVerificacion: `${report.hours} × ${valorPorHora} = ${totalCalculado}`,
-        subtotalEsperado: totalCalculado
+        verificacion: `${report.hours} × ${valorPorHora} = ${detalleHoras.subtotal}`
       });
-
-      // Verificar que el subtotal calculado sea correcto
-      if (detalleHoras.subtotal !== totalCalculado) {
-        console.warn('⚠️ Discrepancia en cálculo de subtotal:', {
-          subtotalCalculado: detalleHoras.subtotal,
-          subtotalEsperado: totalCalculado
-        });
-      }
 
       detalles.push(detalleHoras);
     }
     
-    else if (report.reportType === 'Viajes' && report.trips && report.value) {
+    // HORAS EXTRAS
+    else if (report.reportType === 'Horas Extras' && report.hours && report.value && report.value > 0) {
+      console.log('⏰ Procesando horas extras:', {
+        horas: report.hours,
+        valorTotal: report.value,
+        valorPorHora: report.value / report.hours
+      });
+
+      const valorPorHora = report.value / report.hours;
+      
+      const detalleHorasExtras = createDetalleVenta(
+        'Alquiler',
+        `Alquiler ${report.machineName} - Horas extras`,
+        report.hours,
+        valorPorHora
+      );
+
+      console.log('📋 Detalle de horas extras creado:', {
+        producto: detalleHorasExtras.producto_servicio,
+        cantidad: detalleHorasExtras.cantidad_m3,
+        valorUnitario: detalleHorasExtras.valor_unitario,
+        subtotal: detalleHorasExtras.subtotal
+      });
+
+      detalles.push(detalleHorasExtras);
+    }
+    
+    // VIAJES
+    else if (report.reportType === 'Viajes' && report.trips && report.value && report.value > 0) {
       console.log('🚛 Procesando viajes:', {
         viajes: report.trips,
         valorTotal: report.value,
@@ -79,7 +97,8 @@ export const useVentaDetails = () => {
       detalles.push(detalleViajes);
     }
     
-    else if (report.reportType === 'Recepción Escombrera' && report.value) {
+    // RECEPCIÓN ESCOMBRERA
+    else if (report.reportType === 'Recepción Escombrera' && report.value && report.value > 0) {
       const detalleEscombrera = createDetalleVenta(
         'Servicio',
         `Recepción escombrera - ${report.machineName}`,
@@ -90,17 +109,28 @@ export const useVentaDetails = () => {
       detalles.push(detalleEscombrera);
     }
     
+    // CASOS SIN VALOR O CON VALOR 0
     else {
-      console.log('⚠️ Tipo de reporte no reconocido o datos insuficientes');
-      // Crear detalle genérico con el valor del reporte
-      const detalleGenerico = createDetalleVenta(
-        'Servicio',
-        `${report.reportType} - ${report.machineName}`,
-        1,
-        report.value || 0
-      );
+      console.log('⚠️ Reporte sin valor válido o tipo no reconocido:', {
+        reportType: report.reportType,
+        value: report.value,
+        hours: report.hours,
+        trips: report.trips
+      });
       
-      detalles.push(detalleGenerico);
+      // Solo crear detalle genérico si hay algún valor
+      if (report.value && report.value > 0) {
+        const detalleGenerico = createDetalleVenta(
+          'Servicio',
+          `${report.reportType} - ${report.machineName}`,
+          1,
+          report.value
+        );
+        
+        detalles.push(detalleGenerico);
+      } else {
+        console.log('❌ No se creará detalle de venta porque el valor es 0 o no existe');
+      }
     }
 
     const totalCalculado = detalles.reduce((total, detalle) => total + detalle.subtotal, 0);
