@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,16 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  // Si el usuario ya está autenticado, redirigir al dashboard
+  useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +35,21 @@ const Login: React.FC = () => {
     setIsSubmitting(false);
     
     if (success) {
+      console.log('Login successful, navigating to dashboard');
       navigate('/dashboard');
     }
   };
+
+  // Si el usuario ya está autenticado, no mostrar el formulario
+  if (user) {
+    return (
+      <div className="container max-w-md mx-auto py-10">
+        <div className="text-center">
+          <p>Redirigiendo...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-md mx-auto py-10">

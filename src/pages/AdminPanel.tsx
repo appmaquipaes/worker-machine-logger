@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, User, Building, Database, MapPin, Users, ShoppingCart, DollarSign } from 'lucide-react';
+import { ArrowLeft, User, Building, Database, MapPin, Users, ShoppingCart, DollarSign, Truck, Fuel } from 'lucide-react';
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -77,6 +77,20 @@ const AdminPanel = () => {
       icon: <Database className="mobile-icon-large text-slate-600" />,
       path: '/admin/inventario',
       color: 'from-slate-500 to-slate-600'
+    },
+    {
+      title: 'Control de Transporte',
+      description: 'Gestionar viajes, rutas y análisis de rentabilidad de volquetas',
+      icon: <Truck className="mobile-icon-large text-cyan-600" />,
+      path: '/admin/control-transporte',
+      color: 'from-cyan-500 to-cyan-600'
+    },
+    {
+      title: 'Control de Combustible',
+      description: 'Administrar combustible, saldo Texaco y consumo de maquinaria',
+      icon: <Fuel className="mobile-icon-large text-red-600" />,
+      path: '/admin/control-combustible',
+      color: 'from-red-500 to-red-600'
     },
   ];
 
