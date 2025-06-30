@@ -3,7 +3,6 @@ import React from 'react';
 import { ReportType } from '@/types/report';
 import { Machine } from '@/context/MachineContext';
 import MaterialInputs from './MaterialInputs';
-import HourlyValueInput from './HourlyValueInput';
 import FuelValueInput from './FuelValueInput';
 import MaintenanceValueInput from './MaintenanceValueInput';
 import NovedadesDescriptionInput from './NovedadesDescriptionInput';
@@ -53,15 +52,10 @@ const ServiceInputs: React.FC<ServiceInputsProps> = ({
   description,
   setDescription
 }) => {
-  // Componente para valores de horas trabajadas y extras
+  // Para horas trabajadas y extras, no mostrar campos de valor
+  // El valor se calculará automáticamente desde las tarifas por cliente
   if (reportType === 'Horas Trabajadas' || reportType === 'Horas Extras') {
-    return (
-      <HourlyValueInput
-        reportType={reportType}
-        value={value}
-        setValue={setValue}
-      />
-    );
+    return null;
   }
 
   // Componente para combustible
