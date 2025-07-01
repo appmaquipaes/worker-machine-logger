@@ -23,14 +23,21 @@ const Dashboard: React.FC = () => {
     clearSelectedMachine();
   }, [clearSelectedMachine]);
 
-  // Redirigir si no hay un usuario autenticado
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
+  // Debug: mostrar información del usuario
+  console.log('Dashboard - User:', user);
 
-  if (!user) return null;
+  // Si no hay usuario, mostrar mensaje de carga o redirigir
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Cargando dashboard...</p>
+          <p className="text-sm text-slate-500 mt-2">Si esto toma mucho tiempo, <Button variant="link" onClick={() => navigate('/login')} className="p-0 h-auto">inicia sesión aquí</Button></p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-amber-50/20">
@@ -48,6 +55,9 @@ const Dashboard: React.FC = () => {
           <p className="text-xl text-blue-100 max-w-2xl mx-auto">
             Gestiona tu operación con eficiencia y control total
           </p>
+          <div className="mt-4 text-sm text-blue-200">
+            <p>Rol: {user.role} | Email: {user.email}</p>
+          </div>
         </div>
       </div>
 
