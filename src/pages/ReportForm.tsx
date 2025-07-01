@@ -8,8 +8,13 @@ import ReportSuccessAlert from '@/components/report-form/ReportSuccessAlert';
 import ReportFormActions from '@/components/report-form/ReportFormActions';
 import OperatorInstructions from '@/components/machine-specific/OperatorInstructions';
 import { useReportForm } from '@/hooks/useReportForm';
+import { useAuth } from '@/context/AuthContext';
+import { useMachine } from '@/context/MachineContext';
 
 const ReportForm = () => {
+  const { user } = useAuth();
+  const { selectedMachine } = useMachine();
+  
   const {
     reportType, setReportType,
     description, setDescription,
@@ -26,18 +31,9 @@ const ReportForm = () => {
     proveedor, setProveedor,
     kilometraje, setKilometraje,
     tipoMateria, setTipoMateria,
-    selectedMaquinaria, setSelectedMaquinaria,
+    showSuccess,
     isSubmitting,
-    lastSubmitSuccess,
-    proveedores,
-    tiposMaterial,
-    inventarioAcopio,
-    handleClienteChangeForWorkSite,
-    handleClienteChangeForDestination,
-    handleFincaChangeForDestination,
-    handleSubmit,
-    user,
-    selectedMachine
+    handleSubmit
   } = useReportForm();
   
   if (!user || !selectedMachine) return null;
@@ -51,7 +47,7 @@ const ReportForm = () => {
         <ReportFormHeader selectedMachine={selectedMachine} />
 
         <ReportSuccessAlert 
-          isVisible={lastSubmitSuccess} 
+          isVisible={showSuccess} 
           reportType={reportType} 
         />
         
@@ -102,14 +98,6 @@ const ReportForm = () => {
                 setKilometraje={setKilometraje}
                 tipoMateria={tipoMateria}
                 setTipoMateria={setTipoMateria}
-                selectedMaquinaria={selectedMaquinaria}
-                setSelectedMaquinaria={setSelectedMaquinaria}
-                proveedores={proveedores}
-                tiposMaterial={tiposMaterial}
-                inventarioAcopio={inventarioAcopio}
-                onClienteChangeForWorkSite={handleClienteChangeForWorkSite}
-                onClienteChangeForDestination={handleClienteChangeForDestination}
-                onFincaChangeForDestination={handleFincaChangeForDestination}
               />
               
               <ReportFormActions isSubmitting={isSubmitting} />
