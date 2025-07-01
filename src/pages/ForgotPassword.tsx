@@ -7,16 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, ArrowLeft } from 'lucide-react';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const ForgotPassword: React.FC = () => {
-  const [step, setStep] = useState<'email' | 'verification' | 'newPassword'>('email');
+  const [step, setStep] = useState<'email' | 'success'>('email');
   const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { resetPassword, updatePassword } = useAuth();
+  const { resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleRequestReset = async (e: React.FormEvent) => {
@@ -29,32 +25,7 @@ const ForgotPassword: React.FC = () => {
     setIsSubmitting(false);
     
     if (success) {
-      setStep('verification');
-    }
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (verificationCode.length !== 6) return;
-    
-    setStep('newPassword');
-  };
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    if (!newPassword || newPassword !== confirmPassword) {
-      setIsSubmitting(false);
-      return;
-    }
-    
-    const success = await updatePassword(email, verificationCode, newPassword);
-    setIsSubmitting(false);
-    
-    if (success) {
-      navigate('/login');
+      setStep('success');
     }
   };
 
@@ -62,7 +33,7 @@ const ForgotPassword: React.FC = () => {
     <div className="container max-w-md mx-auto py-10">
       <div className="mb-6 flex justify-start">
         <Button
-          variant="back"
+          variant="outline"
           onClick={() => navigate('/login')}
         >
           <ArrowLeft size={18} />
@@ -74,13 +45,11 @@ const ForgotPassword: React.FC = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
             {step === 'email' && 'Recuperar Contraseña'}
-            {step === 'verification' && 'Verificar Código'}
-            {step === 'newPassword' && 'Nueva Contraseña'}
+            {step === 'success' && 'Correo Enviado'}
           </CardTitle>
           <CardDescription>
-            {step === 'email' && 'Ingresa tu correo electrónico para recibir un código de verificación'}
-            {step === 'verification' && 'Ingresa el código de verificación que recibiste'}
-            {step === 'newPassword' && 'Crea una nueva contraseña segura'}
+            {step === 'email' && 'Ingresa tu correo electrónico para recibir un enlace de recuperación'}
+            {step === 'success' && 'Revisa tu correo electrónico para continuar con el proceso'}
           </CardDescription>
         </CardHeader>
 
@@ -102,80 +71,32 @@ const ForgotPassword: React.FC = () => {
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Enviando..." : "Enviar Código"}
+                {isSubmitting ? "Enviando..." : "Enviar Enlace de Recuperación"}
               </Button>
             </form>
           </CardContent>
         )}
 
-        {step === 'verification' && (
+        {step === 'success' && (
           <CardContent>
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="otp">Código de Verificación</Label>
-                <div className="flex justify-center py-4">
-                  <InputOTP
-                    value={verificationCode}
-                    onChange={setVerificationCode}
-                    maxLength={6}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <p className="text-sm text-center text-muted-foreground">
-                  Se ha enviado un código de 6 dígitos a tu correo
-                </p>
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <Mail className="w-8 h-8 text-green-600" />
               </div>
-              <Button type="submit" className="w-full" disabled={verificationCode.length !== 6}>
-                Verificar Código
-              </Button>
-            </form>
-          </CardContent>
-        )}
-
-        {step === 'newPassword' && (
-          <CardContent>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Nueva Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-                {newPassword !== confirmPassword && confirmPassword && (
-                  <p className="text-xs text-destructive">Las contraseñas no coinciden</p>
-                )}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Se ha enviado un enlace de recuperación a <strong>{email}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Haz clic en el enlace del correo para crear una nueva contraseña.
+              </p>
               <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isSubmitting || !newPassword || newPassword !== confirmPassword}
+                variant="outline" 
+                onClick={() => navigate('/login')}
+                className="w-full"
               >
-                {isSubmitting ? "Actualizando..." : "Actualizar Contraseña"}
+                Volver al inicio de sesión
               </Button>
-            </form>
+            </div>
           </CardContent>
         )}
       </Card>
