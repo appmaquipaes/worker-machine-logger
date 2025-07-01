@@ -15,10 +15,10 @@ export type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor', assignedMachines?: string[]) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<{ error: any }>;
   isLoading: boolean;
   resetPassword: (email: string) => Promise<boolean>;
-  updatePassword: (email: string, resetCode: string, newPassword: string) => Promise<boolean>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
   updateUserMachines: (userId: string, machineIds: string[]) => Promise<boolean>;
 };
 

@@ -1,15 +1,9 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Report, ReportType, ReportContextType } from '@/types/report';
-import { filterReports } from '@/utils/reportUtils';
-import { extraerInfoProveedor } from '@/utils/proveedorUtils';
-import { useReportOperations } from '@/hooks/useReportOperations';
-import { useInventarioOperations } from '@/hooks/useInventarioOperations';
-import { useReportPersistence } from '@/hooks/useReportPersistence';
-import { useReportInventoryProcessing } from '@/hooks/useReportInventoryProcessing';
-import { useReportSalesProcessing } from '@/hooks/useReportSalesProcessing';
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
@@ -21,22 +15,60 @@ export const useReport = () => {
   return context;
 };
 
-// Keep useReports for backward compatibility
-export const useReports = useReport;
-
-interface ReportProviderProps {
-  children: ReactNode;
-}
-
-export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
-  const { createReport, getReportsByMachine, getTotalByType } = useReportOperations();
-  const { validarOperacion } = useInventarioOperations();
-  const { reports, saveReports, updateReport, deleteReport } = useReportPersistence();
-  const { processInventoryForReport } = useReportInventoryProcessing();
-  const { processSalesForReport } = useReportSalesProcessing();
+export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [reports, setReports] = useState<Report[]>([]);
   const { user } = useAuth();
 
-  const addReport = (
+  // Load reports from Supabase
+  const loadReports = async () => {
+    if (!user) return;
+
+    try {
+      const { data: supabaseReports, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading reports:', error);
+        return;
+      }
+
+      if (supabaseReports) {
+        const formattedReports: Report[] = supabaseReports.map(report => ({
+          id: report.id,
+          machineId: report.machine_id || '',
+          machineName: report.machine_name,
+          userName: report.user_name,
+          userId: report.user_id,
+          reportType: report.report_type as ReportType,
+          description: report.description || '',
+          value: Number(report.value) || 0,
+          createdAt: new Date(report.created_at),
+          reportDate: new Date(report.report_date),
+          origin: report.origin,
+          destination: report.destination,
+          cantidadM3: Number(report.cantidad_m3) || undefined,
+          trips: report.trips || undefined,
+          hours: Number(report.hours) || undefined,
+          workSite: report.work_site,
+          proveedor: report.proveedor,
+          kilometraje: Number(report.kilometraje) || undefined
+        }));
+
+        setReports(formattedReports);
+      }
+    } catch (error) {
+      console.error('Error loading reports:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, [user]);
+
+  const addReport = async (
     machineId: string,
     machineName: string,
     reportType: ReportType,
@@ -50,121 +82,149 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     destination?: string,
     cantidadM3?: number,
     proveedor?: string,
-    kilometraje?: number,
-    detalleCalculo?: string,
-    tarifaEncontrada?: boolean
+    kilometraje?: number
   ) => {
-    console.log('=== INICIANDO PROCESO DE CREACIÓN DE REPORTE ===');
-    console.log('👤 Usuario actual:', user?.name, '(ID:', user?.id, ')');
-    console.log('🚛 Máquina:', machineName, '(ID:', machineId, ')');
-    console.log('📋 Tipo:', reportType, 'Descripción:', description);
-    console.log('💰 Valor calculado:', value, 'Detalle:', detalleCalculo, 'Tarifa encontrada:', tarifaEncontrada);
-    console.log('📍 Origen:', origin, 'Destino:', destination, 'Sitio de trabajo:', workSite);
-    console.log('⏰ Fecha del reporte:', reportDate);
-    console.log('🔧 Datos adicionales:', { trips, hours, cantidadM3, proveedor, kilometraje });
-
-    // Extraer información del proveedor si aplica
-    const { proveedorId, proveedorNombre } = extraerInfoProveedor(origin || '');
-    
-    if (proveedorId) {
-      console.log('🏭 Proveedor identificado:', proveedorNombre, '(ID:', proveedorId, ')');
+    if (!user) {
+      toast.error('Debes estar autenticado para crear reportes');
+      return;
     }
 
-    // VALIDACIÓN DE INVENTARIO MEJORADA: Solo para cargadores
-    if (reportType === 'Viajes' && origin && destination && cantidadM3 && description) {
-      const esOrigenAcopio = origin.toLowerCase().includes('acopio');
-      const esCargador = machineName.toLowerCase().includes('cargador');
-      
-      console.log('🔍 Validando inventario:');
-      console.log('- Es origen acopio:', esOrigenAcopio);
-      console.log('- Es cargador:', esCargador);
-      console.log('- Origen original:', origin);
-      
-      // Solo validar stock si es cargador saliendo del acopio
-      if (esOrigenAcopio && esCargador) {
-        console.log('→ Validando stock para cargador saliendo del acopio');
-        const validacion = validarOperacion(description, cantidadM3, 'salida');
-        if (!validacion.esValida) {
-          console.log('❌ Validación de stock fallida:', validacion.mensaje);
-          toast.error(`❌ ${validacion.mensaje}`, {
-            duration: 6000,
-            style: {
-              fontSize: '16px',
-              fontWeight: 'bold',
-            }
-          });
-          return;
-        }
-        console.log('✅ Validación de stock exitosa para cargador');
-      } else if (esOrigenAcopio && !esCargador) {
-        console.log('ℹ️ Volqueta desde acopio - sin validación de stock (no descuenta inventario)');
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .insert({
+          user_id: user.id,
+          machine_id: machineId,
+          machine_name: machineName,
+          user_name: user.name,
+          report_type: reportType,
+          description,
+          report_date: reportDate.toISOString().split('T')[0],
+          trips,
+          hours,
+          value: value || 0,
+          work_site: workSite,
+          origin,
+          destination,
+          cantidad_m3: cantidadM3,
+          proveedor,
+          kilometraje
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding report:', error);
+        toast.error('Error al crear el reporte');
+        return;
       }
-    }
 
-    // Crear el reporte con información de proveedor mejorada
-    console.log('📝 Creando reporte...');
-    const newReport = createReport(
-      reports,
-      machineId,
-      machineName,
-      reportType,
-      description,
-      reportDate,
-      trips,
-      hours,
-      value,
-      workSite,
-      origin,
-      destination,
-      cantidadM3,
-      proveedor,
-      kilometraje
-    );
-    
-    // Agregar información del usuario y proveedor al reporte
-    if (user) {
-      newReport.userName = user.name;
-      newReport.userId = user.id;
-      console.log('👤 Usuario agregado al reporte:', user.name);
-    }
-    
-    if (proveedorId && proveedorNombre) {
-      newReport.proveedorId = proveedorId;
-      newReport.proveedorNombre = proveedorNombre;
-      console.log('📋 Información de proveedor agregada al reporte');
-    }
+      const newReport: Report = {
+        id: data.id,
+        machineId,
+        machineName,
+        userName: user.name,
+        userId: user.id,
+        reportType,
+        description,
+        value: value || 0,
+        createdAt: new Date(),
+        reportDate,
+        origin,
+        destination,
+        cantidadM3,
+        trips,
+        hours,
+        workSite,
+        proveedor,
+        kilometraje
+      };
 
-    // Agregar información de cálculo si está disponible
-    if (detalleCalculo) {
-      newReport.detalleCalculo = detalleCalculo;
-      console.log('📊 Detalle de cálculo agregado:', detalleCalculo);
+      setReports(prev => [newReport, ...prev]);
+      toast.success('Reporte creado exitosamente');
+    } catch (error) {
+      console.error('Error adding report:', error);
+      toast.error('Error al crear el reporte');
     }
-    
-    if (tarifaEncontrada !== undefined) {
-      newReport.tarifaEncontrada = tarifaEncontrada;
-      console.log('🎯 Información de tarifa agregada:', tarifaEncontrada);
+  };
+
+  const updateReport = async (id: string, updatedReport: Partial<Report>) => {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .update({
+          machine_name: updatedReport.machineName,
+          report_type: updatedReport.reportType,
+          description: updatedReport.description,
+          value: updatedReport.value,
+          report_date: updatedReport.reportDate?.toISOString().split('T')[0],
+          trips: updatedReport.trips,
+          hours: updatedReport.hours,
+          work_site: updatedReport.workSite,
+          origin: updatedReport.origin,
+          destination: updatedReport.destination,
+          cantidad_m3: updatedReport.cantidadM3,
+          proveedor: updatedReport.proveedor,
+          kilometraje: updatedReport.kilometraje
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating report:', error);
+        toast.error('Error al actualizar el reporte');
+        return;
+      }
+
+      setReports(prev => prev.map(report =>
+        report.id === id ? { ...report, ...updatedReport } : report
+      ));
+      
+      toast.success('Reporte actualizado exitosamente');
+    } catch (error) {
+      console.error('Error updating report:', error);
+      toast.error('Error al actualizar el reporte');
     }
-    
-    console.log('✅ Reporte creado completamente:', newReport);
-    const updatedReports = [...reports, newReport];
-    saveReports(updatedReports);
-    
-    console.log('💾 Reporte guardado. Total de reportes:', updatedReports.length);
+  };
 
-    // PROCESAR INVENTARIO PRIMERO (para todas las máquinas)
-    processInventoryForReport(newReport);
+  const deleteReport = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', id);
 
-    // PROCESAR VENTAS AUTOMÁTICAS
-    processSalesForReport(newReport);
-    
-    console.log('🎉 PROCESO DE CREACIÓN DE REPORTE COMPLETADO EXITOSAMENTE');
+      if (error) {
+        console.error('Error deleting report:', error);
+        toast.error('Error al eliminar el reporte');
+        return;
+      }
+
+      setReports(prev => prev.filter(report => report.id !== id));
+      toast.success('Reporte eliminado exitosamente');
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast.error('Error al eliminar el reporte');
+    }
+  };
+
+  const getReportsByMachine = (machineId: string) => {
+    return reports.filter(report => report.machineId === machineId);
+  };
+
+  const getTotalByType = (type: string) => {
+    return reports
+      .filter(report => report.reportType === type)
+      .reduce((total, report) => total + report.value, 0);
   };
 
   const getFilteredReports = (filters: any) => {
-    console.log('🔍 Solicitud de filtrado de reportes con filtros:', filters);
-    const result = filterReports(reports, filters);
-    console.log('📊 Resultado del filtrado:', result.length, 'reportes encontrados');
-    return result;
+    return reports.filter(report => {
+      if (filters.machineId && report.machineId !== filters.machineId) return false;
+      if (filters.reportType && report.reportType !== filters.reportType) return false;
+      if (filters.startDate && report.reportDate < filters.startDate) return false;
+      if (filters.endDate && report.reportDate > filters.endDate) return false;
+      return true;
+    });
   };
 
   const value: ReportContextType = {
@@ -172,14 +232,10 @@ export const ReportProvider: React.FC<ReportProviderProps> = ({ children }) => {
     addReport,
     updateReport,
     deleteReport,
-    getReportsByMachine: (machineId: string) => getReportsByMachine(reports, machineId),
-    getTotalByType: (type: string) => getTotalByType(reports, type),
-    getFilteredReports,
+    getReportsByMachine,
+    getTotalByType,
+    getFilteredReports
   };
 
-  return (
-    <ReportContext.Provider value={value}>
-      {children}
-    </ReportContext.Provider>
-  );
+  return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;
 };
