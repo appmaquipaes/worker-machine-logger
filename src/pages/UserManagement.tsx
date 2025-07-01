@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -58,7 +59,6 @@ const UserManagement: React.FC = () => {
         
         if (error) {
           console.error('Error loading users from Supabase:', error);
-          // Fallback to localStorage
           const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
           const usersWithoutPassword = storedUsers.map(
             ({ password, ...userWithoutPassword }: any) => ({
@@ -94,7 +94,6 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      // Try to delete from Supabase first
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -102,7 +101,6 @@ const UserManagement: React.FC = () => {
       
       if (error) {
         console.error('Error deleting from Supabase:', error);
-        // Fallback to localStorage
         const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
         const updatedUsers = currentUsers.filter((u: any) => u.id !== id);
         localStorage.setItem('users', JSON.stringify(updatedUsers));
@@ -163,7 +161,6 @@ const UserManagement: React.FC = () => {
         .eq('id', userId);
       
       if (error) {
-        // Fallback to localStorage
         const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
         const updatedUsers = currentUsers.map((u: any) => 
           u.id === userId 
@@ -191,7 +188,6 @@ const UserManagement: React.FC = () => {
         .eq('id', userId);
       
       if (error) {
-        // Fallback to localStorage
         const currentUsers = JSON.parse(localStorage.getItem('users') || '[]');
         const updatedUsers = currentUsers.map((u: any) => 
           u.id === userId 
