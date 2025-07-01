@@ -1,8 +1,7 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { User, AuthContextType } from '@/types/auth';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -16,54 +15,18 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supabaseAuth = useSupabaseAuth();
-  const [fullUser, setFullUser] = useState<User | null>(null);
-
-  // Load full user profile when auth user changes
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      if (supabaseAuth.user) {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', supabaseAuth.user.id)
-            .single();
-
-          if (error) {
-            console.error('Error loading user profile:', error);
-            return;
-          }
-
-          if (profile) {
-            setFullUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role as 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor',
-              assignedMachines: profile.assigned_machines || [],
-              comisionPorHora: profile.comision_por_hora,
-              comisionPorViaje: profile.comision_por_viaje
-            });
-          }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-        }
-      } else {
-        setFullUser(null);
-      }
-    };
-
-    loadUserProfile();
-  }, [supabaseAuth.user]);
 
   const value: AuthContextType = {
-    user: fullUser,
+    user: supabaseAuth.user,
     login: supabaseAuth.login,
     register: supabaseAuth.register,
     logout: supabaseAuth.logout,
     isLoading: supabaseAuth.isLoading,
     resetPassword: supabaseAuth.resetPassword,
-    updatePassword: supabaseAuth.updatePassword,
+    updatePassword: async (email: string, resetCode: string, newPassword: string) => {
+      // For Supabase, we don't need the email and resetCode parameters
+      return supabaseAuth.updatePassword(newPassword);
+    },
     updateUserMachines: supabaseAuth.updateUserMachines
   };
 

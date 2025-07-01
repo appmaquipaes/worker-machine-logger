@@ -1,95 +1,178 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from "sonner";
+
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor';
+  assigned_machines?: string[];
+  comision_por_hora?: number;
+  comision_por_viaje?: number;
+}
 
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('Fetching profile for user:', userId);
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        if (error.code === 'PGRST116') {
+          console.log('No profile found for user:', userId);
+        }
+        setProfile(null);
+        return null;
+      } else {
+        console.log('Profile loaded successfully:', profileData);
+        setProfile(profileData);
+        return profileData;
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setProfile(null);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // Set up auth state listener
+    let mounted = true;
+
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (initialSession) {
+          console.log('Initial session found:', initialSession.user.email);
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          await fetchUserProfile(initialSession.user.id);
+        } else {
+          console.log('No initial session found');
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state change:', event, session?.user?.email);
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Create or update user profile when signing in
-          await ensureUserProfile(session.user);
+        
+        if (session?.user) {
+          setTimeout(async () => {
+            if (mounted) {
+              await fetchUserProfile(session.user.id);
+            }
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
+        if (event !== 'INITIAL_SESSION') {
+          setIsLoading(false);
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    getInitialSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const ensureUserProfile = async (user: User) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Check if profile exists
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, create it
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario',
-            email: user.email || '',
-            role: 'Trabajador', // Default role
-            assigned_machines: []
-          });
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-        } else {
-          console.log('✅ Profile created for user:', user.email);
-        }
-      }
-    } catch (error) {
-      console.error('Error ensuring user profile:', error);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    try {
+      setIsLoading(true);
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        toast.error(error.message);
+        console.error('Login error:', error);
+        console.error('Error code:', error.status);
+        console.error('Error message:', error.message);
+        
+        // Mensajes más específicos según el error
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error("Email o contraseña incorrectos");
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error("Por favor confirma tu email antes de iniciar sesión");
+        } else {
+          toast.error(`Error de login: ${error.message}`);
+        }
+        setIsLoading(false);
         return false;
       }
 
-      toast.success('Sesión iniciada correctamente');
-      return true;
+      if (data.user) {
+        console.log('Login successful for:', data.user.email);
+        console.log('User data:', data.user);
+        
+        // Fetch profile immediately after successful login
+        const profile = await fetchUserProfile(data.user.id);
+        
+        if (!profile) {
+          console.warn('No profile found for user, login might have issues');
+          toast.warning("Usuario sin perfil configurado");
+        } else {
+          console.log('Profile found after login:', profile);
+        }
+        
+        toast.success("Inicio de sesión exitoso");
+        setIsLoading(false);
+        return true;
+      }
+      
+      setIsLoading(false);
+      return false;
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Error al iniciar sesión');
+      console.error("Error al iniciar sesión:", error);
+      toast.error("Error al iniciar sesión");
+      setIsLoading(false);
       return false;
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor', assignedMachines?: string[]) => {
+  const register = async (
+    name: string, 
+    email: string, 
+    password: string, 
+    role: 'Trabajador' | 'Administrador' | 'Operador' | 'Conductor',
+    assignedMachines: string[] = []
+  ): Promise<boolean> => {
     try {
+      console.log('Starting registration for:', email, 'with role:', role);
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -98,65 +181,67 @@ export const useSupabaseAuth = () => {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            name: name
+            name,
+            role
           }
         }
       });
 
       if (error) {
-        toast.error(error.message);
+        console.error('Registration error:', error);
+        toast.error(`Error de registro: ${error.message}`);
         return false;
       }
 
-      // If user was created successfully, create profile
       if (data.user) {
+        console.log('User created in auth, now creating profile for:', data.user.id);
+        
+        // Create profile with better error handling
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
             id: data.user.id,
-            name: name,
-            email: email,
-            role: role,
-            assigned_machines: assignedMachines || []
+            name,
+            email,
+            role,
+            assigned_machines: (role === 'Operador' || role === 'Conductor') ? assignedMachines : null
           });
 
         if (profileError) {
-          console.error('Error creating profile:', profileError);
+          console.error('Profile creation error:', profileError);
+          toast.error(`Usuario creado pero error al crear perfil: ${profileError.message}`);
+          return false;
         }
-      }
 
-      toast.success('Usuario registrado correctamente');
-      return true;
+        console.log('Profile created successfully');
+        toast.success("Usuario registrado exitosamente");
+        return true;
+      }
+      
+      return false;
     } catch (error) {
-      console.error('Register error:', error);
-      toast.error('Error al registrar usuario');
+      console.error("Error al registrar:", error);
+      toast.error("Error al registrar usuario");
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        toast.error(error.message);
-        return { error };
-      }
-
-      setUser(null);
-      setSession(null);
-      toast.success('Sesión cerrada correctamente');
-      return { error: null };
+      await supabase.auth.signOut();
+      setProfile(null);
+      toast.success("Sesión cerrada");
     } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Error al cerrar sesión');
-      return { error };
+      console.error("Error al cerrar sesión:", error);
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<boolean> => {
     try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
 
       if (error) {
@@ -164,16 +249,16 @@ export const useSupabaseAuth = () => {
         return false;
       }
 
-      toast.success('Correo de recuperación enviado');
+      toast.success("Se ha enviado un enlace de restablecimiento a tu correo");
       return true;
     } catch (error) {
-      console.error('Reset password error:', error);
-      toast.error('Error al enviar correo de recuperación');
+      console.error("Error al solicitar restablecimiento:", error);
+      toast.error("Error al procesar la solicitud");
       return false;
     }
   };
 
-  const updatePassword = async (newPassword: string) => {
+  const updatePassword = async (newPassword: string): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword
@@ -184,16 +269,16 @@ export const useSupabaseAuth = () => {
         return false;
       }
 
-      toast.success('Contraseña actualizada correctamente');
+      toast.success("Contraseña actualizada correctamente");
       return true;
     } catch (error) {
-      console.error('Update password error:', error);
-      toast.error('Error al actualizar contraseña');
+      console.error("Error al actualizar contraseña:", error);
+      toast.error("Error al actualizar la contraseña");
       return false;
     }
   };
 
-  const updateUserMachines = async (userId: string, machineIds: string[]) => {
+  const updateUserMachines = async (userId: string, machineIds: string[]): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -201,37 +286,35 @@ export const useSupabaseAuth = () => {
         .eq('id', userId);
 
       if (error) {
-        console.error('Error updating user machines:', error);
-        toast.error('Error al actualizar máquinas asignadas');
+        toast.error("Error al actualizar máquinas asignadas");
         return false;
       }
 
-      toast.success('Máquinas asignadas actualizadas correctamente');
+      toast.success("Máquinas asignadas actualizadas");
       return true;
     } catch (error) {
-      console.error('Error updating user machines:', error);
-      toast.error('Error al actualizar máquinas asignadas');
+      console.error("Error al actualizar máquinas:", error);
+      toast.error("Error al actualizar las máquinas asignadas");
       return false;
     }
   };
 
-  // Map user to the expected format
-  const mappedUser = user ? {
-    id: user.id,
-    email: user.email || '',
-    name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario',
-    role: 'Trabajador' // This will be updated from the profile
-  } : null;
-
   return {
-    user: mappedUser,
-    session,
-    isLoading,
+    user: profile ? {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: profile.role,
+      assignedMachines: profile.assigned_machines || [],
+      comisionPorHora: profile.comision_por_hora,
+      comisionPorViaje: profile.comision_por_viaje
+    } : null,
     login,
     register,
     logout,
     resetPassword,
     updatePassword,
-    updateUserMachines
+    updateUserMachines,
+    isLoading
   };
 };

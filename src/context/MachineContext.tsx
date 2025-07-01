@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useMachineMigration } from '@/hooks/useMachineMigration';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 export type Machine = {
   id: string;
@@ -38,27 +38,22 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { migrationComplete, syncMachinesFromSupabase } = useMachineMigration();
 
-  // Load machines from Supabase
+  // Cargar máquinas con respaldo robusto
   const loadMachines = async () => {
-    console.log('🔄 Cargando máquinas desde Supabase...');
+    console.log('🔄 Cargando máquinas...');
     setIsLoading(true);
 
     try {
+      // Primero intentar cargar desde Supabase
       const { data: supabaseMachines, error } = await supabase
         .from('machines')
         .select('*')
-        .eq('status', 'active')
-        .order('name');
+        .eq('status', 'active');
 
-      if (error) {
-        console.error('❌ Error cargando máquinas:', error);
-        toast.error('Error al cargar máquinas');
-        return;
-      }
-
-      if (supabaseMachines) {
-        console.log('✅ Máquinas cargadas desde Supabase:', supabaseMachines.length);
+      if (!error && supabaseMachines && supabaseMachines.length > 0) {
+        console.log('✅ Cargando máquinas desde Supabase:', supabaseMachines.length);
         
         const formattedMachines: Machine[] = supabaseMachines.map(machine => ({
           id: machine.id,
@@ -69,20 +64,95 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }));
 
         setMachines(formattedMachines);
+        
+        // Sincronizar con localStorage
+        localStorage.setItem('machines', JSON.stringify(formattedMachines));
+        localStorage.setItem('machines_last_sync', new Date().toISOString());
+        
+      } else {
+        console.log('⚠️ No se pudieron cargar máquinas desde Supabase, usando localStorage');
+        
+        // Cargar desde localStorage como respaldo
+        const storedMachines = localStorage.getItem('machines');
+        if (storedMachines) {
+          const parsedMachines = JSON.parse(storedMachines);
+          const machinesWithStatus = parsedMachines.map((machine: any) => ({
+            ...machine,
+            status: machine.status || 'Disponible'
+          }));
+          setMachines(machinesWithStatus);
+          console.log('📦 Máquinas cargadas desde localStorage:', machinesWithStatus.length);
+        } else {
+          console.log('⚠️ No hay máquinas en localStorage, creando máquinas iniciales');
+          await createInitialMachines();
+        }
       }
     } catch (error) {
       console.error('❌ Error cargando máquinas:', error);
-      toast.error('Error al cargar máquinas');
+      
+      // Último recurso: localStorage
+      const storedMachines = localStorage.getItem('machines');
+      if (storedMachines) {
+        const parsedMachines = JSON.parse(storedMachines);
+        setMachines(parsedMachines);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadMachines();
-  }, []);
+  const createInitialMachines = async () => {
+    const initialMachines: Machine[] = [
+      { id: '1', name: 'Cat315', type: 'Retroexcavadora de Oruga', imageUrl: '/cat315-excavator.jpg', status: 'Disponible' },
+      { id: '2', name: 'Cat312', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+      { id: '3', name: 'Bulldozer D6', type: 'Bulldozer', status: 'Disponible' },
+      { id: '4', name: 'Vibro-SD100', type: 'Vibrocompactador', status: 'Disponible' },
+      { id: '5', name: 'VIBRO-SD70D', type: 'Vibrocompactador', status: 'Disponible' },
+      { id: '6', name: 'VIBRO-CATCS-323', type: 'Vibrocompactador', status: 'Disponible' },
+      { id: '7', name: 'KOMATSU-200', type: 'Retroexcavadora de Oruga', status: 'Disponible' },
+      { id: '8', name: 'CARGADOR-S950', type: 'Cargador', status: 'Disponible' },
+      { id: '9', name: 'MOTONIVELADORA', type: 'Motoniveladora', status: 'Disponible' },
+      { id: '10', name: 'PALADRAGA', type: 'Paladraga', status: 'Disponible' },
+      { id: '11', name: 'MACK UFJ852', type: 'Volqueta', plate: 'UFJ852', status: 'Disponible' },
+      { id: '12', name: 'MACK SWN429', type: 'Volqueta', plate: 'SWN429', status: 'Disponible' },
+    ];
 
-  // Recover selected machine from localStorage
+    try {
+      // Insertar en Supabase
+      const supabaseMachines = initialMachines.map(machine => ({
+        id: machine.id,
+        name: machine.name,
+        type: machine.type,
+        license_plate: machine.plate || null,
+        status: 'active'
+      }));
+
+      const { error } = await supabase
+        .from('machines')
+        .insert(supabaseMachines);
+
+      if (!error) {
+        console.log('✅ Máquinas iniciales creadas en Supabase');
+      }
+    } catch (error) {
+      console.error('❌ Error creando máquinas iniciales en Supabase:', error);
+    }
+
+    // Guardar en localStorage
+    setMachines(initialMachines);
+    localStorage.setItem('machines', JSON.stringify(initialMachines));
+    localStorage.setItem('machines_initialized', 'true');
+    console.log('✅ Máquinas iniciales creadas');
+  };
+
+  // Cargar máquinas cuando la migración esté completa
+  useEffect(() => {
+    if (migrationComplete) {
+      loadMachines();
+    }
+  }, [migrationComplete]);
+
+  // Recuperar máquina seleccionada del localStorage
   useEffect(() => {
     const storedSelectedMachine = localStorage.getItem('selectedMachine');
     if (storedSelectedMachine) {
@@ -105,6 +175,7 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addMachine = async (machine: Omit<Machine, 'id'>) => {
     try {
+      // Insertar en Supabase primero
       const { data, error } = await supabase
         .from('machines')
         .insert({
@@ -117,11 +188,11 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .single();
 
       if (error) {
-        console.error('❌ Error agregando máquina:', error);
-        toast.error('Error al agregar máquina');
-        return;
+        console.error('❌ Error agregando máquina en Supabase:', error);
+        throw error;
       }
 
+      // Agregar al estado local
       const newMachine: Machine = {
         id: data.id,
         name: machine.name,
@@ -130,17 +201,31 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         status: machine.status
       };
 
-      setMachines(prev => [...prev, newMachine]);
-      toast.success('Máquina agregada exitosamente');
+      const updatedMachines = [...machines, newMachine];
+      setMachines(updatedMachines);
+      
+      // Sincronizar localStorage
+      localStorage.setItem('machines', JSON.stringify(updatedMachines));
+      
+      console.log('✅ Máquina agregada exitosamente');
       
     } catch (error) {
       console.error('❌ Error agregando máquina:', error);
-      toast.error('Error al agregar máquina');
+      
+      // Fallback: agregar solo localmente
+      const newMachine: Machine = {
+        ...machine,
+        id: Date.now().toString(),
+      };
+      const updatedMachines = [...machines, newMachine];
+      setMachines(updatedMachines);
+      localStorage.setItem('machines', JSON.stringify(updatedMachines));
     }
   };
 
   const updateMachine = async (id: string, updatedMachine: Partial<Machine>) => {
     try {
+      // Actualizar en Supabase
       const { error } = await supabase
         .from('machines')
         .update({
@@ -152,58 +237,58 @@ export const MachineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .eq('id', id);
 
       if (error) {
-        console.error('❌ Error actualizando máquina:', error);
-        toast.error('Error al actualizar máquina');
-        return;
+        console.error('❌ Error actualizando máquina en Supabase:', error);
       }
 
-      setMachines(prev => prev.map(machine =>
+      // Actualizar estado local
+      const updatedMachines = machines.map(machine =>
         machine.id === id ? { ...machine, ...updatedMachine } : machine
-      ));
+      );
+      setMachines(updatedMachines);
+      localStorage.setItem('machines', JSON.stringify(updatedMachines));
       
+      // Actualizar máquina seleccionada si es la misma
       if (selectedMachine && selectedMachine.id === id) {
         const updated = { ...selectedMachine, ...updatedMachine };
         setSelectedMachine(updated);
         localStorage.setItem('selectedMachine', JSON.stringify(updated));
       }
       
-      toast.success('Máquina actualizada exitosamente');
     } catch (error) {
       console.error('❌ Error actualizando máquina:', error);
-      toast.error('Error al actualizar máquina');
     }
   };
 
   const deleteMachine = async (id: string) => {
     try {
+      // Eliminar de Supabase (marcar como inactivo)
       const { error } = await supabase
         .from('machines')
         .update({ status: 'inactive' })
         .eq('id', id);
 
       if (error) {
-        console.error('❌ Error eliminando máquina:', error);
-        toast.error('Error al eliminar máquina');
-        return;
+        console.error('❌ Error eliminando máquina en Supabase:', error);
       }
 
-      setMachines(prev => prev.filter(machine => machine.id !== id));
+      // Eliminar del estado local
+      const updatedMachines = machines.filter(machine => machine.id !== id);
+      setMachines(updatedMachines);
+      localStorage.setItem('machines', JSON.stringify(updatedMachines));
       
+      // Limpiar máquina seleccionada si es la que se eliminó
       if (selectedMachine && selectedMachine.id === id) {
         clearSelectedMachine();
       }
       
-      toast.success('Máquina eliminada exitosamente');
     } catch (error) {
       console.error('❌ Error eliminando máquina:', error);
-      toast.error('Error al eliminar máquina');
     }
   };
 
   const syncMachines = async () => {
-    console.log('🔄 Sincronizando máquinas...');
+    console.log('🔄 Sincronizando máquinas manualmente...');
     await loadMachines();
-    toast.success('Máquinas sincronizadas exitosamente');
   };
 
   const value = {

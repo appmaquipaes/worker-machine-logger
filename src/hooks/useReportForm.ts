@@ -1,77 +1,28 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ReportType } from '@/types/report';
 import { useMachine } from '@/context/MachineContext';
-import { useAuth } from '@/context/AuthContext';
 import { useReportFormSubmission } from './useReportFormSubmission';
-import { useReportFormStateManagement } from './useReportFormStateManagement';
-import { useReportFormEventHandlers } from './useReportFormEventHandlers';
 import { toast } from "sonner";
 
 export const useReportForm = () => {
-  const {
-    reportType, setReportType,
-    reportDate, setReportDate,
-    description, setDescription,
-    trips, setTrips,
-    hours, setHours,
-    value, setValue,
-    workSite, setWorkSite,
-    origin, setOrigin,
-    selectedCliente, setSelectedCliente,
-    selectedFinca, setSelectedFinca,
-    maintenanceValue, setMaintenanceValue,
-    cantidadM3, setCantidadM3,
-    proveedor, setProveedor,
-    kilometraje, setKilometraje,
-    tipoMateria, setTipoMateria,
-    selectedMaquinaria, setSelectedMaquinaria,
-    showSuccess, setShowSuccess,
-    lastSubmitSuccess, setLastSubmitSuccess,
-    proveedores,
-    tiposMaterial,
-    inventarioAcopio,
-    resetForm
-  } = useReportFormStateManagement();
-
-  const {
-    handleClienteChangeForWorkSite,
-    handleClienteChangeForDestination,
-    handleFincaChangeForDestination,
-    handleReportTypeChange,
-    handleReportDateChange,
-    handleDescriptionChange,
-    handleTripsChange,
-    handleHoursChange,
-    handleValueChange,
-    handleWorkSiteChange,
-    handleOriginChange,
-    handleSelectedClienteChange,
-    handleSelectedFincaChange,
-    handleMaintenanceValueChange,
-    handleCantidadM3Change,
-    handleProveedorChange,
-    handleKilometrajeChange,
-    handleTipoMateriaChange,
-  } = useReportFormEventHandlers(
-    setReportType,
-    setReportDate,
-    setDescription,
-    setTrips,
-    setHours,
-    setValue,
-    setWorkSite,
-    setOrigin,
-    setSelectedCliente,
-    setSelectedFinca,
-    setMaintenanceValue,
-    setCantidadM3,
-    setProveedor,
-    setKilometraje,
-    setTipoMateria
-  );
+  const [reportType, setReportType] = useState<ReportType>('Horas Trabajadas');
+  const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [description, setDescription] = useState('');
+  const [trips, setTrips] = useState<number | undefined>();
+  const [hours, setHours] = useState<number | undefined>();
+  const [value, setValue] = useState<number | undefined>();
+  const [workSite, setWorkSite] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [selectedCliente, setSelectedCliente] = useState('');
+  const [selectedFinca, setSelectedFinca] = useState('');
+  const [maintenanceValue, setMaintenanceValue] = useState<number | undefined>();
+  const [cantidadM3, setCantidadM3] = useState<number | undefined>();
+  const [proveedor, setProveedor] = useState('');
+  const [kilometraje, setKilometraje] = useState<number | undefined>();
+  const [tipoMateria, setTipoMateria] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const { selectedMachine } = useMachine();
-  const { user } = useAuth();
   const { submitReport, isSubmitting } = useReportFormSubmission();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,15 +101,87 @@ export const useReportForm = () => {
 
     if (success) {
       setShowSuccess(true);
-      setLastSubmitSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setLastSubmitSuccess(false);
-      }, 3000);
+      setTimeout(() => setShowSuccess(false), 3000);
       
       // Reset form
       resetForm();
     }
+  };
+
+  const resetForm = () => {
+    setDescription('');
+    setTrips(undefined);
+    setHours(undefined);
+    setValue(undefined);
+    setWorkSite('');
+    setOrigin('');
+    setSelectedCliente('');
+    setSelectedFinca('');
+    setMaintenanceValue(undefined);
+    setCantidadM3(undefined);
+    setProveedor('');
+    setKilometraje(undefined);
+    setTipoMateria('');
+  };
+
+  const handleReportTypeChange = (value: ReportType) => {
+    setReportType(value);
+  };
+
+  const handleReportDateChange = (date: Date) => {
+    setReportDate(date);
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    setDescription(e.target.value);
+  };
+
+  const handleTripsChange = (value: number | undefined) => {
+    setTrips(value);
+  };
+
+  const handleHoursChange = (value: number | undefined) => {
+    setHours(value);
+  };
+
+  const handleValueChange = (value: number | undefined) => {
+    setValue(value);
+  };
+
+  const handleWorkSiteChange = (value: string) => {
+    setWorkSite(value);
+  };
+
+  const handleOriginChange = (value: string) => {
+    setOrigin(value);
+  };
+
+  const handleSelectedClienteChange = (value: string) => {
+    setSelectedCliente(value);
+  };
+
+  const handleSelectedFincaChange = (value: string) => {
+    setSelectedFinca(value);
+  };
+
+  const handleMaintenanceValueChange = (value: number | undefined) => {
+    setMaintenanceValue(value);
+  };
+
+  const handleCantidadM3Change = (value: number | undefined) => {
+    setCantidadM3(value);
+  };
+
+  const handleProveedorChange = (value: string) => {
+    setProveedor(value);
+  };
+
+  const handleKilometrajeChange = (value: number | undefined) => {
+    setKilometraje(value);
+  };
+
+  const handleTipoMateriaChange = (value: string) => {
+    setTipoMateria(value);
   };
 
   return {
@@ -193,16 +216,8 @@ export const useReportForm = () => {
     setKilometraje,
     tipoMateria,
     setTipoMateria,
-    selectedMaquinaria,
-    setSelectedMaquinaria,
     showSuccess,
-    lastSubmitSuccess,
     isSubmitting,
-    proveedores,
-    tiposMaterial,
-    inventarioAcopio,
-    user,
-    selectedMachine,
     
     // Form handlers
     handleSubmit,
@@ -222,8 +237,5 @@ export const useReportForm = () => {
     handleProveedorChange,
     handleKilometrajeChange,
     handleTipoMateriaChange,
-    handleClienteChangeForWorkSite,
-    handleClienteChangeForDestination,
-    handleFincaChangeForDestination,
   };
 };
