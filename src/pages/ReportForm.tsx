@@ -102,6 +102,8 @@ const ReportForm = () => {
                 tiposMaterial={[]}
                 inventarioAcopio={[]}
                 onClienteChangeForWorkSite={() => {}}
+                onClienteChangeForDestination={() => {}}
+                onFincaChangeForDestination={() => {}}
               />
               
               <ReportFormActions isSubmitting={isSubmitting} />
