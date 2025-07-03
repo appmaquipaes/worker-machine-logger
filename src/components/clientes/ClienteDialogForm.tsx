@@ -24,25 +24,25 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
   onSubmit,
 }) => (
   <Form {...form}>
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="nombre_cliente"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <Building2 className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
                 Nombre del Cliente *
               </FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Ej: Constructora XYZ S.A.S." 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
@@ -50,49 +50,49 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
           control={form.control}
           name="tipo_persona"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <User className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-600" />
                 Tipo de Persona *
               </FormLabel>
               <FormControl>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 bg-white shadow-sm">
-                    <SelectValue placeholder="Seleccionar tipo de persona" />
+                  <SelectTrigger className="h-10 border-2 border-slate-300 focus:border-blue-500">
+                    <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-white border-3 border-slate-200 shadow-2xl">
+                  <SelectContent className="z-50 bg-white border-2 border-slate-200 shadow-xl">
                     {tiposPersona.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo} className="text-xl py-4 hover:bg-blue-50 cursor-pointer">
+                      <SelectItem key={tipo} value={tipo} className="hover:bg-blue-50 cursor-pointer">
                         {tipo}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="nit_cedula"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <FileText className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
                 NIT o Cédula *
               </FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Ej: 900123456-1 o 12345678" 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
@@ -100,9 +100,9 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
           control={form.control}
           name="correo_electronico"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <Mail className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-600" />
                 Correo Electrónico
               </FormLabel>
               <FormControl>
@@ -110,33 +110,33 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
                   {...field} 
                   type="email" 
                   placeholder="cliente@ejemplo.com" 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="persona_contacto"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <User className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-600" />
                 Persona de Contacto *
               </FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Ej: Juan Pérez Rodríguez" 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
@@ -144,42 +144,42 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
           control={form.control}
           name="telefono_contacto"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <Phone className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-blue-600" />
                 Teléfono de Contacto *
               </FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Ej: +57 301 234 5678" 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="ciudad"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-blue-600" />
                 Ciudad *
               </FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Ej: Medellín, Antioquia" 
-                  className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                  className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
                 />
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
@@ -187,9 +187,9 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
           control={form.control}
           name="tipo_cliente"
           render={({ field }) => (
-            <FormItem className="space-y-4">
-              <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-                <Building2 className="w-6 h-6 text-blue-600" />
+            <FormItem className="space-y-2">
+              <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
                 Categoría de Cliente
               </FormLabel>
               <FormControl>
@@ -197,19 +197,19 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
                   onValueChange={field.onChange} 
                   defaultValue={field.value}
                 >
-                  <SelectTrigger className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 bg-white shadow-sm">
-                    <SelectValue placeholder="Seleccionar categoría (opcional)" />
+                  <SelectTrigger className="h-10 border-2 border-slate-300 focus:border-blue-500">
+                    <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>
-                  <SelectContent className="z-50 bg-white border-3 border-slate-200 shadow-2xl">
+                  <SelectContent className="z-50 bg-white border-2 border-slate-200 shadow-xl">
                     {tiposCliente.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo} className="text-xl py-4 hover:bg-blue-50 cursor-pointer">
+                      <SelectItem key={tipo} value={tipo} className="hover:bg-blue-50 cursor-pointer">
                         {tipo}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormControl>
-              <FormMessage className="text-lg font-medium" />
+              <FormMessage className="text-sm" />
             </FormItem>
           )}
         />
@@ -219,36 +219,36 @@ const ClienteDialogForm: React.FC<ClienteDialogFormProps> = ({
         control={form.control}
         name="observaciones"
         render={({ field }) => (
-          <FormItem className="space-y-4">
-            <FormLabel className="text-xl font-bold text-slate-700 flex items-center gap-3">
-              <FileText className="w-6 h-6 text-blue-600" />
+          <FormItem className="space-y-2">
+            <FormLabel className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
               Observaciones
             </FormLabel>
             <FormControl>
               <Textarea 
                 {...field} 
-                placeholder="Información adicional del cliente, necesidades especiales, notas importantes..." 
-                className="min-h-[140px] text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 resize-none bg-white shadow-sm"
+                placeholder="Información adicional del cliente..." 
+                className="min-h-[80px] border-2 border-slate-300 focus:border-blue-500 transition-colors resize-none"
               />
             </FormControl>
-            <FormMessage className="text-lg font-medium" />
+            <FormMessage className="text-sm" />
           </FormItem>
         )}
       />
       
-      <DialogFooter className="gap-6 pt-10 border-t-2 border-slate-200">
+      <DialogFooter className="gap-3 pt-4 border-t border-slate-200">
         <Button 
           type="submit" 
-          className="h-16 px-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 min-w-[220px]"
+          className="h-10 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
         >
           {isEdit ? (
             <>
-              <Save className="mr-4 h-7 w-7" />
+              <Save className="mr-2 h-4 w-4" />
               Actualizar Cliente
             </>
           ) : (
             <>
-              <UserPlus className="mr-4 h-7 w-7" />
+              <UserPlus className="mr-2 h-4 w-4" />
               Guardar Cliente
             </>
           )}

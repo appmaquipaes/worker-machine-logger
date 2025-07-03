@@ -98,6 +98,11 @@ const ReportForm = () => {
                 setKilometraje={setKilometraje}
                 tipoMateria={tipoMateria}
                 setTipoMateria={setTipoMateria}
+                proveedores={[]}
+                tiposMaterial={[]}
+                inventarioAcopio={[]}
+                onClienteChangeForWorkSite={() => {}}
+                onProveedorChange={() => {}}
               />
               
               <ReportFormActions isSubmitting={isSubmitting} />

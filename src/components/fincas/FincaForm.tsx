@@ -38,26 +38,26 @@ const FincaForm: React.FC<FincaFormProps> = ({
   onCancel,
 }) => (
   <>
-    <DialogHeader className="space-y-6 pb-8">
-      <div className="flex items-center gap-6">
-        <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-2xl">
-          {editingFinca ? <Save className="h-8 w-8 text-white" /> : <Plus className="h-8 w-8 text-white" />}
+    <DialogHeader className="space-y-4 pb-6">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+          {editingFinca ? <Save className="h-6 w-6 text-white" /> : <Plus className="h-6 w-6 text-white" />}
         </div>
         <div>
-          <DialogTitle className="text-3xl font-bold text-slate-800">
-            {editingFinca ? 'Editar Proyecto/Finca' : 'Agregar Nuevo Proyecto/Finca'}
+          <DialogTitle className="text-2xl font-bold text-slate-800">
+            {editingFinca ? 'Editar Proyecto/Finca' : 'Agregar Proyecto/Finca'}
           </DialogTitle>
-          <p className="text-xl text-slate-600 mt-2">
+          <p className="text-slate-600 mt-1">
             {editingFinca ? 'Modifica la información del proyecto' : 'Complete los datos del nuevo proyecto'}
           </p>
         </div>
       </div>
     </DialogHeader>
     
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 py-8">
-      <div className="space-y-4">
-        <Label htmlFor="nombre-finca" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <Building className="w-6 h-6 text-green-600" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="nombre-finca" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <Building className="w-4 h-4 text-green-600" />
           Nombre del Proyecto/Finca *
         </Label>
         <Input
@@ -65,13 +65,13 @@ const FincaForm: React.FC<FincaFormProps> = ({
           value={nombreFinca}
           onChange={(e) => setNombreFinca(e.target.value)}
           placeholder="Ej: Proyecto Urbanización La Esperanza"
-          className="h-16 text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+          className="h-10 border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="ciudad" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <MapPin className="w-6 h-6 text-green-600" />
+      <div className="space-y-2">
+        <Label htmlFor="ciudad" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-green-600" />
           Ciudad/Municipio *
         </Label>
         <Input
@@ -79,13 +79,13 @@ const FincaForm: React.FC<FincaFormProps> = ({
           value={ciudad}
           onChange={(e) => setCiudad(e.target.value)}
           placeholder="Ej: Medellín, Antioquia"
-          className="h-16 text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+          className="h-10 border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
       
-      <div className="md:col-span-2 space-y-4">
-        <Label htmlFor="direccion" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <MapPin className="w-6 h-6 text-green-600" />
+      <div className="md:col-span-2 space-y-2">
+        <Label htmlFor="direccion" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-green-600" />
           Dirección Exacta del Proyecto *
         </Label>
         <Input
@@ -93,13 +93,13 @@ const FincaForm: React.FC<FincaFormProps> = ({
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
           placeholder="Dirección completa y detallada del proyecto"
-          className="h-16 text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+          className="h-10 border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="contacto-nombre" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <User className="w-6 h-6 text-green-600" />
+      <div className="space-y-2">
+        <Label htmlFor="contacto-nombre" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <User className="w-4 h-4 text-green-600" />
           Persona de Contacto *
         </Label>
         <Input
@@ -107,13 +107,13 @@ const FincaForm: React.FC<FincaFormProps> = ({
           value={contactoNombre}
           onChange={(e) => setContactoNombre(e.target.value)}
           placeholder="Nombre del responsable en el proyecto"
-          className="h-16 text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+          className="h-10 border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="contacto-telefono" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <Phone className="w-6 h-6 text-green-600" />
+      <div className="space-y-2">
+        <Label htmlFor="contacto-telefono" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <Phone className="w-4 h-4 text-green-600" />
           Teléfono de Contacto *
         </Label>
         <Input
@@ -121,45 +121,45 @@ const FincaForm: React.FC<FincaFormProps> = ({
           value={contactoTelefono}
           onChange={(e) => setContactoTelefono(e.target.value)}
           placeholder="Ej: +57 301 234 5678"
-          className="h-16 text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+          className="h-10 border-2 border-slate-300 focus:border-green-500 transition-colors"
         />
       </div>
       
-      <div className="md:col-span-2 space-y-4">
-        <Label htmlFor="notas" className="text-xl font-bold text-slate-700 flex items-center gap-3">
-          <FileText className="w-6 h-6 text-green-600" />
+      <div className="md:col-span-2 space-y-2">
+        <Label htmlFor="notas" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-green-600" />
           Notas Adicionales del Proyecto
         </Label>
         <Textarea
           id="notas"
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
-          placeholder="Información adicional sobre el proyecto, requisitos especiales, observaciones importantes..."
-          className="min-h-[140px] text-xl border-3 border-slate-300 focus:border-green-500 transition-all duration-300 resize-none bg-white shadow-sm"
+          placeholder="Información adicional sobre el proyecto..."
+          className="min-h-[80px] border-2 border-slate-300 focus:border-green-500 transition-colors resize-none"
         />
       </div>
     </div>
     
-    <DialogFooter className="gap-6 pt-10 border-t-2 border-slate-200">
+    <DialogFooter className="gap-3 pt-4 border-t border-slate-200">
       <Button 
         variant="outline" 
         onClick={onCancel}
-        className="h-16 px-10 font-bold text-xl border-3 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 min-w-[180px]"
+        className="h-10 px-4 font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
       >
         Cancelar
       </Button>
       <Button 
         onClick={onSubmit} 
-        className="h-16 px-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 min-w-[250px]"
+        className="h-10 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
       >
         {editingFinca ? (
           <>
-            <Save className="mr-4 h-7 w-7" />
+            <Save className="mr-2 h-4 w-4" />
             Actualizar Proyecto
           </>
         ) : (
           <>
-            <Plus className="mr-4 h-7 w-7" />
+            <Plus className="mr-2 h-4 w-4" />
             Guardar Proyecto
           </>
         )}

@@ -2,38 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter 
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, MapPin, Building } from 'lucide-react';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
+import { Plus, MapPin } from 'lucide-react';
 import { 
   Finca, 
   loadFincas, 
@@ -164,33 +135,30 @@ const FincasManagement: React.FC<FincasManagementProps> = ({
   };
 
   return (
-    <Card className="shadow-2xl border-3 border-slate-200 bg-white rounded-3xl animate-scale-in">
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b-2 border-slate-200 bg-gradient-to-r from-green-50 to-green-100 p-8">
+    <Card className="shadow-lg border bg-white rounded-2xl animate-scale-in">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 bg-gradient-to-r from-green-50 to-green-100 p-6">
         <div>
-          <CardTitle className="flex items-center gap-4 text-3xl font-bold text-green-700">
-            <div className="p-3 bg-green-600 rounded-2xl shadow-lg">
-              <MapPin className="h-8 w-8 text-white" />
+          <CardTitle className="flex items-center gap-3 text-2xl font-bold text-green-700">
+            <div className="p-2 bg-green-600 rounded-xl shadow-md">
+              <MapPin className="h-6 w-6 text-white" />
             </div>
-            Fincas y Puntos de Entrega
+            Fincas y Proyectos
           </CardTitle>
-          <p className="text-xl text-green-600 mt-3 font-medium">
-            Cliente:&nbsp;
-            <span className="font-bold text-green-700">
-              {clienteNombre}
-            </span>
+          <p className="text-green-600 mt-2 font-medium">
+            Cliente: <span className="font-bold text-green-700">{clienteNombre}</span>
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button 
               onClick={openNewFincaDialog} 
-              className="h-16 px-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 min-w-[220px]"
+              className="h-10 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <Plus className="h-6 w-6 mr-3" />
+              <Plus className="h-4 w-4 mr-2" />
               Nueva Finca
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-5xl bg-white shadow-2xl border-0 rounded-3xl animate-fade-in">
+          <DialogContent className="max-w-4xl bg-white shadow-xl border-0 rounded-2xl animate-fade-in">
             <FincaForm
               nombreFinca={nombreFinca}
               setNombreFinca={setNombreFinca}
@@ -211,7 +179,7 @@ const FincasManagement: React.FC<FincasManagementProps> = ({
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0 pb-2">
+      <CardContent className="p-0">
         {fincas.length > 0 ? (
           <FincasTable fincas={fincas} onEdit={handleEdit} onDelete={handleDelete} />
         ) : (

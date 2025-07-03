@@ -198,46 +198,44 @@ const ClientesPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-12 px-8 animate-fade-in max-w-7xl">
-      {/* Enhanced Header Section */}
-      <div className="mb-12">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-6">
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl shadow-2xl">
-                <Users className="h-10 w-10 text-white" />
+    <div className="container mx-auto py-8 px-4 animate-fade-in max-w-7xl">
+      {/* Header Section - Estandarizado */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+                <Users className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-slate-800">
                   Gestión de Clientes
                 </h1>
-                <p className="text-2xl text-slate-600 font-medium mt-2">
-                  Administra tu cartera de clientes y sus proyectos
+                <p className="text-lg text-slate-600 mt-1">
+                  Administra tu cartera de clientes y proyectos
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-4">
+          <div className="flex gap-3">
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
-                <Button 
-                  className="h-16 px-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 min-w-[250px]"
-                >
-                  <UserPlus className="mr-4 h-7 w-7" />
+                <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                  <UserPlus className="mr-2 h-5 w-5" />
                   Agregar Cliente
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[1000px] animate-scale-in shadow-2xl bg-white border-0 rounded-3xl">
-                <DialogHeader className="space-y-6 pb-8">
-                  <div className="flex items-center gap-6">
-                    <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-2xl">
-                      <UserPlus className="h-8 w-8 text-white" />
+              <DialogContent className="sm:max-w-[800px] animate-scale-in shadow-xl bg-white border-0 rounded-2xl">
+                <DialogHeader className="space-y-4 pb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                      <UserPlus className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <DialogTitle className="text-3xl font-bold text-slate-800">Agregar Nuevo Cliente</DialogTitle>
-                      <DialogDescription className="text-xl text-slate-600 mt-2">
-                        Complete la información del cliente para registrarlo en el sistema
+                      <DialogTitle className="text-2xl font-bold text-slate-800">Agregar Cliente</DialogTitle>
+                      <DialogDescription className="text-slate-600 mt-1">
+                        Complete la información del cliente
                       </DialogDescription>
                     </div>
                   </div>
@@ -254,123 +252,123 @@ const ClientesPage: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/admin')}
-              className="h-16 px-12 font-bold text-xl border-3 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 shadow-lg min-w-[250px]"
+              className="h-12 px-6 font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 shadow-sm"
             >
-              <ArrowLeft className="mr-4 h-7 w-7" />
-              Volver al Panel
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Volver
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-3 border-blue-200 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-10">
+      {/* Statistics Cards - Más compactas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-600 text-xl font-bold">Total Clientes</p>
-                <p className="text-5xl font-bold text-blue-700 mt-2">{clientes.length}</p>
+                <p className="text-blue-600 text-sm font-semibold">Total Clientes</p>
+                <p className="text-2xl font-bold text-blue-700 mt-1">{clientes.length}</p>
               </div>
-              <div className="p-5 bg-blue-200 rounded-3xl shadow-lg">
-                <Users className="h-12 w-12 text-blue-600" />
+              <div className="p-2 bg-blue-200 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-3 border-green-200 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-10">
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-600 text-xl font-bold">Empresas</p>
-                <p className="text-5xl font-bold text-green-700 mt-2">
+                <p className="text-green-600 text-sm font-semibold">Empresas</p>
+                <p className="text-2xl font-bold text-green-700 mt-1">
                   {clientes.filter(c => c.tipo_persona === 'Empresa').length}
                 </p>
               </div>
-              <div className="p-5 bg-green-200 rounded-3xl shadow-lg">
-                <Building2 className="h-12 w-12 text-green-600" />
+              <div className="p-2 bg-green-200 rounded-lg">
+                <Building2 className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-3 border-purple-200 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-10">
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-600 text-xl font-bold">Personas Naturales</p>
-                <p className="text-5xl font-bold text-purple-700 mt-2">
+                <p className="text-purple-600 text-sm font-semibold">Personas Naturales</p>
+                <p className="text-2xl font-bold text-purple-700 mt-1">
                   {clientes.filter(c => c.tipo_persona === 'Natural').length}
                 </p>
               </div>
-              <div className="p-5 bg-purple-200 rounded-3xl shadow-lg">
-                <Contact className="h-12 w-12 text-purple-600" />
+              <div className="p-2 bg-purple-200 rounded-lg">
+                <Contact className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-3 border-orange-200 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-10">
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-600 text-xl font-bold">Proyectos Activos</p>
-                <p className="text-5xl font-bold text-orange-700 mt-2">{fincas.length}</p>
+                <p className="text-orange-600 text-sm font-semibold">Proyectos Activos</p>
+                <p className="text-2xl font-bold text-orange-700 mt-1">{fincas.length}</p>
               </div>
-              <div className="p-5 bg-orange-200 rounded-3xl shadow-lg">
-                <MapPin className="h-12 w-12 text-orange-600" />
+              <div className="p-2 bg-orange-200 rounded-lg">
+                <MapPin className="h-6 w-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Search and Filters */}
-      <Card className="mb-10 shadow-2xl border-0 bg-white rounded-3xl">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200 rounded-t-3xl">
-          <CardTitle className="text-3xl font-bold text-slate-800 flex items-center gap-4">
-            <Search className="h-8 w-8 text-slate-600" />
-            Buscar y Filtrar Clientes
+      {/* Search and Filters - Más compactos */}
+      <Card className="mb-6 shadow-lg border-0 bg-white rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 rounded-t-2xl">
+          <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+            <Search className="h-5 w-5 text-slate-600" />
+            Buscar y Filtrar
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <Label htmlFor="search" className="text-xl font-bold text-slate-700">Buscar Cliente</Label>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="search" className="text-sm font-semibold text-slate-700">Buscar Cliente</Label>
               <Input
                 id="search"
-                placeholder="Nombre, NIT/Cédula o contacto..."
+                placeholder="Nombre, NIT/Cédula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-16 text-xl border-3 border-slate-300 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
+                className="h-10 border-2 border-slate-300 focus:border-blue-500 transition-colors"
               />
             </div>
             
-            <div className="space-y-4">
-              <Label htmlFor="tipo-persona" className="text-xl font-bold text-slate-700">Tipo de Persona</Label>
+            <div className="space-y-2">
+              <Label htmlFor="tipo-persona" className="text-sm font-semibold text-slate-700">Tipo de Persona</Label>
               <select
                 id="tipo-persona"
                 value={filterTipoPersona}
                 onChange={(e) => setFilterTipoPersona(e.target.value)}
-                className="w-full h-16 px-6 text-xl border-3 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none transition-all duration-300 bg-white shadow-sm"
+                className="w-full h-10 px-3 border-2 border-slate-300 rounded-md focus:border-blue-500 focus:outline-none transition-colors bg-white"
               >
-                <option value="">Todos los tipos</option>
+                <option value="">Todos</option>
                 {tiposPersona.map((tipo) => (
                   <option key={tipo} value={tipo}>{tipo}</option>
                 ))}
               </select>
             </div>
             
-            <div className="space-y-4">
-              <Label htmlFor="tipo-cliente" className="text-xl font-bold text-slate-700">Categoría Cliente</Label>
+            <div className="space-y-2">
+              <Label htmlFor="tipo-cliente" className="text-sm font-semibold text-slate-700">Categoría</Label>
               <select
                 id="tipo-cliente"
                 value={filterTipoCliente}
                 onChange={(e) => setFilterTipoCliente(e.target.value)}
-                className="w-full h-16 px-6 text-xl border-3 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none transition-all duration-300 bg-white shadow-sm"
+                className="w-full h-10 px-3 border-2 border-slate-300 rounded-md focus:border-blue-500 focus:outline-none transition-colors bg-white"
               >
-                <option value="">Todas las categorías</option>
+                <option value="">Todas</option>
                 {tiposCliente.map((tipo) => (
                   <option key={tipo} value={tipo}>{tipo}</option>
                 ))}
@@ -380,20 +378,20 @@ const ClientesPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Clients Table */}
-      <Card className="shadow-2xl border-0 bg-white rounded-3xl">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200 rounded-t-3xl">
-          <CardTitle className="text-3xl font-bold text-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Users className="h-8 w-8 text-slate-600" />
+      {/* Clients Table - Estandarizada */}
+      <Card className="shadow-lg border-0 bg-white rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 rounded-t-2xl">
+          <CardTitle className="text-xl font-bold text-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-slate-600" />
               Lista de Clientes
             </div>
-            <Badge variant="secondary" className="text-xl font-bold px-6 py-3 shadow-lg">
+            <Badge variant="secondary" className="text-sm font-semibold px-3 py-1">
               {filteredClientes.length} resultados
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-10">
+        <CardContent className="p-6">
           {filteredClientes.length > 0 ? (
             <ClientesTable
               clientes={filteredClientes}
@@ -413,7 +411,7 @@ const ClientesPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Dialogs */}
+      {/* Dialogs */}
       <EditarClienteDialog
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
@@ -425,18 +423,18 @@ const ClientesPage: React.FC = () => {
       />
 
       <Dialog open={showFincasDialog} onOpenChange={setShowFincasDialog}>
-        <DialogContent className="sm:max-w-7xl animate-scale-in shadow-2xl bg-white border-0 rounded-3xl">
-          <DialogHeader className="space-y-6 pb-8">
-            <div className="flex items-center gap-6">
-              <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-2xl">
-                <MapPin className="h-8 w-8 text-white" />
+        <DialogContent className="sm:max-w-6xl animate-scale-in shadow-xl bg-white border-0 rounded-2xl">
+          <DialogHeader className="space-y-4 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+                <MapPin className="h-6 w-6 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-3xl font-bold text-slate-800">
+                <DialogTitle className="text-2xl font-bold text-slate-800">
                   Gestionar Fincas - {selectedCliente?.nombre_cliente}
                 </DialogTitle>
-                <DialogDescription className="text-xl text-slate-600 mt-2">
-                  Administra las fincas y proyectos asociados a este cliente
+                <DialogDescription className="text-slate-600 mt-1">
+                  Administra las fincas asociadas a este cliente
                 </DialogDescription>
               </div>
             </div>
